@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,6 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, increment, updateDoc } from 'firebase/firestore';
+import Link from 'next/link';
 
 interface PostData {
   id: string;
@@ -59,80 +61,76 @@ export default function PostCard({ post }: { post: PostData }) {
     }
   };
 
-  const showSoonToast = (action: string) => {
-    toast({
-      title: "قريباً",
-      description: `ميزة ${action} ستتوفر في التحديث القادم.`,
-    });
-  };
-
   return (
-    <Card className="border-none shadow-none rounded-none w-full bg-card mb-[1px]">
+    <Card className="border-none shadow-none rounded-none w-full bg-card mb-[1px] last:mb-0 transition-colors hover:bg-muted/10">
       <CardHeader className="p-3 pb-1 flex-row items-center justify-between space-y-0">
-        <div className="flex gap-2">
-          <Avatar className="h-8 w-8">
+        <Link href={`/profile/${post.authorId}`} className="flex gap-2.5 group">
+          <Avatar className="h-9 w-9 border border-muted/20">
             <AvatarImage src={post.authorAvatar} alt={post.authorName} />
             <AvatarFallback>{post.authorName?.[0] || 'ت'}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col justify-center">
-            <span className="text-xs font-bold text-primary leading-tight">{post.authorName || 'مستخدم مجهول'}</span>
-            <span className="text-[9px] text-muted-foreground">{formattedDate}</span>
+            <span className="text-[11px] font-bold text-primary leading-tight group-hover:underline">{post.authorName || 'مستخدم مجهول'}</span>
+            <span className="text-[9px] text-muted-foreground flex items-center gap-1">
+              {formattedDate}
+              <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground"></span>
+              عام
+            </span>
           </div>
-        </div>
-        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground">
+        </Link>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary rounded-full">
           <MoreHorizontal size={14} />
         </Button>
       </CardHeader>
-      <CardContent className="px-3 py-1">
-        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+      
+      <CardContent className="px-3 py-2">
+        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
           {post.content}
         </p>
         {post.hashtags && post.hashtags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
+          <div className="flex flex-wrap gap-1.5 mt-2">
             {post.hashtags.map((tag, i) => (
-              <span key={i} className="text-accent hover:underline cursor-pointer text-[10px] font-medium">
+              <span key={i} className="text-accent hover:text-accent/80 cursor-pointer text-[10px] font-bold">
                 {tag}
               </span>
             ))}
           </div>
         )}
       </CardContent>
-      <CardFooter className="px-3 py-0 border-t-0 flex justify-between items-center h-8">
+
+      <CardFooter className="px-2 py-0 border-t-0 flex justify-between items-center h-9">
         <Button 
           variant="ghost" 
           size="sm" 
-          className={`h-7 px-2 gap-1.5 transition-colors ${isLiked ? 'text-red-500 bg-red-50/50' : 'text-muted-foreground'}`}
+          className={`h-8 flex-1 gap-1.5 transition-all rounded-none ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-400'}`}
           onClick={handleLike}
         >
-          <Heart size={16} fill={isLiked ? "currentColor" : "none"} />
+          <Heart size={16} fill={isLiked ? "currentColor" : "none"} className={isLiked ? "animate-in zoom-in-75" : ""} />
           <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
         </Button>
         
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-7 px-2 text-muted-foreground gap-1.5"
-          onClick={() => showSoonToast('الرد')}
+          className="h-8 flex-1 text-muted-foreground hover:text-primary gap-1.5 rounded-none"
         >
           <MessageCircle size={16} />
-          <span className="text-[11px]">رد</span>
+          <span className="text-[11px]">3</span>
         </Button>
 
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-7 px-2 text-muted-foreground gap-1.5"
-          onClick={() => showSoonToast('إعادة النشر')}
+          className="h-8 flex-1 text-muted-foreground hover:text-accent gap-1.5 rounded-none"
         >
           <Repeat size={16} />
-          <span className="text-[11px]">نشر</span>
+          <span className="text-[11px]">8</span>
         </Button>
 
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-7 px-2 text-muted-foreground"
-          onClick={() => showSoonToast('المشاركة')}
+          className="h-8 w-10 text-muted-foreground hover:text-primary rounded-none"
         >
           <Share2 size={16} />
         </Button>

@@ -1,20 +1,43 @@
+
+'use client';
+
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { Search, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useState } from 'react';
 
 export default function Navbar() {
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   return (
-    <nav className="fixed top-0 z-50 w-full h-8 border-b bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto h-full flex items-center justify-between px-4">
-        <div className="flex items-center">
-          <Link href="/" className="text-sm font-bold text-primary font-headline tracking-tighter">
+    <nav className="fixed top-0 z-50 w-full h-8 border-b bg-background/80 backdrop-blur-md transition-all duration-300">
+      <div className="container mx-auto h-full flex items-center justify-between px-4 max-w-5xl">
+        <div className={`flex items-center transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
+          <Link href="/" className="text-sm font-bold text-primary font-headline tracking-tighter whitespace-nowrap">
             تواصل <span className="text-accent text-[10px]">Tawasul</span>
           </Link>
         </div>
 
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-            <Search size={14} className="text-muted-foreground" />
+        <div className={`flex-1 flex justify-center px-4 transition-all duration-300 ${isSearchFocused ? 'max-w-full' : 'max-w-[180px]'}`}>
+          <div className="relative w-full group">
+            <Search 
+              size={12} 
+              className={`absolute right-2.5 top-1/2 -translate-y-1/2 transition-colors ${isSearchFocused ? 'text-primary' : 'text-muted-foreground'}`} 
+            />
+            <Input 
+              placeholder="بحث..." 
+              className="h-6 w-full pr-8 pl-3 bg-secondary/50 border-none rounded-full text-[10px] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:bg-secondary transition-all"
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+            />
+          </div>
+        </div>
+
+        <div className={`flex items-center gap-1 transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full relative">
+            <Bell size={14} className="text-muted-foreground" />
+            <span className="absolute top-1.5 left-1.5 w-1.5 h-1.5 bg-accent rounded-full border border-background"></span>
           </Button>
         </div>
       </div>
