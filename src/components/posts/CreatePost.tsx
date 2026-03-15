@@ -53,7 +53,7 @@ export default function CreatePost() {
   };
 
   return (
-    <Card className="mb-6 overflow-hidden border-none shadow-sm">
+    <Card className="mb-0 md:mb-6 overflow-hidden border-none shadow-none rounded-none w-full bg-card">
       <CardContent className="p-4 md:p-6">
         <div className="flex gap-4">
           <Avatar className="h-10 w-10">
@@ -63,7 +63,7 @@ export default function CreatePost() {
           <div className="flex-1 space-y-4">
             <Textarea 
               placeholder="بماذا تفكر؟" 
-              className="min-h-[120px] resize-none border-none focus-visible:ring-0 p-0 text-lg"
+              className="min-h-[120px] resize-none border-none focus-visible:ring-0 p-0 text-lg bg-transparent"
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />

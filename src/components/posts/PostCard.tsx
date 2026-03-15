@@ -33,7 +33,7 @@ export default function PostCard({ post }: { post: Post }) {
   };
 
   return (
-    <Card className="mb-4 border-none shadow-sm hover:shadow-md transition-shadow duration-300">
+    <Card className="mb-0 md:mb-4 border-x-0 md:border-x border-y-0 md:border-y border-none shadow-none rounded-none w-full bg-card transition-colors duration-300">
       <CardHeader className="p-4 md:p-6 flex-row items-start justify-between space-y-0">
         <div className="flex gap-3">
           <Avatar className="h-10 w-10">

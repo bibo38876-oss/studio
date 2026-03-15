@@ -20,9 +20,9 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container mx-auto max-w-4xl py-6 px-4">
+      <main className="container mx-auto max-w-4xl py-0 md:py-6 px-0 md:px-4">
         {/* Profile Header */}
-        <div className="bg-card rounded-3xl shadow-sm overflow-hidden mb-6">
+        <div className="bg-card rounded-none md:rounded-3xl shadow-none md:shadow-sm overflow-hidden mb-6">
           <div className="h-48 bg-primary relative" />
           <div className="px-6 pb-6 relative">
             <div className="flex justify-between items-end -mt-12 mb-4">
@@ -85,33 +85,33 @@ export default function ProfilePage() {
 
         {/* Profile Content Tabs */}
         <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-auto p-0 mb-6">
+          <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-auto p-0 mb-6 px-4 md:px-0">
             <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent px-8 py-3 font-bold">منشورات</TabsTrigger>
             <TabsTrigger value="replies" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent px-8 py-3 font-bold">الردود</TabsTrigger>
             <TabsTrigger value="media" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent px-8 py-3 font-bold">الوسائط</TabsTrigger>
             <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent px-8 py-3 font-bold">الإعجابات</TabsTrigger>
           </TabsList>
-          <TabsContent value="posts" className="space-y-4">
+          <TabsContent value="posts" className="space-y-1 md:space-y-4">
             {userPosts.length > 0 ? (
               userPosts.map(post => <PostCard key={post.id} post={post} />)
             ) : (
-              <div className="text-center py-20 bg-card rounded-3xl">
+              <div className="text-center py-20 bg-card rounded-none md:rounded-3xl">
                 <p className="text-muted-foreground">لا توجد منشورات حتى الآن.</p>
               </div>
             )}
           </TabsContent>
           <TabsContent value="replies">
-            <div className="text-center py-20 bg-card rounded-3xl">
+            <div className="text-center py-20 bg-card rounded-none md:rounded-3xl">
               <p className="text-muted-foreground">لا توجد ردود لعرضها.</p>
             </div>
           </TabsContent>
           <TabsContent value="media">
-             <div className="text-center py-20 bg-card rounded-3xl">
+             <div className="text-center py-20 bg-card rounded-none md:rounded-3xl">
               <p className="text-muted-foreground">لا توجد صور أو فيديوهات.</p>
             </div>
           </TabsContent>
           <TabsContent value="likes">
-             <div className="text-center py-20 bg-card rounded-3xl">
+             <div className="text-center py-20 bg-card rounded-none md:rounded-3xl">
               <p className="text-muted-foreground">المنشورات المعجب بها ستظهر هنا.</p>
             </div>
           </TabsContent>

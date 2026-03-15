@@ -11,15 +11,15 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-4 py-6 md:py-8 flex gap-6">
+      <main className="container mx-auto px-0 md:px-4 py-0 md:py-8 flex gap-6">
         {/* Left column - User profile and navigation shortcuts */}
         <LeftSidebar />
 
         {/* Middle column - Feed */}
-        <div className="flex-1 max-w-2xl">
+        <div className="flex-1 max-w-2xl w-full">
           <CreatePost />
           
-          <div className="space-y-4">
+          <div className="space-y-1 md:space-y-4">
             {MOCK_POSTS.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
