@@ -2,6 +2,7 @@
 "use client"
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,12 +23,15 @@ interface CommentsDialogProps {
 export default function CommentsDialog({ postId, postAuthorId, post, onClose }: CommentsDialogProps) {
   const [commentText, setCommentText] = useState('');
   const { firestore, user } = useFirebase();
+  const router = useRouter();
+
+  const isAnonymous = !user || user.isAnonymous;
 
   // Get current user profile for comment data
   const userRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user || isAnonymous) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user, isAnonymous]);
   const { data: profile } = useDoc(userRef);
 
   const commentsQuery = useMemoFirebase(() => {
@@ -41,11 +45,15 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
   const { data: comments, isLoading } = useCollection(commentsQuery);
 
   const handleAddComment = () => {
+    if (isAnonymous) {
+      router.push('/login');
+      return;
+    }
     if (!commentText.trim() || !user || !firestore) return;
 
     const commentData = {
       authorId: user.uid,
-      authorName: profile?.username || 'مستخدم تواصل',
+      authorName: profile?.username || user.displayName || 'مستخدم تواصل',
       authorAvatar: profile?.profilePictureUrl || '',
       content: commentText.trim(),
       createdAt: serverTimestamp(),
@@ -63,7 +71,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
       addDocumentNonBlocking(collection(firestore, 'users', postAuthorId, 'notifications'), {
         type: 'comment',
         fromUserId: user.uid,
-        fromUsername: profile?.username || 'مستخدم تواصل',
+        fromUsername: profile?.username || user.displayName || 'مستخدم تواصل',
         fromAvatar: profile?.profilePictureUrl || '',
         postId: postId,
         createdAt: serverTimestamp(),
@@ -76,7 +84,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
 
   return (
     <div className="flex flex-col h-full bg-background animate-in slide-in-from-left duration-300">
-      {/* Header - Slim and Professional */}
+      {/* Header */}
       <div className="flex items-center gap-4 p-2 border-b sticky top-0 bg-background/80 backdrop-blur-md z-20 h-10">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
           <ChevronRight size={20} />
@@ -88,7 +96,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
       </div>
 
       <div className="flex-1 overflow-y-auto pb-20">
-        {/* Original Post Content in Detail */}
         {post && (
           <div className="p-4 border-b bg-muted/5">
             <div className="flex gap-3 mb-4">
@@ -109,15 +116,9 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <Image src={post.mediaUrl} alt="Post media" fill className="object-cover" />
               </div>
             )}
-            <div className="flex gap-4 text-[10px] text-muted-foreground border-t pt-3">
-              <span>{post.createdAt?.toDate ? new Date(post.createdAt.toDate()).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
-              <span>•</span>
-              <span>{post.createdAt?.toDate ? new Date(post.createdAt.toDate()).toLocaleDateString('ar-SA') : ''}</span>
-            </div>
           </div>
         )}
 
-        {/* Comments Section */}
         <div className="p-4 space-y-6">
           <div className="flex items-center gap-2 mb-2">
             <MessageSquareText size={14} className="text-primary" />
@@ -154,22 +155,22 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
         </div>
       </div>
 
-      {/* Persistent Bottom Comment Input */}
       <div className="p-3 border-t bg-background/80 backdrop-blur-md pb-safe sticky bottom-0 z-30">
         <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-10">
           <Input 
-            placeholder="اكتب تعليقاً..." 
+            placeholder={isAnonymous ? "سجل الدخول للتعليق..." : "اكتب تعليقاً..."}
             className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+            readOnly={isAnonymous}
+            onClick={() => isAnonymous && router.push('/login')}
           />
           <Button 
             size="icon" 
             variant="ghost" 
             className={`h-8 w-8 rounded-full transition-all ${commentText.trim() ? 'text-primary scale-110' : 'text-muted-foreground opacity-50'}`}
             onClick={handleAddComment}
-            disabled={!commentText.trim()}
           >
             <Send size={16} />
           </Button>

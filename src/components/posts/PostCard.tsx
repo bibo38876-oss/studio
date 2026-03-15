@@ -13,6 +13,7 @@ import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDoc
 import { doc, increment, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,8 +40,11 @@ interface PostData {
 export default function PostCard({ post }: { post: PostData }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
+  const router = useRouter();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   
+  const isAnonymous = !user || user.isAnonymous;
+
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'posts', post.id, 'likes', user.uid);
@@ -63,6 +67,10 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isAnonymous) {
+      router.push('/login');
+      return;
+    }
     if (!user || !firestore) return;
     const postRef = doc(firestore, 'posts', post.id);
     const userLikeRef = doc(firestore, 'posts', post.id, 'likes', user.uid);
@@ -79,7 +87,7 @@ export default function PostCard({ post }: { post: PostData }) {
         setDocumentNonBlocking(notifRef, {
           type: 'like',
           fromUserId: user.uid,
-          fromUsername: 'مستخدم تواصل',
+          fromUsername: user.displayName || 'مستخدم تواصل',
           postId: post.id,
           createdAt: serverTimestamp(),
           read: false
@@ -90,6 +98,10 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isAnonymous) {
+      router.push('/login');
+      return;
+    }
     if (!user || !firestore) return;
     if (isBookmarked) {
       deleteDocumentNonBlocking(bookmarkRef!);
@@ -152,16 +164,6 @@ export default function PostCard({ post }: { post: PostData }) {
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 600px"
               />
-            </div>
-          )}
-
-          {post.hashtags && post.hashtags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 px-3 mt-2">
-              {post.hashtags.map((tag, i) => (
-                <span key={i} className="text-accent hover:underline cursor-pointer text-[10px] font-bold">
-                  {tag}
-                </span>
-              ))}
             </div>
           )}
         </CardContent>

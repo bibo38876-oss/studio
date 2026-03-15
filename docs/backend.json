@@ -13,7 +13,8 @@
         "profilePictureUrl": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time" },
         "followingIds": { "type": "array", "items": { "type": "string" } },
-        "followerIds": { "type": "array", "items": { "type": "string" } }
+        "followerIds": { "type": "array", "items": { "type": "string" } },
+        "email": { "type": "string", "format": "email" }
       },
       "required": ["id", "username", "createdAt"]
     },
@@ -66,7 +67,7 @@
     }
   },
   "auth": {
-    "providers": ["anonymous"]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Home, Compass, Bell, User, Plus } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import CreatePost from '@/components/posts/CreatePost';
 import { useState } from 'react';
@@ -11,15 +11,30 @@ import { useUser } from '@/firebase';
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isPostOpen, setIsPostOpen] = useState(false);
   const { user } = useUser();
+
+  const isAnonymous = !user || user.isAnonymous;
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    if (isAnonymous) {
+      e.preventDefault();
+      router.push('/login');
+    }
+  };
 
   const navItems = [
     { icon: <Home size={14} />, label: 'الرئيسية', path: '/' },
     { icon: <Compass size={14} />, label: 'استكشف', path: '/explore' },
     { icon: null, label: 'نشر', path: 'post' },
     { icon: <Bell size={14} />, label: 'تنبيهات', path: '/notifications' },
-    { icon: <User size={14} />, label: 'حسابي', path: user ? `/profile/${user.uid}` : '/profile/me' },
+    { 
+      icon: <User size={14} />, 
+      label: 'حسابي', 
+      path: user && !user.isAnonymous ? `/profile/${user.uid}` : '/login',
+      onClick: handleProfileClick
+    },
   ];
 
   return (
@@ -28,14 +43,17 @@ export default function BottomNav() {
         {navItems.map((item, index) => {
           if (item.path === 'post') {
             return (
-              <Dialog key={index} open={isPostOpen} onOpenChange={setIsPostOpen}>
+              <Dialog key={index} open={isPostOpen} onOpenChange={(open) => {
+                if (isAnonymous && open) {
+                  router.push('/login');
+                  return;
+                }
+                setIsPostOpen(open);
+              }}>
                 <DialogTrigger asChild>
                   <button className="relative w-9 h-6 transition-transform hover:scale-110 active:scale-95 mx-2 group">
-                    {/* طبقة اللون السماوي (اليسار) */}
                     <div className="absolute inset-0 bg-[#00f2ea] rounded-sm -translate-x-1"></div>
-                    {/* طبقة اللون الأحمر (اليمين) */}
                     <div className="absolute inset-0 bg-[#ff0050] rounded-sm translate-x-1"></div>
-                    {/* الزر الأبيض الرئيسي */}
                     <div className="absolute inset-0 bg-white dark:bg-foreground rounded-sm flex items-center justify-center">
                       <Plus size={16} className="text-black dark:text-background" strokeWidth={3} />
                     </div>
@@ -54,6 +72,7 @@ export default function BottomNav() {
             <Link 
               key={index} 
               href={item.path} 
+              onClick={item.onClick}
               className={`flex flex-col items-center justify-center gap-0 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
             >
               {item.icon}
