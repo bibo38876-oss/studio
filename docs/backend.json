@@ -1,207 +1,50 @@
+
 {
   "entities": {
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user profile within the Tawasul social media application. User authentication is handled externally.",
+      "description": "Represents a user profile within the Tawasul social media application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
-        "username": {
-          "type": "string",
-          "description": "The user's chosen display name or handle, displayed publicly."
-        },
-        "bio": {
-          "type": "string",
-          "description": "A short biographical description provided by the user, displayed on their profile."
-        },
-        "profilePictureUrl": {
-          "type": "string",
-          "description": "A URL pointing to the user's profile image.",
-          "format": "uri"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "The date and time when the user account was created.",
-          "format": "date-time"
-        },
-        "followingIds": {
-          "type": "array",
-          "description": "An array of user IDs that this user is currently following. (Relationship: User N:N User)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "followerIds": {
-          "type": "array",
-          "description": "An array of user IDs that are currently following this user. (Relationship: User N:N User)",
-          "items": {
-            "type": "string"
-          }
-        }
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "bio": { "type": "string" },
+        "profilePictureUrl": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "followingIds": { "type": "array", "items": { "type": "string" } },
+        "followerIds": { "type": "array", "items": { "type": "string" } }
       },
-      "required": [
-        "id",
-        "username",
-        "createdAt"
-      ]
+      "required": ["id", "username", "createdAt"]
     },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a single text-based post created by a user in the Tawasul application.",
+      "description": "Represents a post, now supporting AI-generated media.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Post entity."
-        },
-        "authorId": {
-          "type": "string",
-          "description": "Reference to the User who created this post. (Relationship: User 1:N Post)"
-        },
-        "content": {
-          "type": "string",
-          "description": "The main textual content of the post."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "The date and time when the post was created.",
-          "format": "date-time"
-        },
-        "hashtags": {
-          "type": "array",
-          "description": "An array of keywords or topics associated with the post, potentially AI-generated.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "likesCount": {
-          "type": "number",
-          "description": "A denormalized count of how many likes this post has received."
-        }
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "content": { "type": "string" },
+        "mediaUrl": { "type": "string", "description": "URL of AI generated image or uploaded media" },
+        "mediaType": { "type": "string", "enum": ["image", "video"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "hashtags": { "type": "array", "items": { "type": "string" } },
+        "likesCount": { "type": "number" }
       },
-      "required": [
-        "id",
-        "authorId",
-        "content",
-        "createdAt"
-      ]
-    },
-    "Like": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Like",
-      "type": "object",
-      "description": "Represents a user's 'like' interaction with a specific post.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Like entity."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User who liked the post. (Relationship: User 1:N Like)"
-        },
-        "postId": {
-          "type": "string",
-          "description": "Reference to the Post that was liked. (Relationship: Post 1:N Like)"
-        },
-        "likedAt": {
-          "type": "string",
-          "description": "The date and time when the like action occurred.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "postId",
-        "likedAt"
-      ]
+      "required": ["id", "authorId", "content", "createdAt"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["anonymous"]
   },
   "firestore": {
     "structure": [
-      {
-        "path": "users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profile information. The 'userId' is the authenticated user's UID. This collection is publicly readable, but only the owner ('userId') can create, update, or delete their own profile. For scalability and authorization independence, the 'followingIds' and 'followerIds' arrays in the User schema are best managed as denormalized counts, with the actual relationships stored in dedicated subcollections, or strictly used for client-side display without rules reliance. Includes denormalized counts for 'followingCount' and 'followerCount' (not in schema, but implicitly derived for efficient rules)."
-        }
-      },
-      {
-        "path": "posts/{postId}",
-        "definition": {
-          "entityName": "Post",
-          "schema": {
-            "$ref": "#/backend/entities/Post"
-          },
-          "description": "Contains public posts created by users. The 'authorId' field within each Post document denormalizes ownership, enabling authorization rules to verify 'request.auth.uid == resource.data.authorId' without requiring a 'get()' operation on a parent user document. All posts in this collection share the same security posture (publicly readable, only author can write). Includes denormalized 'likesCount'."
-        }
-      },
-      {
-        "path": "posts/{postId}/likes/{likingUserId}",
-        "definition": {
-          "entityName": "Like",
-          "schema": {
-            "$ref": "#/backend/entities/Like"
-          },
-          "description": "Represents a user's 'like' on a specific post. The 'likingUserId' (which is the actual user's ID) is used as the document ID, making authorization highly efficient: 'request.auth.uid == likingUserId'. Only the 'likingUserId' can create or delete their own like. The 'postId' and 'userId' fields within the document provide explicit context, while the path itself ensures authorization independence. The 'id' field from the schema is effectively managed by the document ID 'likingUserId'."
-        }
-      },
-      {
-        "path": "users/{followerId}/following/{followedId}",
-        "definition": {
-          "entityName": "FollowingEntry",
-          "schema": {
-            "$ref": "#/backend/entities/FollowingEntry"
-          },
-          "description": "Represents that 'followerId' is following 'followedId'. This document is owned by 'followerId', meaning only 'followerId' can create or delete it. This structure provides strong authorization independence. The document includes denormalized 'followedUserId', 'followedUsername', and 'followedProfilePictureUrl' (conceptual fields for display, not explicitly in User schema but implied for denormalization) to avoid additional 'get()' calls for rendering lists. (Note: 'FollowingEntry' is a conceptual entity derived from 'User' for relationship modeling.)",
-          "params": [
-            {
-              "name": "followerId",
-              "description": "The unique ID of the user who is initiating the follow."
-            },
-            {
-              "name": "followedId",
-              "description": "The unique ID of the user being followed."
-            }
-          ]
-        }
-      },
-      {
-        "path": "users/{followedId}/followers/{followerId}",
-        "definition": {
-          "entityName": "FollowerEntry",
-          "schema": {
-            "$ref": "#/backend/entities/FollowerEntry"
-          },
-          "description": "Represents that 'followerId' is a follower of 'followedId'. This document is created by 'followerId' as part of a batched write when a follow action occurs. Authorization is tied to 'request.auth.uid == resource.data.followerUserId'. The document includes denormalized 'followerUserId', 'followerUsername', and 'followerProfilePictureUrl' (conceptual fields for display, not explicitly in User schema but implied for denormalization) to avoid 'get()' calls when listing followers. (Note: 'FollowerEntry' is a conceptual entity derived from 'User' for relationship modeling.)",
-          "params": [
-            {
-              "name": "followedId",
-              "description": "The unique ID of the user who is being followed."
-            },
-            {
-              "name": "followerId",
-              "description": "The unique ID of the user who is following 'followedId'."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure for Tawasul prioritizes security, scalability, and debuggability by adhering strictly to the core design principles and strategy mandates. \n\n**Authorization Independence via Denormalization:**\n- The most critical aspect is avoiding hierarchical authorization dependencies. This is achieved by denormalizing authorization-critical fields directly into the documents where they are needed. For instance, a `Post` document explicitly contains its `authorId`, allowing rules to verify `request.auth.uid == resource.data.authorId` without needing to `get()` a parent `User` document. \n- For `Like` entities, the `posts/{postId}/likes/{likingUserId}` path uses the liking user's ID as the document ID. This means the `Like` document itself and its path inherently contain the authorization context (`likingUserId`), allowing rules to check `request.auth.uid == likingUserId` without a `get()` call.\n- For `Follow` relationships, instead of relying on large arrays within `User` documents, two symmetrical subcollections are used: `users/{followerId}/following/{followedId}` and `users/{followedId}/followers/{followerId}`. Each document in these subcollections explicitly contains the respective `followerUserId` or `followedUserId` and relevant denormalized display fields (e.g., `followerUsername`, `followedUsername`). When a user (`followerId`) initiates a follow, a batched write creates documents in *both* subcollections. The rule for creating/deleting `users/{followedId}/followers/{followerId}` checks `request.auth.uid == resource.data.followerUserId`, ensuring only the `followerId` can establish/remove this relationship, thereby achieving authorization independence even across different user branches.\n\n**Structural Segregation (Homogeneous Security Posture):**\n- The design ensures all documents within a given collection share the same security requirements. \n- `/users/{userId}`: All user profiles follow the same access pattern (owner can write, public can read). \n- `/posts/{postId}`: All posts are public reads, and only the author can modify/delete. There are no 'draft' posts mixed with 'published' posts in this collection, simplifying rules. \n- `/posts/{postId}/likes/{likingUserId}`: All 'like' documents have the same security requirement: only `likingUserId` can create/delete their own like.\n- `/users/{userId}/following` and `/users/{userId}/followers`: These subcollections exclusively manage follow relationships, with clear ownership for creation/deletion.\n\n**QAPs (Rules are not Filters):**\n- The structure is designed to support efficient and secure `list` operations without relying on security rules to filter results (which is an anti-pattern). \n- **Home Feed:** Clients can query `posts.where('authorId', 'in', [...followedUserIds])`. Since `posts` are public and `authorId` is indexed, this is a QAP-compliant query. The rules simply allow reading all posts. \n- **User Profiles:** Displaying a user's posts is done by querying `posts.where('authorId', '==', userId)`. \n- **Follow/Unfollow:** Listing who a user follows is a direct read of `users/{userId}/following`. Listing who follows a user is a direct read of `users/{userId}/followers`. These subcollections are naturally filterable by their path. \n- **Like Posts:** Listing all likes for a specific post is a direct read of `posts/{postId}/likes`.\n\n**Overall, this design promotes straightforward security rules, reduces the risk of data leaks, and supports scalable operations for a social media application like Tawasul.**"
+      { "path": "users/{userId}", "definition": { "entityName": "User" } },
+      { "path": "posts/{postId}", "definition": { "entityName": "Post" } },
+      { "path": "posts/{postId}/likes/{userId}", "definition": { "entityName": "Like" } }
+    ]
   }
 }
