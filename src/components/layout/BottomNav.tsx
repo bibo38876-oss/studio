@@ -41,7 +41,7 @@ export default function BottomNav() {
                     </div>
                   </button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px] p-0 border-none bg-background gap-0 overflow-hidden rounded-t-2xl sm:rounded-2xl">
+                <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-auto p-0 border-none bg-background gap-0 overflow-hidden flex flex-col">
                   <DialogTitle className="sr-only">إنشاء منشور جديد</DialogTitle>
                   <CreatePost onSuccess={() => setIsPostOpen(false)} />
                 </DialogContent>
