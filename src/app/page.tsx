@@ -7,18 +7,18 @@ import { Toaster } from '@/components/ui/toaster';
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-muted/30">
       <Navbar />
       
-      <main className="container mx-auto px-0 md:px-4 py-12 flex gap-6">
-        {/* Left column - Hidden on small screens, shown on desktop */}
-        <div className="hidden md:block w-64 pt-4">
+      <main className="container mx-auto px-0 md:px-4 pt-10 flex gap-6">
+        {/* Left column - Hidden on small screens */}
+        <div className="hidden md:block w-64 pt-4 h-fit sticky top-14">
           <LeftSidebar />
         </div>
 
         {/* Middle column - Feed */}
-        <div className="flex-1 max-w-2xl w-full border-x-0 md:border-x">
-          <div className="space-y-px">
+        <div className="flex-1 w-full max-w-full md:max-w-2xl mx-auto">
+          <div className="flex flex-col">
             {MOCK_POSTS.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
@@ -26,7 +26,7 @@ export default function Home() {
         </div>
 
         {/* Right column - Hidden on small screens */}
-        <div className="hidden lg:block w-80 pt-4">
+        <div className="hidden lg:block w-80 pt-4 h-fit sticky top-14">
           <RightSidebar />
         </div>
       </main>

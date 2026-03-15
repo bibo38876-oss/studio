@@ -32,76 +32,74 @@ export default function PostCard({ post }: { post: Post }) {
   };
 
   return (
-    <Card className="border-x-0 border-t-0 border-b border-border shadow-none rounded-none w-full bg-card transition-colors duration-300">
-      <CardHeader className="p-4 flex-row items-center justify-between space-y-0">
-        <div className="flex gap-3">
-          <Avatar className="h-9 w-9">
+    <Card className="border-none shadow-none rounded-none w-full bg-card mb-0.5">
+      <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
+        <div className="flex gap-2.5">
+          <Avatar className="h-8 w-8">
             <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback>{user.name[0]}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-primary hover:underline cursor-pointer">{user.name}</span>
-            <span className="text-[10px] text-muted-foreground">{user.handle} • {post.timestamp}</span>
+            <span className="text-sm font-bold text-primary hover:underline cursor-pointer leading-none">{user.name}</span>
+            <span className="text-[10px] text-muted-foreground mt-1">{user.handle} • {post.timestamp}</span>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-          <MoreHorizontal size={18} />
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground">
+          <MoreHorizontal size={14} />
         </Button>
       </CardHeader>
-      <CardContent className="px-4 py-0 pb-3">
-        <p className="text-[15px] text-foreground leading-snug whitespace-pre-wrap">
+      <CardContent className="px-3 py-0 pb-2">
+        <p className="text-sm text-foreground leading-snug whitespace-pre-wrap">
           {post.content}
         </p>
         {post.hashtags && post.hashtags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
             {post.hashtags.map((tag, i) => (
-              <span key={i} className="text-accent hover:underline cursor-pointer text-[13px] font-medium">
+              <span key={i} className="text-accent hover:underline cursor-pointer text-xs font-medium">
                 {tag}
               </span>
             ))}
           </div>
         )}
       </CardContent>
-      <CardFooter className="p-1 px-4 border-t-0 flex justify-between">
-        <div className="flex items-center gap-1 group">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`h-9 px-2 gap-1.5 ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
-            onClick={handleLike}
-          >
-            <Heart size={18} fill={isLiked ? "currentColor" : "none"} className="transition-transform group-active:scale-125" />
-            <span className="text-[13px] font-medium">{likesCount}</span>
-          </Button>
-        </div>
+      <CardFooter className="p-1 px-3 border-t-0 flex justify-between items-center h-8">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={`h-7 px-1.5 gap-1 ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
+          onClick={handleLike}
+        >
+          <Heart size={16} fill={isLiked ? "currentColor" : "none"} />
+          <span className="text-xs font-medium">{likesCount}</span>
+        </Button>
         
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-9 px-2 text-muted-foreground hover:text-accent gap-1.5"
+          className="h-7 px-1.5 text-muted-foreground gap-1"
           onClick={() => showSoonToast('التعليق')}
         >
-          <MessageCircle size={18} />
-          <span className="text-[13px]">تعليق</span>
+          <MessageCircle size={16} />
+          <span className="text-xs">تعليق</span>
         </Button>
 
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-9 px-2 text-muted-foreground hover:text-accent gap-1.5"
+          className="h-7 px-1.5 text-muted-foreground gap-1"
           onClick={() => showSoonToast('إعادة النشر')}
         >
-          <Repeat size={18} />
-          <span className="text-[13px]">نشر</span>
+          <Repeat size={16} />
+          <span className="text-xs">نشر</span>
         </Button>
 
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-9 px-2 text-muted-foreground hover:text-accent"
+          className="h-7 px-1.5 text-muted-foreground"
           onClick={() => showSoonToast('المشاركة')}
         >
-          <Share2 size={18} />
+          <Share2 size={16} />
         </Button>
       </CardFooter>
     </Card>
