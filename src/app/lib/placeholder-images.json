@@ -1,0 +1,22 @@
+{
+  "placeholderImages": [
+    {
+      "id": "user1",
+      "description": "User profile avatar",
+      "imageUrl": "https://picsum.photos/seed/user1/200/200",
+      "imageHint": "man person"
+    },
+    {
+      "id": "user2",
+      "description": "User profile avatar",
+      "imageUrl": "https://picsum.photos/seed/user2/200/200",
+      "imageHint": "woman person"
+    },
+    {
+      "id": "post1",
+      "description": "Post featured image",
+      "imageUrl": "https://picsum.photos/seed/post1/800/400",
+      "imageHint": "nature landscape"
+    }
+  ]
+}
