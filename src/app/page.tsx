@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -49,7 +48,7 @@ export default function Home() {
     }
   }, [user, profile, isProfileLoading, firestore]);
 
-  // Query for all posts
+  // Query for all posts - Ensure firestore is available
   const allPostsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
@@ -58,7 +57,6 @@ export default function Home() {
   // Query for posts from followed users
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !profile?.followingIds || profile.followingIds.length === 0) return null;
-    // Note: Firestore 'in' limit is 10, but good for MVP
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 10)),

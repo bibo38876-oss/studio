@@ -3,30 +3,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * Tawasul Social Media Security Rules
+     * Tawasul Social Media Security Rules - Updated for Public Access
      *
      * CORE PHILOSOPHY:
      * This ruleset implements a strict user-ownership model designed for a public social media 
      * environment. While content is generally discoverable (publicly readable), write operations 
      * are strictly restricted to the creators of the data. 
-     *
-     * DATA STRUCTURE:
-     * - /users/{userId}: Top-level user profiles.
-     * - /posts/{postId}: Top-level public feed content.
-     * - /posts/{postId}/likes/{likingUserId}: Subcollection for post interactions.
-     * - /users/{userId}/following/{followedId}: Subcollection for outbound relationships.
-     * - /users/{userId}/followers/{followerId}: Subcollection for inbound relationships.
-     *
-     * KEY SECURITY DECISIONS:
-     * - Public Read Access: Following the social media nature of Tawasul, profiles, posts, 
-     *   likes, and follow lists are publicly readable to allow for global discovery.
-     * - Denormalization for Authorization: Post ownership is verified using an internal 
-     *   'authorId' field to avoid expensive cross-document lookups.
-     * - Identity-Based Paths: Subcollections for likes and follows use the actor's UID as 
-     *   the document ID (e.g., /likes/{likingUserId}), ensuring that authorization is 
-     *   inherently tied to the document path.
-     * - Relational Integrity: On document creation, rules enforce that internal ID fields 
-     *   match the authenticated user's UID and the path variables.
      */
 
     // --- Helper Functions ---
@@ -55,71 +37,41 @@ service cloud.firestore {
 
     /**
      * @description Rules for User profiles. Publicly readable, owner-writable.
-     * @path /users/{userId}
-     * @allow get, list (public), create/update/delete (isOwner)
-     * @deny Writes from users whose UID does not match the userId path variable.
-     * @principle Enforces self-creation and ownership of user profiles.
      */
     match /users/{userId} {
       allow get, list: if true;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
 
-      /**
-       * @description Rules for a user's following list.
-       * @path /users/{userId}/following/{followedId}
-       * @allow create/delete (isOwner of userId)
-       * @deny Creating/deleting following entries for other users.
-       * @principle Path-based authorization for social graph management.
-       */
       match /following/{followedId} {
-        allow get, list: if true;
-        allow create: if isOwner(userId);
-        allow update: if false;
-        allow delete: if isExistingOwner(userId);
+        allow read: if true;
+        allow create, delete: if isOwner(userId);
       }
 
-      /**
-       * @description Rules for a user's follower list.
-       * @path /users/{userId}/followers/{followerId}
-       * @allow create/delete (isOwner of followerId)
-       * @deny Creating a follower entry where the authenticated user is not the follower.
-       * @principle Validates that the 'follower' is the one initiating the relationship write.
-       */
       match /followers/{followerId} {
-        allow get, list: if true;
+        allow read: if true;
         allow create: if isOwner(followerId);
-        allow update: if false;
-        allow delete: if isExistingOwner(followerId);
+        allow delete: if isOwner(followerId) || isOwner(userId);
       }
     }
 
     /**
      * @description Rules for Posts. Publicly readable, author-writable.
-     * @path /posts/{postId}
-     * @allow get, list (public), create (isDataOwner authorId), update/delete (isExistingDataOwner)
-     * @deny Modifying or deleting posts authored by others.
-     * @principle Uses denormalized 'authorId' for efficient authorization.
      */
     match /posts/{postId} {
-      allow get, list: if true;
+      // Allow everyone to read posts (Public Feed)
+      allow read, list: if true;
+      
+      // Only signed-in users can create posts with their own UID
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if resource != null && isDataOwner(resource.data.authorId) && request.resource.data.authorId == resource.data.authorId;
-      allow delete: if resource != null && isDataOwner(resource.data.authorId);
+      
+      // Only the author can update or delete their posts
+      allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
 
-      /**
-       * @description Rules for Likes on a post.
-       * @path /posts/{postId}/likes/{likingUserId}
-       * @allow create/delete (isOwner of likingUserId)
-       * @deny Liking a post on behalf of another user.
-       * @principle Document ID-based authorization for interaction markers.
-       */
       match /likes/{likingUserId} {
-        allow get, list: if true;
-        allow create: if isOwner(likingUserId) && request.resource.data.userId == likingUserId;
-        allow update: if false;
-        allow delete: if isExistingOwner(likingUserId);
+        allow read, list: if true;
+        allow create, delete: if isOwner(likingUserId);
       }
     }
   }
