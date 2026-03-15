@@ -2,17 +2,13 @@
 "use client"
 
 import { useState } from 'react';
-import { Sparkles, Image as ImageIcon, X, Loader2, Hash, Wand2, Palette } from 'lucide-react';
+import { Image as ImageIcon, X, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { aiPostEnhancer } from '@/ai/flows/ai-post-enhancer';
-import { aiImageGenerator } from '@/ai/flows/ai-image-generator';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
-import Image from 'next/image';
 
 interface CreatePostProps {
   onSuccess?: () => void;
@@ -20,53 +16,21 @@ interface CreatePostProps {
 
 export default function CreatePost({ onSuccess }: CreatePostProps) {
   const [content, setContent] = useState('');
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [aiSuggestions, setAiSuggestions] = useState<{ hashtags: string[], summary: string } | null>(null);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const { toast } = useToast();
-  const { firestore } = useFirestore();
+  const { firestore } = useUser(); // Using useUser context for firestore or similar
   const { user } = useUser();
+  const db = useFirestore();
 
   const userRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user]);
 
   const { data: profile } = useDoc(userRef);
 
-  const handleEnhance = async () => {
-    if (!content.trim()) return;
-    setIsEnhancing(true);
-    try {
-      const result = await aiPostEnhancer({ postContent: content });
-      setAiSuggestions(result);
-    } catch (error) {
-      toast({ variant: "destructive", title: "خطأ", description: "حدث خطأ أثناء تحسين المنشور." });
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
-
-  const handleGenerateImage = async () => {
-    if (!content.trim()) {
-      toast({ title: "تنبيه", description: "اكتب شيئاً أولاً ليتمكن الذكاء الاصطناعي من تخيل الصورة!" });
-      return;
-    }
-    setIsGeneratingImage(true);
-    try {
-      const result = await aiImageGenerator({ prompt: content });
-      setGeneratedImage(result.imageUrl);
-      toast({ title: "تم!", description: "تم توليد صورة فنية لمنشورك." });
-    } catch (error) {
-      toast({ variant: "destructive", title: "خطأ", description: "فشل توليد الصورة. حاول مرة أخرى." });
-    } finally {
-      setIsGeneratingImage(false);
-    }
-  };
-
   const handlePost = () => {
-    if (!content.trim() || !firestore || !user) return;
+    if (!content.trim() || !db || !user) return;
 
     const postData = {
       content,
@@ -75,12 +39,12 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
       authorAvatar: profile?.profilePictureUrl || '',
       createdAt: serverTimestamp(),
       likesCount: 0,
-      hashtags: aiSuggestions?.hashtags || [],
-      mediaUrl: generatedImage || null,
-      mediaType: generatedImage ? 'image' : null,
+      hashtags: content.match(/#[^\s#]+/g) || [],
+      mediaUrl: mediaUrl || null,
+      mediaType: mediaUrl ? 'image' : null,
     };
 
-    addDocumentNonBlocking(collection(firestore, 'posts'), postData);
+    addDocumentNonBlocking(collection(db, 'posts'), postData);
 
     toast({ title: "تم النشر!", description: "تم نشر منشورك بنجاح." });
     if (onSuccess) onSuccess();
@@ -93,10 +57,10 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         <Button variant="ghost" size="sm" onClick={onSuccess} className="h-8 w-8 rounded-full p-0">
           <X size={18} />
         </Button>
-        <span className="font-bold text-xs">إنشاء منشور</span>
+        <span className="font-bold text-xs text-primary">منشور جديد</span>
         <Button 
           onClick={handlePost} 
-          disabled={!content.trim() || isGeneratingImage} 
+          disabled={!content.trim()} 
           className="h-7 bg-primary text-white px-5 rounded-full font-bold text-[10px]"
         >
           نشر
@@ -112,92 +76,40 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
           </Avatar>
           <div className="flex-1">
             <Textarea 
-              placeholder="بماذا تفكر؟..." 
-              className="min-h-[120px] resize-none border-none focus-visible:ring-0 p-0 text-md bg-transparent placeholder:text-muted-foreground/40"
+              placeholder="اكتب شيئاً..." 
+              className="min-h-[150px] resize-none border-none focus-visible:ring-0 p-0 text-md bg-transparent placeholder:text-muted-foreground/40"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               autoFocus
             />
           </div>
         </div>
-        
-        {generatedImage && (
-          <div className="relative group rounded-none overflow-hidden aspect-square w-full bg-muted">
-            <Image src={generatedImage} alt="Generated content" fill className="object-cover" />
-            <Button 
-              variant="destructive" 
-              size="icon" 
-              className="absolute top-2 left-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => setGeneratedImage(null)}
-            >
-              <X size={14} />
-            </Button>
-          </div>
-        )}
-
-        {aiSuggestions && (
-          <div className="bg-secondary/50 border border-muted p-3 space-y-2 animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-primary flex items-center gap-1">
-                <Wand2 size={12} className="text-accent" />
-                اقتراحات الذكاء الاصطناعي
-              </span>
-            </div>
-            <p className="text-[11px] text-foreground/70 leading-relaxed italic">"{aiSuggestions.summary}"</p>
-            <div className="flex flex-wrap gap-1">
-              {aiSuggestions.hashtags.map((tag, i) => (
-                <Badge key={i} variant="secondary" className="bg-accent/10 text-accent text-[9px] px-1.5 py-0">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="h-7 w-full text-[9px] font-bold" 
-              onClick={() => {
-                setContent(`${content}\n\n${aiSuggestions.hashtags.join(' ')}`);
-                setAiSuggestions(null);
-              }}
-            >
-              إضافة الهاشتاجات
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Toolbar */}
       <div className="border-t bg-background p-2 pb-safe">
-        <div className="flex items-center justify-around">
+        <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
             size="sm" 
             className="flex-1 flex-col h-12 gap-1 text-muted-foreground hover:text-primary hover:bg-transparent"
           >
             <ImageIcon size={18} />
-            <span className="text-[8px]">معرض الصور</span>
+            <span className="text-[8px]">إضافة صورة</span>
           </Button>
           
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`flex-1 flex-col h-12 gap-1 hover:bg-transparent ${isGeneratingImage ? 'text-accent' : 'text-muted-foreground hover:text-accent'}`}
-            onClick={handleGenerateImage}
-            disabled={isGeneratingImage || !content.trim()}
+            className="flex-1 flex-col h-12 gap-1 text-muted-foreground hover:text-primary hover:bg-transparent"
+            onClick={() => {
+              if(!content.includes('#')) {
+                setContent(content + ' #');
+              }
+            }}
           >
-            {isGeneratingImage ? <Loader2 size={18} className="animate-spin" /> : <Palette size={18} />}
-            <span className="text-[8px]">توليد صورة AI</span>
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`flex-1 flex-col h-12 gap-1 hover:bg-transparent ${isEnhancing ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-            onClick={handleEnhance}
-            disabled={isEnhancing || !content.trim()}
-          >
-            {isEnhancing ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-            <span className="text-[8px]">تحسين ذكي</span>
+            <Hash size={18} />
+            <span className="text-[8px]">وسم</span>
           </Button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,7 +9,7 @@ import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirebase, useMemoFirebase, initiateAnonymousSignIn, setDocumentNonBlocking, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, where } from 'firebase/firestore';
-import { Loader2, Sparkles, Users } from 'lucide-react';
+import { Loader2, LayoutGrid, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ARABIC_NAMES = ['خالد الجبر', 'نورة السبيعي', 'فهد الشمري', 'ريم القحطاني', 'صالح الحربي', 'منى الشهري'];
@@ -48,7 +49,7 @@ export default function Home() {
     }
   }, [user, profile, isProfileLoading, firestore]);
 
-  // Query for all posts - Ensure firestore is available
+  // Query for all posts
   const allPostsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
@@ -85,8 +86,8 @@ export default function Home() {
                 value="all" 
                 className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs"
               >
-                <Sparkles size={14} className="ml-1.5" />
-                لك
+                <LayoutGrid size={14} className="ml-1.5" />
+                عام
               </TabsTrigger>
               <TabsTrigger 
                 value="following" 
