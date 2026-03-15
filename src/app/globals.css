@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,7 +24,7 @@
     --border: 220 31% 90%;
     --input: 220 31% 90%;
     --ring: 220 31% 46%;
-    --radius: 0rem; /* جعل الحواف حادة تماماً بناءً على طلب المستخدم */
+    --radius: 0rem; /* حواف حادة تماماً بناءً على طلب المستخدم */
   }
   .dark {
     --background: 221 31% 10%;
@@ -65,4 +66,13 @@
 /* تحسين تجربة ملء الشاشة للبطاقات */
 .card-full-width {
   @apply rounded-none border-x-0 border-t-0;
+}
+
+/* تنسيق فائق النحافة للقوائم */
+.slim-nav {
+  @apply h-7; /* ارتفاع صغير جداً للقائمة العلوية */
+}
+
+.slim-bottom-nav {
+  @apply h-8; /* ارتفاع صغير جداً للقائمة السفلية */
 }

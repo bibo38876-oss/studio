@@ -2,6 +2,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // وظائف مساعدة للتحقق من الهوية
     function isSignedIn() {
       return request.auth != null;
     }
@@ -9,6 +10,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // قواعد بيانات المستخدمين والملفات الشخصية
     match /users/{userId} {
       allow read: if true;
       allow create, update: if isOwner(userId);
@@ -33,6 +35,8 @@ service cloud.firestore {
       }
     }
 
+    // قواعد المنشورات - القراءة عامة للجميع
+    // تم إضافة هذا التعليق لضمان إعادة النشر الفوري لتصحيح خطأ الصلاحيات: 2024-05-20
     match /posts/{postId} {
       allow read, list: if true;
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
