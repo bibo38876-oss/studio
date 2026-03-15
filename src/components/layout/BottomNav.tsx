@@ -2,22 +2,23 @@
 
 import Link from 'next/link';
 import { Home, Compass, Bell, User, Plus } from 'lucide-react';
-import { CURRENT_USER } from '@/lib/mock-data';
 import { usePathname } from 'next/navigation';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import CreatePost from '@/components/posts/CreatePost';
 import { useState } from 'react';
+import { useUser } from '@/firebase';
 
 export default function BottomNav() {
   const pathname = usePathname();
   const [isPostOpen, setIsPostOpen] = useState(false);
+  const { user } = useUser();
 
   const navItems = [
     { icon: <Home size={16} />, label: 'الرئيسية', path: '/' },
     { icon: <Compass size={16} />, label: 'استكشف', path: '/explore' },
     { icon: null, label: 'نشر', path: 'post' },
     { icon: <Bell size={16} />, label: 'تنبيهات', path: '/notifications' },
-    { icon: <User size={16} />, label: 'حسابي', path: `/profile/${CURRENT_USER.id}` },
+    { icon: <User size={16} />, label: 'حسابي', path: user ? `/profile/${user.uid}` : '/profile/me' },
   ];
 
   return (

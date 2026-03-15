@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { Search, Settings } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CURRENT_USER } from '@/lib/mock-data';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Navbar() {
   return (
@@ -18,15 +16,6 @@ export default function Navbar() {
           <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
             <Search size={14} className="text-muted-foreground" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-            <Settings size={14} className="text-muted-foreground" />
-          </Button>
-          <Link href={`/profile/${CURRENT_USER.id}`}>
-            <Avatar className="h-5 w-5 border border-accent/20">
-              <AvatarImage src={CURRENT_USER.avatar} alt={CURRENT_USER.name} />
-              <AvatarFallback>{CURRENT_USER.name[0]}</AvatarFallback>
-            </Avatar>
-          </Link>
         </div>
       </div>
     </nav>
