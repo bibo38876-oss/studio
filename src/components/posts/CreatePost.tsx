@@ -5,12 +5,11 @@ import { Sparkles, Image as ImageIcon, Send, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CURRENT_USER } from '@/lib/mock-data';
 import { aiPostEnhancer } from '@/ai/flows/ai-post-enhancer';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 
 interface CreatePostProps {
   onSuccess?: () => void;
@@ -23,6 +22,13 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const { toast } = useToast();
   const { firestore } = useFirestore();
   const { user } = useUser();
+
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: profile } = useDoc(userRef);
 
   const handleEnhance = async () => {
     if (!content.trim()) return;
@@ -55,6 +61,8 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     const postData = {
       content,
       authorId: user.uid,
+      authorName: profile?.username || 'مستخدم تواصل',
+      authorAvatar: profile?.profilePictureUrl || `https://picsum.photos/seed/${user.uid}/200/200`,
       createdAt: serverTimestamp(),
       likesCount: 0,
       hashtags: aiSuggestions?.hashtags || [],
@@ -64,7 +72,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
     toast({
       title: "تم النشر!",
-      description: "تم نشر منشورك بنجاح على تواصل.",
+      description: "تم نشر منشورك بنجاح.",
     });
     
     setContent('');
@@ -74,23 +82,23 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
   return (
     <div className="flex flex-col bg-card w-full animate-in slide-in-from-bottom-full duration-300">
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <h3 className="font-bold text-lg text-primary">منشور جديد</h3>
-        <Button variant="ghost" size="icon" onClick={onSuccess} className="rounded-full h-8 w-8">
-          <X size={20} />
+      <div className="flex items-center justify-between px-4 py-2 border-b">
+        <h3 className="font-bold text-sm text-primary">منشور جديد</h3>
+        <Button variant="ghost" size="icon" onClick={onSuccess} className="h-8 w-8">
+          <X size={18} />
         </Button>
       </div>
 
       <div className="p-4 space-y-4">
         <div className="flex gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={CURRENT_USER.avatar} alt={CURRENT_USER.name} />
-            <AvatarFallback>{CURRENT_USER.name[0]}</AvatarFallback>
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={profile?.profilePictureUrl} alt={profile?.username} />
+            <AvatarFallback>{profile?.username?.[0] || 'ت'}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <Textarea 
-              placeholder="بماذا تفكر؟" 
-              className="min-h-[150px] resize-none border-none focus-visible:ring-0 p-0 text-lg bg-transparent"
+              placeholder="ماذا يدور في ذهنك؟" 
+              className="min-h-[120px] resize-none border-none focus-visible:ring-0 p-0 text-md bg-transparent"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               autoFocus
@@ -99,49 +107,49 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         </div>
         
         {aiSuggestions && (
-          <div className="bg-secondary/50 rounded-2xl p-4 space-y-3">
+          <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-primary flex items-center gap-2">
-                <Sparkles size={16} className="text-accent" />
+              <span className="text-[10px] font-bold text-primary flex items-center gap-1">
+                <Sparkles size={12} className="text-accent" />
                 مقترح الذكاء الاصطناعي
               </span>
-              <Button variant="ghost" size="icon" onClick={() => setAiSuggestions(null)} className="h-6 w-6">
-                <X size={14} />
-              </Button>
+              <button onClick={() => setAiSuggestions(null)} className="text-muted-foreground">
+                <X size={12} />
+              </button>
             </div>
-            <p className="text-sm text-muted-foreground italic">"{aiSuggestions.summary}"</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="text-xs text-muted-foreground italic line-clamp-2">"{aiSuggestions.summary}"</p>
+            <div className="flex flex-wrap gap-1">
               {aiSuggestions.hashtags.map((tag, i) => (
-                <Badge key={i} variant="secondary" className="bg-accent/10 text-accent hover:bg-accent/20 border-none">
+                <Badge key={i} variant="secondary" className="bg-accent/10 text-accent text-[9px] h-5 border-none">
                   {tag}
                 </Badge>
               ))}
             </div>
-            <Button size="sm" variant="outline" className="w-full mt-2 rounded-xl" onClick={handleApplySuggestion}>
-              تطبيق الهاشتاجات
+            <Button size="sm" variant="outline" className="h-7 w-full text-[10px] rounded-lg" onClick={handleApplySuggestion}>
+              إضافة الهاشتاجات
             </Button>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="text-primary hover:text-accent rounded-full">
-              <ImageIcon size={22} />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
+              <ImageIcon size={20} />
             </Button>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-primary hover:text-accent gap-2 px-3 rounded-full"
+              className="h-8 text-primary gap-1 px-2 rounded-lg"
               onClick={handleEnhance}
               disabled={isEnhancing || !content.trim()}
             >
-              {isEnhancing ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              <span className="hidden xs:inline text-sm">تحسين</span>
+              {isEnhancing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              <span className="text-xs">تحسين</span>
             </Button>
           </div>
-          <Button onClick={handlePost} disabled={!content.trim() || !user} className="bg-primary hover:bg-primary/90 text-white gap-2 px-8 rounded-full py-6 transition-all shadow-md">
-            <span className="font-bold">نشر الآن</span>
-            <Send size={18} className="rtl:rotate-180" />
+          <Button onClick={handlePost} disabled={!content.trim() || !user} className="h-9 bg-primary text-white gap-2 px-6 rounded-xl font-bold transition-all shadow-sm">
+            <span>نشر</span>
+            <Send size={14} className="rtl:rotate-180" />
           </Button>
         </div>
       </div>
