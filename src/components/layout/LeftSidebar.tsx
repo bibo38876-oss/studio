@@ -1,49 +1,73 @@
+"use client"
+
 import Link from 'next/link';
-import { User, Bookmark, Settings, MessageSquare, Compass } from 'lucide-react';
+import { Compass, Bookmark, Settings, MessageSquare, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CURRENT_USER } from '@/lib/mock-data';
+import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function LeftSidebar() {
+  const { user, firestore } = useFirebase();
+
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: profile, isLoading } = useDoc(userRef);
+
+  if (isLoading) {
+    return (
+      <aside className="hidden md:flex w-64 items-center justify-center py-10">
+        <Loader2 className="animate-spin text-primary h-6 w-6" />
+      </aside>
+    );
+  }
+
   return (
     <aside className="hidden md:block w-64 space-y-4">
-      <Card className="border-none shadow-sm overflow-hidden">
-        <div className="h-16 bg-primary w-full" />
+      <Card className="border-none shadow-none rounded-none overflow-hidden bg-card">
+        <div className="h-16 bg-primary/10 w-full" />
         <CardContent className="relative pt-0 px-4 pb-6">
           <Avatar className="h-16 w-16 absolute -top-8 right-4 border-4 border-card">
-            <AvatarImage src={CURRENT_USER.avatar} alt={CURRENT_USER.name} />
-            <AvatarFallback>{CURRENT_USER.name[0]}</AvatarFallback>
+            <AvatarImage src={profile?.profilePictureUrl} alt={profile?.username} />
+            <AvatarFallback>{profile?.username?.[0] || 'ت'}</AvatarFallback>
           </Avatar>
-          <div className="mt-10 space-y-1">
-            <h3 className="font-bold text-lg text-primary">{CURRENT_USER.name}</h3>
-            <p className="text-sm text-muted-foreground">{CURRENT_USER.handle}</p>
+          <div className="mt-10 space-y-0.5">
+            <h3 className="font-bold text-md text-primary">{profile?.username || 'مستخدم جديد'}</h3>
+            <p className="text-[10px] text-muted-foreground">@{user?.uid.slice(0, 8)}</p>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground line-clamp-2">
-            {CURRENT_USER.bio}
+          <p className="mt-3 text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+            {profile?.bio || 'لا يوجد نبذة شخصية بعد.'}
           </p>
-          <div className="mt-6 flex gap-4 border-t pt-4">
+          <div className="mt-5 flex gap-4 border-t pt-4">
             <div className="flex flex-col text-center flex-1">
-              <span className="font-bold text-primary text-sm">{CURRENT_USER.followers}</span>
-              <span className="text-[10px] text-muted-foreground">متابع</span>
+              <span className="font-bold text-primary text-sm">{profile?.followerIds?.length || 0}</span>
+              <span className="text-[9px] text-muted-foreground">متابع</span>
             </div>
             <div className="flex flex-col text-center flex-1 border-r">
-              <span className="font-bold text-primary text-sm">{CURRENT_USER.following}</span>
-              <span className="text-[10px] text-muted-foreground">يتابع</span>
+              <span className="font-bold text-primary text-sm">{profile?.followingIds?.length || 0}</span>
+              <span className="text-[9px] text-muted-foreground">يتابع</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="bg-white rounded-2xl p-2 shadow-sm space-y-1">
+      <div className="bg-card rounded-none p-1 space-y-0.5">
         {[
-          { icon: <Compass size={20} />, label: 'استكشف', active: false },
-          { icon: <MessageSquare size={20} />, label: 'الرسائل', active: false },
-          { icon: <Bookmark size={20} />, label: 'العلامات المرجعية', active: false },
-          { icon: <Settings size={20} />, label: 'الإعدادات', active: false },
+          { icon: <Compass size={18} />, label: 'استكشف', path: '/explore' },
+          { icon: <MessageSquare size={18} />, label: 'الرسائل', path: '/messages' },
+          { icon: <Bookmark size={18} />, label: 'العلامات المرجعية', path: '/bookmarks' },
+          { icon: <Settings size={18} />, label: 'الإعدادات', path: '/settings' },
         ].map((item, i) => (
-          <Link key={i} href="#" className={`flex items-center gap-3 p-3 rounded-xl transition-all ${item.active ? 'bg-secondary text-primary font-bold' : 'text-muted-foreground hover:bg-secondary hover:text-primary'}`}>
+          <Link 
+            key={i} 
+            href={item.path} 
+            className="flex items-center gap-3 p-3 text-muted-foreground hover:bg-secondary hover:text-primary transition-all rounded-lg"
+          >
             {item.icon}
-            <span className="font-medium">{item.label}</span>
+            <span className="text-sm font-medium">{item.label}</span>
           </Link>
         ))}
       </div>
