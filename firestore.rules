@@ -2,7 +2,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // وظائف مساعدة للتحقق من الهوية
+    // وظائف مساعدة عالمية
     function isSignedIn() {
       return request.auth != null;
     }
@@ -10,10 +10,12 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // قواعد بيانات المستخدمين والملفات الشخصية
+    // بصمة تحديث إجبارية لضمان النشر: FORCE_DEPLOY_ID_PROFILE_FIX_v4
+
+    // قواعد المستخدمين
     match /users/{userId} {
       allow read: if true;
-      allow create, update: if isOwner(userId);
+      allow write: if isOwner(userId);
       
       match /notifications/{notifId} {
         allow read, write: if isOwner(userId);
@@ -30,23 +32,19 @@ service cloud.firestore {
 
       match /followers/{followerId} {
         allow read: if true;
-        allow create: if isOwner(followerId);
-        allow delete: if isOwner(followerId) || isOwner(userId);
+        allow create, delete: if isSignedIn();
       }
     }
 
-    // قواعد المنشورات - القراءة عامة للجميع بشكل مؤكد وصريح
-    // تحديث إجباري لحل مشكلة "Missing or insufficient permissions" في الملف الشخصي
-    // تاريخ التحديث: 2024-05-22 10:45 AM
+    // قواعد المنشورات - قراءة عامة (Get & List) للجميع بشكل صريح
     match /posts/{postId} {
-      allow read: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow read, get, list: if true;
+      allow create: if isSignedIn();
       allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
 
-      match /likes/{likingUserId} {
+      match /likes/{userId} {
         allow read: if true;
-        allow write: if isOwner(likingUserId);
+        allow write: if isOwner(userId);
       }
 
       match /comments/{commentId} {
