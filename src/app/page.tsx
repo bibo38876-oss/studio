@@ -1,11 +1,34 @@
+'use client';
+
+import { useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import LeftSidebar from '@/components/layout/LeftSidebar';
 import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
-import { MOCK_POSTS } from '@/lib/mock-data';
 import { Toaster } from '@/components/ui/toaster';
+import { useCollection, useFirestore, useAuth, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
+  const { firestore } = useFirestore() ? { firestore: useFirestore() } : { firestore: null };
+  const auth = useAuth();
+
+  // Auto sign-in anonymously for the demo
+  useEffect(() => {
+    if (auth) {
+      signInAnonymously(auth).catch(console.error);
+    }
+  }, [auth]);
+
+  const postsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: posts, isLoading } = useCollection(postsQuery);
+
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
       <Navbar />
@@ -19,9 +42,20 @@ export default function Home() {
         {/* Middle column - Feed */}
         <div className="flex-1 w-full max-w-full md:max-w-2xl mx-auto">
           <div className="flex flex-col">
-            {MOCK_POSTS.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground text-sm">جاري تحميل التحديثات...</p>
+              </div>
+            ) : posts && posts.length > 0 ? (
+              posts.map((post: any) => (
+                <PostCard key={post.id} post={post} />
+              ))
+            ) : (
+              <div className="text-center py-20 bg-card">
+                <p className="text-muted-foreground">لا توجد منشورات بعد. كن أول من ينشر!</p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -9,6 +9,8 @@ import { CURRENT_USER } from '@/lib/mock-data';
 import { aiPostEnhancer } from '@/ai/flows/ai-post-enhancer';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
 
 interface CreatePostProps {
   onSuccess?: () => void;
@@ -19,6 +21,8 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<{ hashtags: string[], summary: string } | null>(null);
   const { toast } = useToast();
+  const { firestore } = useFirestore();
+  const { user } = useUser();
 
   const handleEnhance = async () => {
     if (!content.trim()) return;
@@ -46,11 +50,23 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   };
 
   const handlePost = () => {
-    if (!content.trim()) return;
+    if (!content.trim() || !firestore || !user) return;
+
+    const postData = {
+      content,
+      authorId: user.uid,
+      createdAt: serverTimestamp(),
+      likesCount: 0,
+      hashtags: aiSuggestions?.hashtags || [],
+    };
+
+    addDocumentNonBlocking(collection(firestore, 'posts'), postData);
+
     toast({
       title: "تم النشر!",
       description: "تم نشر منشورك بنجاح على تواصل.",
     });
+    
     setContent('');
     setAiSuggestions(null);
     if (onSuccess) onSuccess();
@@ -123,7 +139,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
               <span className="hidden xs:inline text-sm">تحسين</span>
             </Button>
           </div>
-          <Button onClick={handlePost} disabled={!content.trim()} className="bg-primary hover:bg-primary/90 text-white gap-2 px-8 rounded-full py-6 transition-all shadow-md">
+          <Button onClick={handlePost} disabled={!content.trim() || !user} className="bg-primary hover:bg-primary/90 text-white gap-2 px-8 rounded-full py-6 transition-all shadow-md">
             <span className="font-bold">نشر الآن</span>
             <Send size={18} className="rtl:rotate-180" />
           </Button>

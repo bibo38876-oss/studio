@@ -5,19 +5,34 @@ import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat } from 'lucide-rea
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { MOCK_USERS, type Post } from '@/lib/mock-data';
+import { MOCK_USERS } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
-export default function PostCard({ post }: { post: Post }) {
+interface PostData {
+  id: string;
+  authorId: string;
+  content: string;
+  createdAt: any;
+  likesCount?: number;
+  hashtags?: string[];
+}
+
+export default function PostCard({ post }: { post: PostData }) {
   const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(post.likes);
+  const [likesCount, setLikesCount] = useState(post.likesCount || 0);
   const { toast } = useToast();
 
-  const user = MOCK_USERS.find(u => u.id === post.userId) || {
+  const user = MOCK_USERS.find(u => u.id === post.authorId) || {
     name: 'مستخدم مجهول',
     handle: '@unknown',
-    avatar: ''
+    avatar: 'https://picsum.photos/seed/unknown/200/200'
   };
+
+  const formattedDate = post.createdAt?.toDate 
+    ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ar })
+    : 'منذ وقت قليل';
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -41,7 +56,7 @@ export default function PostCard({ post }: { post: Post }) {
           </Avatar>
           <div className="flex flex-col">
             <span className="text-sm font-bold text-primary hover:underline cursor-pointer leading-none">{user.name}</span>
-            <span className="text-[10px] text-muted-foreground mt-1">{user.handle} • {post.timestamp}</span>
+            <span className="text-[10px] text-muted-foreground mt-1">{user.handle} • {formattedDate}</span>
           </div>
         </div>
         <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground">
