@@ -1,25 +1,25 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * Tawasul Social Media Security Rules
-     * RE-DEPLOYMENT TRIGGER: 2024-05-21T00:01:00Z
-     */
-
     function isSignedIn() {
       return request.auth != null;
     }
-
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // --- Users Collection ---
     match /users/{userId} {
       allow read: if true;
       allow create, update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      
+      match /notifications/{notifId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /bookmarks/{postId} {
+        allow read, write: if isOwner(userId);
+      }
 
       match /following/{followedId} {
         allow read: if true;
@@ -33,16 +33,9 @@ service cloud.firestore {
       }
     }
 
-    // --- Posts Collection ---
     match /posts/{postId} {
-      // السماح بالقراءة العامة لجميع المنشورات
-      allow read: if true;
-      allow list: if true;
-      
-      // السماح بإنشاء المنشورات للمستخدمين المسجلين فقط
+      allow read, list: if true;
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      
-      // السماح بالتعديل والحذف لصاحب المنشور فقط
       allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
 
       match /likes/{likingUserId} {

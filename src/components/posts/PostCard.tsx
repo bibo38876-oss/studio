@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Bookmark } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,15 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, increment, updateDoc } from 'firebase/firestore';
+import { doc, increment, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import Image from 'next/image';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PostData {
   id: string;
@@ -36,8 +42,16 @@ export default function PostCard({ post }: { post: PostData }) {
     return doc(firestore, 'posts', post.id, 'likes', user.uid);
   }, [firestore, post.id, user]);
 
+  const bookmarkRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid, 'bookmarks', post.id);
+  }, [firestore, post.id, user]);
+
   const { data: likeData } = useDoc(likeRef);
+  const { data: bookmarkData } = useDoc(bookmarkRef);
+  
   const isLiked = !!likeData;
+  const isBookmarked = !!bookmarkData;
 
   const formattedDate = post.createdAt?.toDate 
     ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ar })
@@ -54,6 +68,30 @@ export default function PostCard({ post }: { post: PostData }) {
     } else {
       setDocumentNonBlocking(userLikeRef, { userId: user.uid, likedAt: new Date().toISOString() }, { merge: true });
       updateDoc(postRef, { likesCount: increment(1) });
+      
+      // Create notification for post owner (if not self)
+      if (post.authorId !== user.uid) {
+        const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+        setDocumentNonBlocking(notifRef, {
+          type: 'like',
+          fromUserId: user.uid,
+          fromUsername: 'مستخدم تواصل', // Would ideally get real name
+          postId: post.id,
+          createdAt: serverTimestamp(),
+          read: false
+        }, { merge: true });
+      }
+    }
+  };
+
+  const handleBookmark = () => {
+    if (!user || !firestore) return;
+    if (isBookmarked) {
+      deleteDocumentNonBlocking(bookmarkRef!);
+      toast({ description: "تمت إزالة العلامة المرجعية." });
+    } else {
+      setDocumentNonBlocking(bookmarkRef!, { ...post, bookmarkedAt: serverTimestamp() }, { merge: true });
+      toast({ description: "تم حفظ المنشور في العلامات المرجعية." });
     }
   };
 
@@ -72,9 +110,23 @@ export default function PostCard({ post }: { post: PostData }) {
             </span>
           </div>
         </Link>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full">
-          <MoreHorizontal size={14} />
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full">
+              <MoreHorizontal size={14} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="text-xs">
+            <DropdownMenuItem onClick={handleBookmark} className="gap-2">
+              <Bookmark size={14} fill={isBookmarked ? "currentColor" : "none"} />
+              {isBookmarked ? 'إزالة من العلامات' : 'حفظ المنشور'}
+            </DropdownMenuItem>
+            <DropdownMenuItem className="gap-2 text-destructive">
+              إبلاغ
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </CardHeader>
       
       <CardContent className="px-0 py-0">

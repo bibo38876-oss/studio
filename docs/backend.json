@@ -35,6 +35,20 @@
         "likesCount": { "type": "number" }
       },
       "required": ["id", "authorId", "content", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["like", "follow", "mention"] },
+        "fromUserId": { "type": "string" },
+        "fromUsername": { "type": "string" },
+        "fromAvatar": { "type": "string" },
+        "postId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      }
     }
   },
   "auth": {
@@ -43,6 +57,8 @@
   "firestore": {
     "structure": [
       { "path": "users/{userId}", "definition": { "entityName": "User" } },
+      { "path": "users/{userId}/notifications/{notifId}", "definition": { "entityName": "Notification" } },
+      { "path": "users/{userId}/bookmarks/{postId}", "definition": { "entityName": "Post" } },
       { "path": "posts/{postId}", "definition": { "entityName": "Post" } },
       { "path": "posts/{postId}/likes/{userId}", "definition": { "entityName": "Like" } }
     ]
