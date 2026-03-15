@@ -6,23 +6,23 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Navbar() {
   return (
-    <nav className="fixed top-0 z-50 w-full h-10 border-b bg-background/80 backdrop-blur-md">
+    <nav className="fixed top-0 z-50 w-full h-8 border-b bg-background/80 backdrop-blur-md">
       <div className="container mx-auto h-full flex items-center justify-between px-4">
         <div className="flex items-center">
-          <Link href="/" className="text-lg font-bold text-primary font-headline tracking-tighter">
-            تواصل <span className="text-accent text-sm">Tawasul</span>
+          <Link href="/" className="text-sm font-bold text-primary font-headline tracking-tighter">
+            تواصل <span className="text-accent text-[10px]">Tawasul</span>
           </Link>
         </div>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
-            <Search size={16} className="text-muted-foreground" />
+          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+            <Search size={14} className="text-muted-foreground" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
-            <Settings size={16} className="text-muted-foreground" />
+          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+            <Settings size={14} className="text-muted-foreground" />
           </Button>
           <Link href={`/profile/${CURRENT_USER.id}`}>
-            <Avatar className="h-6 w-6 border border-accent/20">
+            <Avatar className="h-5 w-5 border border-accent/20">
               <AvatarImage src={CURRENT_USER.avatar} alt={CURRENT_USER.name} />
               <AvatarFallback>{CURRENT_USER.name[0]}</AvatarFallback>
             </Avatar>
