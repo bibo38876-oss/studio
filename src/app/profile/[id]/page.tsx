@@ -27,15 +27,15 @@ export default function ProfilePage() {
 
   // استرجاع بيانات الملف الشخصي
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
+    if (!firestore || !id || id === 'undefined') return null;
     return doc(firestore, 'users', id);
   }, [firestore, id]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // استرجاع منشورات المستخدم - تأكد من أن القواعد تسمح بهذا الاستعلام
+  // استرجاع منشورات المستخدم - تم التأكد من توافق القواعد مع هذا الاستعلام
   const postsQuery = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
+    if (!firestore || !id || id === 'undefined') return null;
     return query(
       collection(firestore, 'posts'),
       where('authorId', '==', id),

@@ -10,7 +10,28 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // بصمة تحديث إجبارية لضمان النشر: FORCE_DEPLOY_ID_PROFILE_FIX_v4
+    // بصمة تحديث إجبارية لضمان النشر الفوري والمؤكد: FORCE_DEPLOY_VER_STABLE_FIX_99
+
+    // قواعد المنشورات - قراءة عامة (Get & List) للجميع بشكل صريح جداً
+    match /posts/{postId} {
+      allow read, get, list: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+
+      match /likes/{userId} {
+        allow read: if true;
+        allow write: if isOwner(userId);
+      }
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow delete: if isSignedIn() && (
+          resource.data.authorId == request.auth.uid || 
+          get(/databases/$(database)/documents/posts/$(postId)).data.authorId == request.auth.uid
+        );
+      }
+    }
 
     // قواعد المستخدمين
     match /users/{userId} {
@@ -33,24 +54,6 @@ service cloud.firestore {
       match /followers/{followerId} {
         allow read: if true;
         allow create, delete: if isSignedIn();
-      }
-    }
-
-    // قواعد المنشورات - قراءة عامة (Get & List) للجميع بشكل صريح
-    match /posts/{postId} {
-      allow read, get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
-
-      match /likes/{userId} {
-        allow read: if true;
-        allow write: if isOwner(userId);
-      }
-
-      match /comments/{commentId} {
-        allow read: if true;
-        allow create: if isSignedIn();
-        allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || get(/databases/$(database)/documents/posts/$(postId)).data.authorId == request.auth.uid);
       }
     }
   }
