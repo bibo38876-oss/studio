@@ -3,50 +3,27 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * Tawasul Social Media Security Rules - Updated for Public Access
-     *
-     * CORE PHILOSOPHY:
-     * This ruleset implements a strict user-ownership model designed for a public social media 
-     * environment. While content is generally discoverable (publicly readable), write operations 
-     * are strictly restricted to the creators of the data. 
+     * Tawasul Social Media Security Rules
+     * RE-DEPLOYMENT TRIGGER: 2024-05-21T00:01:00Z
      */
 
-    // --- Helper Functions ---
-
-    /** @description Checks if the request is from a signed-in user. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the provided UID matches the authenticated user's UID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if the authenticated user is the owner of an existing document. */
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    /** @description Checks if the user is the owner based on a field within the document data. */
-    function isDataOwner(ownerId) {
-      return isSignedIn() && request.auth.uid == ownerId;
-    }
-
-    // --- Collection Rules ---
-
-    /**
-     * @description Rules for User profiles. Publicly readable, owner-writable.
-     */
+    // --- Users Collection ---
     match /users/{userId} {
-      allow get, list: if true;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow read: if true;
+      allow create, update: if isOwner(userId);
       allow delete: if isOwner(userId);
 
       match /following/{followedId} {
         allow read: if true;
-        allow create, delete: if isOwner(userId);
+        allow write: if isOwner(userId);
       }
 
       match /followers/{followerId} {
@@ -56,22 +33,21 @@ service cloud.firestore {
       }
     }
 
-    /**
-     * @description Rules for Posts. Publicly readable, author-writable.
-     */
+    // --- Posts Collection ---
     match /posts/{postId} {
-      // Allow everyone to read posts (Public Feed)
-      allow read, list: if true;
+      // السماح بالقراءة العامة لجميع المنشورات
+      allow read: if true;
+      allow list: if true;
       
-      // Only signed-in users can create posts with their own UID
+      // السماح بإنشاء المنشورات للمستخدمين المسجلين فقط
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
       
-      // Only the author can update or delete their posts
+      // السماح بالتعديل والحذف لصاحب المنشور فقط
       allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
 
       match /likes/{likingUserId} {
-        allow read, list: if true;
-        allow create, delete: if isOwner(likingUserId);
+        allow read: if true;
+        allow write: if isOwner(likingUserId);
       }
     }
   }

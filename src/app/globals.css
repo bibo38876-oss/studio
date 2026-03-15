@@ -23,7 +23,7 @@
     --border: 220 31% 90%;
     --input: 220 31% 90%;
     --ring: 220 31% 46%;
-    --radius: 1rem;
+    --radius: 0rem; /* جعل الحواف حادة تماماً بناءً على طلب المستخدم */
   }
   .dark {
     --background: 221 31% 10%;
@@ -60,4 +60,9 @@
 
 .font-headline {
   font-family: 'Inter', sans-serif;
+}
+
+/* تحسين تجربة ملء الشاشة للبطاقات */
+.card-full-width {
+  @apply rounded-none border-x-0 border-t-0;
 }
