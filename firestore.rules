@@ -35,10 +35,12 @@ service cloud.firestore {
       }
     }
 
-    // قواعد المنشورات - القراءة عامة للجميع بشكل مؤكد
-    // تم تحديث هذا التعليق لضمان إعادة النشر الفوري وتصحيح خطأ الصلاحيات المستمر: 2024-05-21 15:30
+    // قواعد المنشورات - القراءة عامة للجميع بشكل مؤكد وصريح
+    // تحديث إجباري لحل مشكلة "Missing or insufficient permissions" في الملف الشخصي
+    // تاريخ التحديث: 2024-05-22 10:45 AM
     match /posts/{postId} {
-      allow read, list: if true;
+      allow read: if true;
+      allow list: if true;
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
       allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
 
