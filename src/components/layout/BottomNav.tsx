@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -29,8 +30,15 @@ export default function BottomNav() {
             return (
               <Dialog key={index} open={isPostOpen} onOpenChange={setIsPostOpen}>
                 <DialogTrigger asChild>
-                  <button className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-lg shadow-md -mt-4 transition-transform hover:scale-105 active:scale-95">
-                    <Plus size={16} />
+                  <button className="relative w-9 h-6 transition-transform hover:scale-110 active:scale-95 mx-2 group">
+                    {/* طبقة اللون السماوي (اليسار) */}
+                    <div className="absolute inset-0 bg-[#00f2ea] rounded-sm -translate-x-1"></div>
+                    {/* طبقة اللون الأحمر (اليمين) */}
+                    <div className="absolute inset-0 bg-[#ff0050] rounded-sm translate-x-1"></div>
+                    {/* الزر الأبيض الرئيسي */}
+                    <div className="absolute inset-0 bg-white dark:bg-foreground rounded-sm flex items-center justify-center">
+                      <Plus size={16} className="text-black dark:text-background" strokeWidth={3} />
+                    </div>
                   </button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px] p-0 border-none bg-background gap-0 overflow-hidden rounded-t-2xl sm:rounded-2xl">
