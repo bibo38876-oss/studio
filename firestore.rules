@@ -35,8 +35,8 @@ service cloud.firestore {
       }
     }
 
-    // قواعد المنشورات - القراءة عامة للجميع
-    // تم إضافة هذا التعليق لضمان إعادة النشر الفوري لتصحيح خطأ الصلاحيات: 2024-05-20
+    // قواعد المنشورات - القراءة عامة للجميع بشكل مؤكد
+    // تم تحديث هذا التعليق لضمان إعادة النشر الفوري وتصحيح خطأ الصلاحيات المستمر: 2024-05-21 15:30
     match /posts/{postId} {
       allow read, list: if true;
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
