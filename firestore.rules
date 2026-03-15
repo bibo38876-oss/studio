@@ -42,6 +42,12 @@ service cloud.firestore {
         allow read: if true;
         allow write: if isOwner(likingUserId);
       }
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || get(/databases/$(database)/documents/posts/$(postId)).data.authorId == request.auth.uid);
+      }
     }
   }
 }

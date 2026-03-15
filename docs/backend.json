@@ -32,16 +32,30 @@
         "mediaType": { "type": "string", "enum": ["image", "video"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "hashtags": { "type": "array", "items": { "type": "string" } },
-        "likesCount": { "type": "number" }
+        "likesCount": { "type": "number" },
+        "commentsCount": { "type": "number" }
       },
       "required": ["id", "authorId", "content", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "content", "createdAt"]
     },
     "Notification": {
       "title": "Notification",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["like", "follow", "mention"] },
+        "type": { "type": "string", "enum": ["like", "follow", "mention", "comment"] },
         "fromUserId": { "type": "string" },
         "fromUsername": { "type": "string" },
         "fromAvatar": { "type": "string" },
@@ -60,7 +74,8 @@
       { "path": "users/{userId}/notifications/{notifId}", "definition": { "entityName": "Notification" } },
       { "path": "users/{userId}/bookmarks/{postId}", "definition": { "entityName": "Post" } },
       { "path": "posts/{postId}", "definition": { "entityName": "Post" } },
-      { "path": "posts/{postId}/likes/{userId}", "definition": { "entityName": "Like" } }
+      { "path": "posts/{postId}/likes/{userId}", "definition": { "entityName": "Like" } },
+      { "path": "posts/{postId}/comments/{commentId}", "definition": { "entityName": "Comment" } }
     ]
   }
 }

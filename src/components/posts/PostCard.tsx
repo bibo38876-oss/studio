@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, increment, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -19,6 +19,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import CommentsDialog from "./CommentsDialog";
 
 interface PostData {
   id: string;
@@ -30,12 +32,14 @@ interface PostData {
   mediaType?: 'image' | 'video';
   createdAt: any;
   likesCount?: number;
+  commentsCount?: number;
   hashtags?: string[];
 }
 
 export default function PostCard({ post }: { post: PostData }) {
   const { user, firestore } = useFirebase();
   const { toast } = useToast();
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -69,13 +73,12 @@ export default function PostCard({ post }: { post: PostData }) {
       setDocumentNonBlocking(userLikeRef, { userId: user.uid, likedAt: new Date().toISOString() }, { merge: true });
       updateDoc(postRef, { likesCount: increment(1) });
       
-      // Create notification for post owner (if not self)
       if (post.authorId !== user.uid) {
         const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
         setDocumentNonBlocking(notifRef, {
           type: 'like',
           fromUserId: user.uid,
-          fromUsername: 'مستخدم تواصل', // Would ideally get real name
+          fromUsername: 'مستخدم تواصل',
           postId: post.id,
           createdAt: serverTimestamp(),
           read: false
@@ -168,10 +171,24 @@ export default function PostCard({ post }: { post: PostData }) {
           <span className="text-[10px] font-bold">{post.likesCount || 0}</span>
         </Button>
         
-        <Button variant="ghost" size="sm" className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none">
-          <MessageCircle size={16} />
-          <span className="text-[10px]">0</span>
-        </Button>
+        <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none"
+            onClick={() => setIsCommentsOpen(true)}
+          >
+            <MessageCircle size={16} />
+            <span className="text-[10px] font-bold">{post.commentsCount || 0}</span>
+          </Button>
+          <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[80vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col">
+            <CommentsDialog 
+              postId={post.id} 
+              postAuthorId={post.authorId} 
+              onClose={() => setIsCommentsOpen(false)} 
+            />
+          </DialogContent>
+        </Dialog>
 
         <Button variant="ghost" size="sm" className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none">
           <Repeat size={16} />
