@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import LeftSidebar from '@/components/layout/LeftSidebar';
@@ -16,7 +16,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
   const [activeTab, setActiveTab] = useState('for-you');
+  const [limitForYou, setLimitForYou] = useState(10);
+  const [limitFollowing, setLimitFollowing] = useState(10);
   const router = useRouter();
+
+  // مراجع لاكتشاف نهاية الصفحة
+  const loadMoreForYouRef = useRef<HTMLDivElement>(null);
+  const loadMoreFollowingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -31,24 +37,24 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // جلب المنشورات العامة لتبويب "لك"
+  // جلب المنشورات العامة لتبويب "لك" مع حد متغير
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
-  }, [firestore, user?.uid]);
+    return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(limitForYou));
+  }, [firestore, user?.uid, limitForYou]);
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // جلب المنشورات من المتابعين لتبويب "أتابعهم"
+  // جلب المنشورات من المتابعين لتبويب "أتابعهم" مع حد متغير
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 10)),
       orderBy('createdAt', 'desc'),
-      limit(50)
+      limit(limitFollowing)
     );
-  }, [firestore, user?.uid, profile?.followingIds]);
+  }, [firestore, user?.uid, profile?.followingIds, limitFollowing]);
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
@@ -64,7 +70,7 @@ export default function Home() {
       if (profile.followingIds?.includes(post.authorId)) score += 50;
       if (profile.interactedAuthorIds?.includes(post.authorId)) score += 30;
 
-      const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
+      const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : (post.createdAt ? new Date(post.createdAt) : new Date());
       const postAgeMs = Date.now() - postDate.getTime();
       const oneHour = 3600000;
       const oneDay = 86400000;
@@ -76,6 +82,27 @@ export default function Home() {
       return { ...post, recommendationScore: score };
     }).sort((a, b) => b.recommendationScore - a.recommendationScore);
   }, [postsPool, profile]);
+
+  // إعداد مراقب التمرير اللانهائي
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          if (activeTab === 'for-you' && !isPoolLoading) {
+            setLimitForYou(prev => prev + 10);
+          } else if (activeTab === 'following' && !isFollowingLoading) {
+            setLimitFollowing(prev => prev + 10);
+          }
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = activeTab === 'for-you' ? loadMoreForYouRef.current : loadMoreFollowingRef.current;
+    if (currentRef) observer.observe(currentRef);
+
+    return () => observer.disconnect();
+  }, [activeTab, isPoolLoading, isFollowingLoading]);
 
   if (isUserLoading || !user) {
     return (
@@ -115,7 +142,7 @@ export default function Home() {
 
             <AnimatePresence mode="wait">
               <TabsContent value="for-you" key="for-you" className="mt-0">
-                {isPoolLoading ? (
+                {isPoolLoading && limitForYou === 10 ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     <p className="text-[10px] text-muted-foreground animate-pulse">جاري تحضير التوصيات...</p>
@@ -128,6 +155,11 @@ export default function Home() {
                     className="flex flex-col"
                   >
                     {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
+                    
+                    {/* محفز التحميل الإضافي */}
+                    <div ref={loadMoreForYouRef} className="py-10 flex justify-center">
+                      {isPoolLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
+                    </div>
                   </motion.div>
                 )}
               </TabsContent>
@@ -139,7 +171,7 @@ export default function Home() {
                     <p className="text-primary font-bold text-xs mb-1">ابدأ بمتابعة الآخرين</p>
                     <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
                   </div>
-                ) : isFollowingLoading ? (
+                ) : isFollowingLoading && limitFollowing === 10 ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
@@ -151,6 +183,11 @@ export default function Home() {
                     className="flex flex-col"
                   >
                     {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
+                    
+                    {/* محفز التحميل الإضافي */}
+                    <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">
+                      {isFollowingLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
+                    </div>
                   </motion.div>
                 )}
               </TabsContent>
