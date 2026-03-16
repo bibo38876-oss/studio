@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFirebase } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
@@ -136,15 +136,6 @@ export default function LoginPage() {
             </div>
           </CardContent>
         </Card>
-
-        <Button 
-          variant="ghost" 
-          onClick={() => router.push('/')}
-          className="w-full text-[10px] text-muted-foreground gap-1"
-        >
-          <ArrowRight size={12} />
-          تصفح كزائر
-        </Button>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import LeftSidebar from '@/components/layout/LeftSidebar';
 import RightSidebar from '@/components/layout/RightSidebar';
@@ -13,16 +14,21 @@ import { Loader2, LayoutGrid, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Home() {
-  const { firestore, user } = useFirebase();
+  const { firestore, user, isUserLoading } = useFirebase();
   const [activeTab, setActiveTab] = useState('all');
+  const router = useRouter();
 
-  const isAnonymous = !user || user.isAnonymous;
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
-  // Query for profile only if signed in with email
+  // Query for profile
   const userProfileRef = useMemoFirebase(() => {
-    if (!firestore || isAnonymous) return null;
+    if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user, isAnonymous]);
+  }, [firestore, user]);
 
   const { data: profile } = useDoc(userProfileRef);
 
@@ -45,6 +51,14 @@ export default function Home() {
   const { data: allPosts, isLoading: isAllLoading } = useCollection(allPostsQuery);
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
+  if (isUserLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
@@ -64,15 +78,13 @@ export default function Home() {
                 <LayoutGrid size={14} className="ml-1.5" />
                 عام
               </TabsTrigger>
-              {!isAnonymous && (
-                <TabsTrigger 
-                  value="following" 
-                  className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs"
-                >
-                  <Users size={14} className="ml-1.5" />
-                  أتابعهم
-                </TabsTrigger>
-              )}
+              <TabsTrigger 
+                value="following" 
+                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs"
+              >
+                <Users size={14} className="ml-1.5" />
+                أتابعهم
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="all" className="mt-0">
@@ -89,23 +101,21 @@ export default function Home() {
               )}
             </TabsContent>
 
-            {!isAnonymous && (
-              <TabsContent value="following" className="mt-0">
-                {isFollowingLoading ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                ) : followingPosts && followingPosts.length > 0 ? (
-                  followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)
-                ) : (
-                  <div className="text-center py-24 bg-card px-8">
-                    <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
-                    <p className="text-primary font-bold text-sm mb-1">ابدأ بمتابعة الآخرين</p>
-                    <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
-                  </div>
-                )}
-              </TabsContent>
-            )}
+            <TabsContent value="following" className="mt-0">
+              {isFollowingLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : followingPosts && followingPosts.length > 0 ? (
+                followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)
+              ) : (
+                <div className="text-center py-24 bg-card px-8">
+                  <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-primary font-bold text-sm mb-1">ابدأ بمتابعة الآخرين</p>
+                  <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
         </div>
 

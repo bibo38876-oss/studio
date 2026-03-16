@@ -1,7 +1,8 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Input } from '@/components/ui/input';
 import { Search, TrendingUp, Users, Hash, Loader2 } from 'lucide-react';
@@ -14,12 +15,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const { firestore, user: currentUser } = useFirebase();
+  const { firestore, user: currentUser, isUserLoading } = useFirebase();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !currentUser) {
+      router.push('/login');
+    }
+  }, [currentUser, isUserLoading, router]);
 
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentUser) return null;
     return query(collection(firestore, 'users'), limit(20));
-  }, [firestore]);
+  }, [firestore, currentUser]);
 
   const { data: users, isLoading } = useCollection(usersQuery);
 
@@ -35,6 +43,14 @@ export default function ExplorePage() {
     { name: 'تطوير_الذات', count: '48K' },
     { name: 'تقنية', count: '73K' }
   ];
+
+  if (isUserLoading || !currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
