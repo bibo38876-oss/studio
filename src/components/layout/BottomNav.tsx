@@ -17,12 +17,8 @@ export default function BottomNav() {
 
   const isAnonymous = !user || user.isAnonymous;
 
-  const isChatPage = pathname?.startsWith('/groups/') && pathname?.split('/').length > 2;
-  const isSettingsPage = pathname === '/settings';
-  const isLoginPage = pathname === '/login';
-  const isAdminPage = pathname === '/admin';
-
-  if (isChatPage || isSettingsPage || isLoginPage || isAdminPage) {
+  // القائمة السفلية تظهر فقط في الصفحة الرئيسية بناءً على طلب المستخدم
+  if (pathname !== '/') {
     return null;
   }
 
