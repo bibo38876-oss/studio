@@ -4,12 +4,21 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Info, Sparkles, TrendingUp, Wallet, ShieldCheck, Star, Scale, Gavel, AlertCircle } from 'lucide-react';
+import { ChevronRight, Info, Sparkles, TrendingUp, Wallet, ShieldCheck, Star, Scale, Gavel, AlertCircle, Package } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 export default function WalletPage() {
   const router = useRouter();
+  const { toast } = useToast();
+
+  const handlePackageClick = () => {
+    toast({
+      title: "قريباً في تيمقاد",
+      description: "نظام شحن الباقات قيد التطوير والتدقيق القانوني حالياً.",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,7 +112,48 @@ export default function WalletPage() {
             </Card>
           </div>
 
-          {/* Legal Compliance Section - NEW */}
+          {/* Coin Packages Section */}
+          <section className="w-full text-right space-y-6 pt-6">
+            <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
+              <Package size={18} />
+              <h3 className="font-bold text-md uppercase tracking-tighter">باقات نقاط تيمقاد</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { amount: "100", label: "باقة البداية", color: "bg-blue-500/10 text-blue-600" },
+                { amount: "500", label: "باقة النشاط", color: "bg-green-500/10 text-green-600" },
+                { amount: "1000", label: "باقة التميز", color: "bg-purple-500/10 text-purple-600" },
+                { amount: "5000", label: "باقة الريادة", color: "bg-amber-500/10 text-amber-600" }
+              ].map((pkg, i) => (
+                <motion.div key={i} whileHover={{ y: -5 }} whileTap={{ scale: 0.95 }}>
+                  <Card 
+                    className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/50 transition-all cursor-pointer group border-b-2 border-transparent hover:border-primary overflow-hidden"
+                    onClick={handlePackageClick}
+                  >
+                    <CardContent className="p-6 flex flex-col items-center gap-3 relative">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${pkg.color}`}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                          <text x="12" y="16" textAnchor="middle" fontSize="12" fontWeight="bold" fill="currentColor">T</text>
+                        </svg>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xl font-bold text-primary">{pkg.amount} Coin</p>
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">{pkg.label}</p>
+                      </div>
+                      <div className="w-full h-[1px] bg-muted/30 my-1" />
+                      <Button variant="ghost" className="h-7 text-[9px] font-bold rounded-full w-full hover:bg-primary hover:text-white transition-colors">
+                        طلب الباقة
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
+          {/* Legal Compliance Section */}
           <section className="w-full text-right space-y-6 pt-10">
             <div className="flex items-center gap-3 text-destructive border-r-4 border-destructive pr-3">
               <Scale size={18} />
