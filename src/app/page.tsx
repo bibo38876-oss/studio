@@ -9,7 +9,7 @@ import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, where, limit, collectionGroup } from 'firebase/firestore';
+import { collection, query, orderBy, doc, where, limit } from 'firebase/firestore';
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -31,7 +31,7 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // جلب المنشورات العامة لتبويب "لك"
+  // جلب المنشورات العامة لتبويب "لك" (Pool للمرشحين)
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
@@ -39,7 +39,7 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // جلب المنشورات من المتابعين
+  // جلب المنشورات من المتابعين لتبويب "أتابعهم"
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -52,59 +52,34 @@ export default function Home() {
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
-  // جلب الـ Reposts من المتابعين عبر Collection Group
-  const followingRepostsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
-    return query(
-      collectionGroup(firestore, 'reposts'),
-      where('reposterId', 'in', profile.followingIds.slice(0, 10)),
-      orderBy('repostedAt', 'desc'),
-      limit(20)
-    );
-  }, [firestore, user?.uid, profile?.followingIds]);
-
-  const { data: followingReposts } = useCollection(followingRepostsQuery);
-
-  // دمج المنشورات الأصلية والمعاد نشرها في خلاصة "أتابعهم"
-  const combinedFollowingFeed = useMemo(() => {
-    const posts = followingPosts || [];
-    const reposts = (followingReposts || []).map(r => ({
-      ...r.postData,
-      id: `${r.id}_repost`, // معرف فريد للـ Repost
-      isRepost: true,
-      repostedBy: r.reposterName,
-      repostedAt: r.repostedAt,
-      feedSortDate: r.repostedAt?.toDate?.() || new Date()
-    }));
-
-    const originalPosts = posts.map(p => ({
-      ...p,
-      feedSortDate: p.createdAt?.toDate?.() || new Date()
-    }));
-
-    // دمج وترتيب حسب التاريخ (الأحدث أولاً)
-    return [...originalPosts, ...reposts].sort((a, b) => b.feedSortDate - a.feedSortDate);
-  }, [followingPosts, followingReposts]);
-
-  // خوارزمية التوصيات لتبويب "لك"
+  // خوارزمية التوصيات المتقدمة لتبويب "لك"
   const recommendedPosts = useMemo(() => {
     if (!postsPool || !profile) return [];
 
     return [...postsPool].map(post => {
       let score = 0;
+
+      // 1. التفاعل العام (Engagement)
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
+      score += (post.viewsCount || 0) * 0.1;
 
-      if (profile.followingIds?.includes(post.authorId)) score += 20;
+      // 2. العلاقة الاجتماعية (Social Graph)
+      if (profile.followingIds?.includes(post.authorId)) score += 50;
+      
+      // 3. سجل الاهتمامات (Interaction History)
+      if (profile.interactedAuthorIds?.includes(post.authorId)) score += 30;
 
+      // 4. الحداثة الزمنية (Recency Decay)
       const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
       const postAgeMs = Date.now() - postDate.getTime();
       const oneHour = 3600000;
       const oneDay = 86400000;
 
-      if (postAgeMs < oneHour) score += 30;
-      else if (postAgeMs < oneDay) score += 15;
-      else score += 5;
+      if (postAgeMs < oneHour) score += 40;
+      else if (postAgeMs < oneDay) score += 20;
+      else if (postAgeMs < oneDay * 7) score += 5;
+      else score -= 10; // تقليل أولوية المنشورات القديمة جداً
 
       return { ...post, recommendationScore: score };
     }).sort((a, b) => b.recommendationScore - a.recommendationScore);
@@ -123,10 +98,12 @@ export default function Home() {
       <Navbar />
       
       <main className="container mx-auto px-0 md:px-4 pt-8 flex gap-6">
+        {/* Sidebar الأيسر - سطح المكتب */}
         <div className="hidden md:block w-64 pt-4 h-fit sticky top-8">
           <LeftSidebar />
         </div>
 
+        {/* الخلاصة المركزية */}
         <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto">
           <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="w-full bg-background/80 backdrop-blur-md border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-8 z-40">
@@ -174,9 +151,9 @@ export default function Home() {
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
-              ) : combinedFollowingFeed.length > 0 ? (
+              ) : followingPosts && followingPosts.length > 0 ? (
                 <div className="flex flex-col">
-                  {combinedFollowingFeed.map((post: any) => <PostCard key={post.id} post={post} />)}
+                  {followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
                 </div>
               ) : (
                 <div className="text-center py-20 bg-card border-b">
@@ -187,6 +164,7 @@ export default function Home() {
           </Tabs>
         </div>
 
+        {/* Sidebar الأيمن - سطح المكتب */}
         <div className="hidden lg:block w-80 pt-4 h-fit sticky top-8">
           <RightSidebar />
         </div>
