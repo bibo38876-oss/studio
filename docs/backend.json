@@ -14,7 +14,8 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "followingIds": { "type": "array", "items": { "type": "string" } },
         "followerIds": { "type": "array", "items": { "type": "string" } },
-        "email": { "type": "string", "format": "email" }
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "The role of the user in the platform." }
       },
       "required": ["id", "username", "createdAt"]
     },

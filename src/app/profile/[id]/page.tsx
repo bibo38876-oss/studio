@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
@@ -43,6 +43,14 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
+  // جلب بيانات المستخدم الحالي للتحقق من الصلاحيات (Admin)
+  const currentUserProfileRef = useMemoFirebase(() => {
+    if (!firestore || !currentUser?.uid) return null;
+    return doc(firestore, 'users', currentUser.uid);
+  }, [firestore, currentUser?.uid]);
+
+  const { data: currentUserProfile } = useDoc(currentUserProfileRef);
+
   const postsQuery = useMemoFirebase(() => {
     if (!firestore || !id || !currentUser?.uid) return null;
     return query(
@@ -66,6 +74,7 @@ export default function ProfilePage() {
 
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
+  const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === 'admin@tawasul.com'; // شرط المسؤول
 
   const handleUpdateProfile = () => {
     if (!firestore || !currentUser?.uid) return;
@@ -79,23 +88,24 @@ export default function ProfilePage() {
   const handleFollow = () => {
     if (!currentUser?.uid || !firestore || !profile || isOwnProfile) return;
 
-    const currentUserRef = doc(firestore, 'users', currentUser.uid);
+    const curUserRef = doc(firestore, 'users', currentUser.uid);
     const targetUserRef = doc(firestore, 'users', id);
 
     if (isFollowing) {
-      updateDoc(currentUserRef, { followingIds: arrayRemove(id) });
+      updateDoc(curUserRef, { followingIds: arrayRemove(id) });
       updateDoc(targetUserRef, { followerIds: arrayRemove(currentUser.uid) });
     } else {
-      updateDoc(currentUserRef, { followingIds: arrayUnion(id) });
+      updateDoc(curUserRef, { followingIds: arrayUnion(id) });
       updateDoc(targetUserRef, { followerIds: arrayUnion(currentUser.uid) });
     }
   };
 
   const copyShareLink = () => {
-    navigator.clipboard.writeText(window.location.origin);
+    const url = `${window.location.origin}/profile/${id}`;
+    navigator.clipboard.writeText(url);
     toast({
       title: "تم النسخ!",
-      description: "تم نسخ رابط التطبيق لمشاركته مع أصدقائك.",
+      description: "تم نسخ رابط الملف الشخصي لمشاركته.",
     });
   };
 
@@ -132,6 +142,16 @@ export default function ProfilePage() {
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
+            {/* زر الإدارة فوق البنر - يظهر فقط لصاحب التطبيق */}
+            {isAdmin && (
+              <div className="absolute top-2 right-2 z-10">
+                <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold bg-black/20 text-white backdrop-blur-md rounded-full gap-1 hover:bg-black/40 border border-white/10" onClick={() => router.push('/admin')}>
+                  <ShieldCheck size={12} className="text-accent" />
+                  إدارة النظام
+                </Button>
+              </div>
+            )}
+
             <div className="absolute top-2 left-2 flex gap-2">
               <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
                 <DialogTrigger asChild>
@@ -233,7 +253,10 @@ export default function ProfilePage() {
 
             <div className="space-y-3">
               <div className="space-y-0.5">
-                <h1 className="text-md font-bold text-primary">{profile.username}</h1>
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-md font-bold text-primary">{profile.username}</h1>
+                  {profile.role === 'admin' && <ShieldCheck size={14} className="text-accent" />}
+                </div>
                 <p className="text-[9px] text-muted-foreground">{profile.email}</p>
               </div>
 
