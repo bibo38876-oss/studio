@@ -16,7 +16,6 @@ service cloud.firestore {
       );
     }
 
-    // السماح بالاستعلامات الجماعية (Collection Group) لمنشورات إعادات النشر
     match /{path=**}/reposts/{repostId} {
       allow read: if isSignedIn();
     }
@@ -27,7 +26,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         isOwner(resource.data.authorId) || 
         isAdmin() || 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount', 'likesCount', 'repostsCount', 'commentsCount', 'poll', 'reportsCount'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount', 'likesCount', 'repostsCount', 'commentsCount', 'poll', 'reportsCount', 'impressions_left', 'promoted'])
       );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
 

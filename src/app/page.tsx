@@ -21,7 +21,6 @@ export default function Home() {
   const [limitFollowing, setLimitFollowing] = useState(10);
   const router = useRouter();
 
-  // مراجع لاكتشاف نهاية الصفحة للتمرير اللانهائي
   const loadMoreForYouRef = useRef<HTMLDivElement>(null);
   const loadMoreFollowingRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +37,6 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // جلب المنشورات العامة لتبويب "لك" مع حد متغير للتمرير اللانهائي
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(limitForYou));
@@ -46,7 +44,19 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // جلب المنشورات من المتابعين لتبويب "أتابعهم"
+  // جلب المنشورات المروجة (Ads)
+  const promotedQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'posts'),
+      where('promoted', '==', true),
+      where('impressions_left', '>', 0),
+      limit(10)
+    );
+  }, [firestore]);
+
+  const { data: promotedPosts } = useCollection(promotedQuery);
+
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -59,11 +69,11 @@ export default function Home() {
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
-  // خوارزمية التوصيات المتقدمة
+  // خوارزمية التوصيات المتقدمة + دمج الإعلانات
   const recommendedPosts = useMemo(() => {
     if (!postsPool || !profile) return [];
 
-    return [...postsPool].map(post => {
+    const basePosts = [...postsPool].map(post => {
       let score = 0;
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
@@ -82,9 +92,23 @@ export default function Home() {
 
       return { ...post, recommendationScore: score };
     }).sort((a, b) => b.recommendationScore - a.recommendationScore);
-  }, [postsPool, profile]);
 
-  // إعداد مراقب التمرير اللانهائي (Infinite Scroll)
+    // دمج الإعلانات: منشور مروج كل 5 منشورات
+    const finalFeed = [];
+    let adIdx = 0;
+    const ads = promotedPosts?.filter(ad => !basePosts.some(p => p.id === ad.id)) || [];
+
+    basePosts.forEach((post, i) => {
+      finalFeed.push(post);
+      if ((i + 1) % 5 === 0 && ads[adIdx]) {
+        finalFeed.push(ads[adIdx]);
+        adIdx++;
+      }
+    });
+
+    return finalFeed;
+  }, [postsPool, profile, promotedPosts]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -157,7 +181,6 @@ export default function Home() {
                   >
                     {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
                     
-                    {/* محفز التمرير اللانهائي */}
                     <div ref={loadMoreForYouRef} className="py-10 flex justify-center">
                       {isPoolLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
                     </div>
@@ -185,7 +208,6 @@ export default function Home() {
                   >
                     {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
                     
-                    {/* محفز التمرير اللانهائي */}
                     <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">
                       {isFollowingLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
                     </div>

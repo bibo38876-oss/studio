@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus, Rocket } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import CommentsDialog from "./CommentsDialog";
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import {
@@ -53,6 +53,8 @@ interface PostData {
   hashtags?: string[];
   email?: string;
   authorVerificationType?: VerificationType;
+  promoted?: boolean;
+  impressions_left?: number;
 }
 
 export default function PostCard({ post }: { post: PostData }) {
@@ -60,9 +62,11 @@ export default function PostCard({ post }: { post: PostData }) {
   const router = useRouter();
   const { toast } = useToast();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [isPromoteOpen, setIsPromoteOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const viewedRef = useRef(false);
+  const promotedViewedRef = useRef(false);
   
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
@@ -105,21 +109,31 @@ export default function PostCard({ post }: { post: PostData }) {
   }, [firestore, displayPost.id, user]);
   const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
 
-  // مراقب المشاهدات للتمرير
   useEffect(() => {
-    if (!firestore || !displayPost.id || viewedRef.current) return;
+    if (!firestore || !displayPost.id) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !viewedRef.current) {
-          viewedRef.current = true;
-          updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { viewsCount: increment(1) });
+        if (entries[0].isIntersecting) {
+          // عداد المشاهدات العادي
+          if (!viewedRef.current) {
+            viewedRef.current = true;
+            updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { viewsCount: increment(1) });
+          }
+          // عداد الترويج
+          if (displayPost.promoted && (displayPost.impressions_left || 0) > 0 && !promotedViewedRef.current) {
+            promotedViewedRef.current = true;
+            updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { 
+              impressions_left: increment(-1),
+              // سيختفي المنشور من الاستعلام تلقائياً عندما يصبح العدد 0
+            });
+          }
         }
       },
       { threshold: 0.5 }
     );
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
-  }, [firestore, displayPost.id]);
+  }, [firestore, displayPost.id, displayPost.promoted, displayPost.impressions_left]);
 
   const handleFollow = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -146,6 +160,16 @@ export default function PostCard({ post }: { post: PostData }) {
         read: false
       }, { merge: true });
     }
+  };
+
+  const handlePromote = (impressions: number) => {
+    if (!firestore || !displayPost.id) return;
+    updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), {
+      promoted: true,
+      impressions_left: increment(impressions)
+    });
+    setIsPromoteOpen(false);
+    toast({ title: "تم الترويج!", description: `سيبدأ منشورك بالظهور لـ ${impressions} مستخدم إضافي.` });
   };
 
   const handleVote = async (optionIndex: number) => {
@@ -261,12 +285,26 @@ export default function PostCard({ post }: { post: PostData }) {
         transition={{ duration: 0.3 }}
       >
         <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
+          {displayPost.promoted && (
+            <div className="flex items-center gap-1.5 text-[9px] text-accent font-bold px-4 pt-2 group">
+              <Rocket size={10} className="fill-current animate-pulse" />
+              <span className="uppercase tracking-widest">مروج • Sponsored</span>
+            </div>
+          )}
+          
           <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="text-xs">
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
+                  
+                  {isOwner && (
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setIsPromoteOpen(true); }} className="gap-2 cursor-pointer text-accent font-bold">
+                      <Rocket size={12} /> ترويج المنشور
+                    </DropdownMenuItem>
+                  )}
+
                   {!isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleReport(); }} className="gap-2 text-red-500 cursor-pointer"><AlertTriangle size={12} /> إبلاغ عن محتوى مخالف</DropdownMenuItem>}
                   {isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteDocumentNonBlocking(doc(firestore!, 'posts', displayPost.id)); toast({ description: "تم الحذف" }); }} className="gap-2 text-destructive cursor-pointer"><Trash2 size={12} /> حذف المنشور</DropdownMenuItem>}
                 </DropdownMenuContent>
@@ -401,6 +439,41 @@ export default function PostCard({ post }: { post: PostData }) {
           </CardFooter>
         </Card>
       </motion.div>
+
+      {/* نافذة الترويج */}
+      <Dialog open={isPromoteOpen} onOpenChange={setIsPromoteOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold flex items-center gap-2">
+              <Rocket className="text-accent" size={18} /> ترويج المنشور
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-6 space-y-4">
+            <p className="text-xs text-muted-foreground text-center mb-4">اختر باقة الترويج لزيادة عدد الوصول لمنشورك في مجتمع تيمقاد.</p>
+            {[
+              { price: "$1", impressions: 1000, label: "باقة البرونزية" },
+              { price: "$3", impressions: 5000, label: "باقة الفضية" },
+              { price: "$5", impressions: 10000, label: "باقة الذهبية" },
+            ].map((tier, i) => (
+              <Button 
+                key={i} 
+                variant="outline" 
+                className="w-full h-14 justify-between px-6 rounded-none hover:bg-primary/5 group border-muted/20"
+                onClick={() => handlePromote(tier.impressions)}
+              >
+                <div className="flex flex-col items-start">
+                  <span className="text-xs font-bold text-primary">{tier.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{tier.impressions} ظهور مستهدف</span>
+                </div>
+                <span className="text-sm font-bold text-accent group-hover:scale-110 transition-transform">{tier.price}</span>
+              </Button>
+            ))}
+          </div>
+          <DialogFooter>
+            <p className="text-[8px] text-muted-foreground text-center w-full italic">بضغطك على إحدى الباقات، سيتم تفعيل الترويج فوراً (محاكاة).</p>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
         <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[95vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col [&>button]:hidden">
