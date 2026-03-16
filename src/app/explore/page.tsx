@@ -29,11 +29,11 @@ export default function ExplorePage() {
   ) || [];
 
   const trendingTags = [
-    { name: 'رؤية_2030', count: '125K' },
-    { name: 'الذكاء_الاصطناعي', count: '89K' },
-    { name: 'تطوير_الذات', count: '45K' },
-    { name: 'السعودية', count: '210K' },
-    { name: 'تقنية', count: '67K' }
+    { name: 'الجزائر_تتطور', count: '145K' },
+    { name: 'الذكاء_الاصطناعي', count: '92K' },
+    { name: 'الجزائر', count: '310K' },
+    { name: 'تطوير_الذات', count: '48K' },
+    { name: 'تقنية', count: '73K' }
   ];
 
   return (
@@ -70,7 +70,7 @@ export default function ExplorePage() {
               {trendingTags.map((tag, i) => (
                 <div key={i} className="p-4 hover:bg-muted/10 cursor-pointer flex justify-between items-center group">
                   <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground">رائج في المملكة العربية السعودية</span>
+                    <span className="text-xs text-muted-foreground">رائج في الجزائر</span>
                     <span className="text-sm font-bold text-primary group-hover:text-accent transition-colors">#{tag.name}</span>
                     <span className="text-[10px] text-muted-foreground">{tag.count} منشور</span>
                   </div>
@@ -96,7 +96,7 @@ export default function ExplorePage() {
                       </Avatar>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
-                        <span className="text-[10px] text-muted-foreground">@{user.id.slice(0, 8)}</span>
+                        <span className="text-[10px] text-muted-foreground">{user.email}</span>
                         <p className="text-[10px] text-foreground line-clamp-1 mt-0.5">{user.bio}</p>
                       </div>
                     </Link>

@@ -137,7 +137,7 @@ export default function ProfilePage() {
               <p className="text-xs leading-relaxed text-foreground/80">{profile.bio || 'لا يوجد نبذة شخصية.'}</p>
 
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
-                <div className="flex items-center gap-1"><MapPin size={10} /><span>الرياض، السعودية</span></div>
+                <div className="flex items-center gap-1"><MapPin size={10} /><span>الجزائر</span></div>
                 <div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div>
               </div>
 

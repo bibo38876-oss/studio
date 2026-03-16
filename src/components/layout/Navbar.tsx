@@ -35,10 +35,12 @@ export default function Navbar() {
         </div>
 
         <div className={`flex items-center gap-1 transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
-          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full relative">
-            <Bell size={12} className="text-muted-foreground" />
-            <span className="absolute top-1 left-1 w-1 h-1 bg-accent rounded-full border border-background"></span>
-          </Button>
+          <Link href="/notifications">
+            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full relative">
+              <Bell size={12} className="text-muted-foreground" />
+              <span className="absolute top-1 left-1 w-1 h-1 bg-accent rounded-full border border-background"></span>
+            </Button>
+          </Link>
         </div>
       </div>
     </nav>
