@@ -9,14 +9,12 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Force Deploy ID: security_v12_indexed_access
+    // Force Deploy ID: security_v15_reposts_support
 
     match /posts/{postId} {
-      // السماح للقراءة والقائمة لجميع المسجلين لرؤية المحتوى
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
-      // الحذف فقط للمالك
       allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
 
       match /likes/{userId} {
@@ -49,8 +47,9 @@ service cloud.firestore {
         allow write: if isSignedIn();
       }
       
-      match /bookmarks/{postRef} {
-        allow read, write: if isOwner(userId);
+      match /reposts/{postId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId);
       }
     }
 

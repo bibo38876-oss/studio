@@ -39,6 +39,7 @@ interface PostData {
   createdAt: any;
   likesCount?: number;
   commentsCount?: number;
+  repostsCount?: number;
   hashtags?: string[];
   email?: string;
 }
@@ -59,6 +60,14 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const { data: likeData } = useDoc(likeRef);
   const isLiked = !!likeData;
+
+  const repostRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid, 'reposts', post.id);
+  }, [firestore, post.id, user]);
+
+  const { data: repostData } = useDoc(repostRef);
+  const isReposted = !!repostData;
 
   const formattedDate = post.createdAt?.toDate 
     ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ar })
@@ -85,6 +94,46 @@ export default function PostCard({ post }: { post: PostData }) {
         const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
         setDocumentNonBlocking(notifRef, {
           type: 'like',
+          fromUserId: user.uid,
+          fromUsername: user.displayName || 'مستخدم تواصل',
+          postId: post.id,
+          createdAt: serverTimestamp(),
+          read: false
+        }, { merge: true });
+      }
+    }
+  };
+
+  const handleRepost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isAnonymous) {
+      router.push('/login');
+      return;
+    }
+    if (!user || !firestore) return;
+
+    const postRef = doc(firestore, 'posts', post.id);
+    const userRepostRef = doc(firestore, 'users', user.uid, 'reposts', post.id);
+
+    if (isReposted) {
+      deleteDocumentNonBlocking(userRepostRef);
+      updateDoc(postRef, { repostsCount: increment(-1) });
+      toast({ description: "تم إزالة إعادة النشر" });
+    } else {
+      setDocumentNonBlocking(userRepostRef, { 
+        postId: post.id, 
+        repostedAt: serverTimestamp(),
+        originalAuthorId: post.authorId,
+        // تخزين نسخة من البيانات للعرض السريع في التبويب
+        postData: { ...post, createdAt: post.createdAt?.toDate()?.toISOString() || new Date().toISOString() }
+      }, { merge: true });
+      updateDoc(postRef, { repostsCount: increment(1) });
+      toast({ description: "تم إعادة النشر" });
+      
+      if (post.authorId !== user.uid) {
+        const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+        setDocumentNonBlocking(notifRef, {
+          type: 'mention', // سنستخدمها كرمز لإعادة النشر في الوقت الحالي
           fromUserId: user.uid,
           fromUsername: user.displayName || 'مستخدم تواصل',
           postId: post.id,
@@ -205,8 +254,14 @@ export default function PostCard({ post }: { post: PostData }) {
             <span className="text-[10px] font-bold">{post.commentsCount || 0}</span>
           </Button>
 
-          <Button variant="ghost" size="sm" className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none hover:bg-secondary/50" onClick={(e) => e.stopPropagation()}>
-            <Repeat size={16} />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`h-8 flex-1 gap-1.5 rounded-none transition-colors ${isReposted ? 'text-green-500 bg-green-500/5' : 'text-muted-foreground hover:bg-secondary/50'}`}
+            onClick={handleRepost}
+          >
+            <Repeat size={16} className={isReposted ? "stroke-[3px]" : ""} />
+            <span className="text-[10px] font-bold">{post.repostsCount || 0}</span>
           </Button>
 
           <Button variant="ghost" size="sm" className="h-8 flex-1 text-muted-foreground rounded-none hover:bg-secondary/50" onClick={(e) => e.stopPropagation()}>

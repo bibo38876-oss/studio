@@ -29,51 +29,34 @@
         "authorName": { "type": "string" },
         "authorAvatar": { "type": "string" },
         "content": { "type": "string" },
-        "mediaUrl": { "type": "string" },
         "mediaUrls": { "type": "array", "items": { "type": "string" } },
         "mediaType": { "type": "string", "enum": ["image", "video"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "hashtags": { "type": "array", "items": { "type": "string" } },
         "likesCount": { "type": "number" },
-        "commentsCount": { "type": "number" }
+        "commentsCount": { "type": "number" },
+        "repostsCount": { "type": "number" }
       },
       "required": ["id", "authorId", "content", "createdAt"]
     },
-    "Group": {
-      "title": "Group",
+    "Repost": {
+      "title": "Repost",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "creatorId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "membersCount": { "type": "number" }
-      },
-      "required": ["name", "creatorId", "createdAt"]
-    },
-    "GroupMessage": {
-      "title": "GroupMessage",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "senderId": { "type": "string" },
-        "senderName": { "type": "string" },
-        "content": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["senderId", "content", "createdAt"]
+        "postId": { "type": "string" },
+        "repostedAt": { "type": "string", "format": "date-time" },
+        "originalAuthorId": { "type": "string" }
+      }
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": ["password"]
   },
   "firestore": {
     "structure": [
       { "path": "users/{userId}", "definition": { "entityName": "User" } },
-      { "path": "posts/{postId}", "definition": { "entityName": "Post" } },
-      { "path": "groups/{groupId}", "definition": { "entityName": "Group" } },
-      { "path": "groups/{groupId}/messages/{messageId}", "definition": { "entityName": "GroupMessage" } }
+      { "path": "users/{userId}/reposts/{postId}", "definition": { "entityName": "Repost" } },
+      { "path": "posts/{postId}", "definition": { "entityName": "Post" } }
     ],
     "indexes": [
       {
@@ -82,8 +65,7 @@
         "fields": [
           { "fieldPath": "authorId", "order": "ASCENDING" },
           { "fieldPath": "createdAt", "order": "DESCENDING" }
-        ],
-        "description": "ضروري لعرض المنشورات في الملف الشخصي ولخلاصة المتابعة (IN operator)."
+        ]
       }
     ]
   }

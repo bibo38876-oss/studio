@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
@@ -40,7 +40,7 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // استعلام منشورات المستخدم المعروض - يتطلب الفهرس الذي قمت بإنشائه في الصورة
+  // استعلام منشورات المستخدم
   const postsQuery = useMemoFirebase(() => {
     if (!firestore || !id || !currentUser?.uid) return null;
     return query(
@@ -51,6 +51,17 @@ export default function ProfilePage() {
   }, [firestore, id, currentUser?.uid]);
 
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
+
+  // استعلام المعاد نشرها
+  const repostsQuery = useMemoFirebase(() => {
+    if (!firestore || !id || !currentUser?.uid) return null;
+    return query(
+      collection(firestore, 'users', id, 'reposts'),
+      orderBy('repostedAt', 'desc')
+    );
+  }, [firestore, id, currentUser?.uid]);
+
+  const { data: reposts, isLoading: isRepostsLoading } = useCollection(repostsQuery);
 
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
@@ -190,9 +201,16 @@ export default function ProfilePage() {
         </div>
 
         <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0 mb-0.5 sticky top-7 z-40 bg-background/80 backdrop-blur-md">
-            <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold h-full">المنشورات</TabsTrigger>
-            <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold h-full">الإعجابات</TabsTrigger>
+          <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0 mb-0.5 sticky top-7 z-40 bg-background/80 backdrop-blur-md overflow-x-auto no-scrollbar">
+            <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">
+              المنشورات
+              <span className="text-[9px] opacity-50">({posts?.length || 0})</span>
+            </TabsTrigger>
+            <TabsTrigger value="reposts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">
+              المعاد نشرها
+              <span className="text-[9px] opacity-50">({reposts?.length || 0})</span>
+            </TabsTrigger>
+            <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 text-[10px] font-bold h-full shrink-0">الإعجابات</TabsTrigger>
           </TabsList>
           
           <TabsContent value="posts" className="mt-0 space-y-[1px]">
@@ -203,6 +221,27 @@ export default function ProfilePage() {
             ) : (
               <div className="text-center py-24 bg-card px-8 border-b">
                 <p className="text-muted-foreground text-[10px]">لا توجد منشورات لهذا المستخدم بعد.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="reposts" className="mt-0 space-y-[1px]">
+            {isRepostsLoading ? (
+              <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div>
+            ) : reposts && reposts.length > 0 ? (
+              reposts.map((repost: any) => (
+                <div key={repost.id} className="relative">
+                  <div className="bg-muted/30 px-4 py-1 flex items-center gap-2 text-[9px] text-muted-foreground font-bold border-b border-muted/50">
+                    <Repeat size={10} className="text-green-500" />
+                    أعاد نشر هذا
+                  </div>
+                  <PostCard post={repost.postData} />
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center">
+                <Repeat size={30} className="text-muted-foreground/20 mb-3" />
+                <p className="text-muted-foreground text-[10px]">لا توجد منشورات معاد نشرها بعد.</p>
               </div>
             )}
           </TabsContent>
