@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -40,19 +41,16 @@ export default function AdminPage() {
     }
   }, [isAdminUser, isUserLoading, router]);
 
-  // جلب المستخدمين - مسموح فقط للأدمن
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !isAdminUser) return null;
     return query(collection(firestore, 'users'), limit(100));
   }, [firestore, isAdminUser]);
 
-  // جلب المنشورات العامة للإحصائيات - مسموح فقط للأدمن
   const postsQuery = useMemoFirebase(() => {
     if (!firestore || !isAdminUser) return null;
     return query(collection(firestore, 'posts'), limit(500));
   }, [firestore, isAdminUser]);
 
-  // جلب المنشورات المبلغ عنها - مسموح فقط للأدمن
   const reportedPostsQuery = useMemoFirebase(() => {
     if (!firestore || !isAdminUser) return null;
     return query(collection(firestore, 'posts'), where('reportsCount', '>=', 10), limit(50));
