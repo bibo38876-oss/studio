@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3 } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import CommentsDialog from "./CommentsDialog";
-import VerifiedBadge, { VerificationType } from '../ui/VerifiedBadge';
+import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import {
   Carousel,
   CarouselContent,
@@ -55,16 +55,14 @@ export default function PostCard({ post }: { post: PostData }) {
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
-  // جلب بيانات المؤلف للتأكد من حالة التوثيق الحالية
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !post.authorId) return null;
     return doc(firestore, 'users', post.authorId);
   }, [firestore, post.authorId]);
   const { data: authorData } = useDoc(authorRef);
 
-  // حساب نوع التوثيق: هاردكود للإدارة، أو من البيانات المخزنة
   const verificationType: VerificationType = post.email === 'adelbenmaza8@gmail.com' 
-    ? 'grey' 
+    ? 'blue' 
     : (authorData?.verificationType || post.authorVerificationType || 'none');
 
   const likeRef = useMemoFirebase(() => {

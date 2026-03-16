@@ -45,7 +45,6 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // جلب بيانات المستخدم الحالي للتحقق من الصلاحيات (Admin)
   const currentUserProfileRef = useMemoFirebase(() => {
     if (!firestore || !currentUser?.uid) return null;
     return doc(firestore, 'users', currentUser.uid);
@@ -77,12 +76,10 @@ export default function ProfilePage() {
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
   
-  // التحقق من أن المستخدم هو المسؤول
   const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === ADMIN_EMAIL;
   
-  // حساب نوع التوثيق للملف الشخصي
   const verificationType: VerificationType = profile?.email === ADMIN_EMAIL 
-    ? 'grey' 
+    ? 'blue' 
     : (profile?.verificationType || 'none');
 
   const handleUpdateProfile = () => {
@@ -151,7 +148,6 @@ export default function ProfilePage() {
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
-            {/* زر الإدارة فوق البنر */}
             {isAdmin && isOwnProfile && (
               <div className="absolute top-2 right-2 z-10">
                 <Button 

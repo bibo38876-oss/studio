@@ -8,10 +8,10 @@ import { collection, query, doc, limit } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Search, ShieldCheck, UserCheck, CheckCircle2 } from 'lucide-react';
+import { Loader2, Search, ShieldCheck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
+import VerifiedBadge from '@/components/ui/VerifiedBadge';
 
 export default function AdminPage() {
   const { firestore, user: currentUser, isUserLoading } = useFirebase();
@@ -43,8 +43,6 @@ export default function AdminPage() {
     if (!firestore) return;
     updateDocumentNonBlocking(doc(firestore, 'users', userId), {
       verificationType: type,
-      // If gold or grey, we can also ensure role is set if needed
-      role: type === 'grey' ? 'admin' : 'user'
     });
     toast({ description: "تم تحديث حالة التوثيق بنجاح." });
   };
@@ -90,7 +88,7 @@ export default function AdminPage() {
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-primary">{user.username}</span>
-                      <VerifiedBadge type={user.verificationType || 'none'} />
+                      <VerifiedBadge type={user.email === ADMIN_EMAIL ? 'blue' : (user.verificationType || 'none')} />
                     </div>
                     <span className="text-[10px] text-muted-foreground">{user.email}</span>
                   </div>
@@ -98,7 +96,7 @@ export default function AdminPage() {
 
                 <div className="flex items-center gap-2">
                   <Select 
-                    defaultValue={user.verificationType || 'none'} 
+                    defaultValue={user.email === ADMIN_EMAIL ? 'blue' : (user.verificationType || 'none')} 
                     onValueChange={(val) => handleUpdateVerification(user.id, val)}
                   >
                     <SelectTrigger className="h-8 text-[10px] w-[120px] rounded-none bg-secondary/50 border-none">
@@ -108,7 +106,6 @@ export default function AdminPage() {
                       <SelectItem value="none">بدون توثيق</SelectItem>
                       <SelectItem value="blue">أزرق (مستخدم)</SelectItem>
                       <SelectItem value="gold">ذهبي (إعلامي)</SelectItem>
-                      <SelectItem value="grey">رمادي (مسؤول)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
