@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Bookmark, ChevronRight } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Bookmark } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,6 @@ import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, increment, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -22,6 +21,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import CommentsDialog from "./CommentsDialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 
 interface PostData {
   id: string;
@@ -30,6 +34,7 @@ interface PostData {
   authorAvatar?: string;
   content: string;
   mediaUrl?: string;
+  mediaUrls?: string[];
   mediaType?: 'image' | 'video';
   createdAt: any;
   likesCount?: number;
@@ -112,15 +117,17 @@ export default function PostCard({ post }: { post: PostData }) {
     }
   };
 
+  const allMedia = post.mediaUrls || (post.mediaUrl ? [post.mediaUrl] : []);
+
   return (
     <>
       <Card 
-        className="border-none shadow-none rounded-none w-full bg-card mb-[1px] last:mb-0 transition-all duration-200 hover:bg-secondary/20 cursor-pointer active:scale-[0.99]"
+        className="border-none shadow-none rounded-none w-full bg-card mb-[1px] last:mb-0 transition-all duration-200 hover:bg-secondary/20 cursor-pointer active:scale-[0.99] border-b"
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
           <Link href={`/profile/${post.authorId}`} className="flex gap-2.5 group" onClick={(e) => e.stopPropagation()}>
-            <Avatar className="h-9 w-9 border border-muted/20 transition-transform group-hover:scale-105">
+            <Avatar className="h-9 w-9 border border-muted/20 transition-transform group-hover:scale-105 rounded-none">
               <AvatarImage src={post.authorAvatar} alt={post.authorName} />
               <AvatarFallback>{post.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
@@ -155,15 +162,24 @@ export default function PostCard({ post }: { post: PostData }) {
             {post.content}
           </p>
           
-          {post.mediaUrl && (
-            <div className="relative w-full aspect-square bg-muted mt-2 overflow-hidden">
-              <Image 
-                src={post.mediaUrl} 
-                alt="Post media" 
-                fill 
-                className="object-cover transition-transform duration-500 hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 600px"
-              />
+          {allMedia.length > 0 && (
+            <div className="w-full mt-2 bg-muted/20">
+              <Carousel className="w-full">
+                <CarouselContent className="-ml-0">
+                  {allMedia.map((url, index) => (
+                    <CarouselItem key={index} className="pl-0">
+                      <div className="relative w-full">
+                        <img 
+                          src={url} 
+                          alt={`Post media ${index + 1}`} 
+                          className="w-full h-auto block"
+                          style={{ maxHeight: '80vh', objectFit: 'contain' }}
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
             </div>
           )}
         </CardContent>
@@ -203,7 +219,7 @@ export default function PostCard({ post }: { post: PostData }) {
       </Card>
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-        <DialogContent className="sm:max-w-full h-[100dvh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col sm:max-w-[600px] sm:h-[90vh] sm:rounded-none animate-in fade-in zoom-in-95 duration-200">
+        <DialogContent className="sm:max-w-full h-[100dvh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col sm:max-w-[600px] sm:h-[95vh] sm:rounded-none animate-in fade-in zoom-in-95 duration-200">
           <DialogTitle className="sr-only">تفاصيل المنشور والتعليقات</DialogTitle>
           <CommentsDialog 
             postId={post.id} 

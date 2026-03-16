@@ -30,6 +30,7 @@
         "authorAvatar": { "type": "string" },
         "content": { "type": "string" },
         "mediaUrl": { "type": "string" },
+        "mediaUrls": { "type": "array", "items": { "type": "string" } },
         "mediaType": { "type": "string", "enum": ["image", "video"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "hashtags": { "type": "array", "items": { "type": "string" } },

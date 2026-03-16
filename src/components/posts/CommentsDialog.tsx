@@ -11,7 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Send, ChevronRight, MessageSquareText } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import Image from 'next/image';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 
 interface CommentsDialogProps {
   postId: string;
@@ -27,7 +31,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
 
   const isAnonymous = !user || user.isAnonymous;
 
-  // استرجاع ملف المستخدم الحالي لبيانات التعليق
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user || isAnonymous) return null;
     return doc(firestore, 'users', user.uid);
@@ -52,7 +55,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     if (!commentText.trim() || !user || !firestore) return;
 
     const content = commentText.trim();
-    setCommentText(''); // مسح المدخل فوراً لتحسين تجربة الاستجابة
+    setCommentText('');
 
     const commentData = {
       authorId: user.uid,
@@ -81,9 +84,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     }
   };
 
+  const allMedia = post?.mediaUrls || (post?.mediaUrl ? [post.mediaUrl] : []);
+
   return (
     <div className="flex flex-col h-full bg-background animate-in slide-in-from-left-2 duration-300">
-      {/* Header - Slim */}
       <div className="flex items-center gap-4 p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-20 h-10">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full hover:bg-secondary transition-colors">
           <ChevronRight size={20} />
@@ -96,9 +100,9 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
 
       <div className="flex-1 overflow-y-auto pb-20 scroll-smooth">
         {post && (
-          <div className="p-4 border-b bg-muted/10">
-            <div className="flex gap-3 mb-4">
-              <Avatar className="h-10 w-10 border border-muted/20">
+          <div className="pb-4 border-b bg-muted/5">
+            <div className="flex gap-3 p-4">
+              <Avatar className="h-10 w-10 border border-muted/20 rounded-none">
                 <AvatarImage src={post.authorAvatar} alt={post.authorName} />
                 <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
               </Avatar>
@@ -107,12 +111,25 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <span className="text-[10px] text-muted-foreground">@{post.email?.split('@')[0] || 'مستخدم'}</span>
               </div>
             </div>
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap mb-4 tracking-tight">
+            <p className="px-4 pb-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
               {post.content}
             </p>
-            {post.mediaUrl && (
-              <div className="relative w-full aspect-square bg-muted rounded-none overflow-hidden mb-4 border">
-                <Image src={post.mediaUrl} alt="Post media" fill className="object-cover" sizes="600px" />
+            {allMedia.length > 0 && (
+              <div className="w-full bg-black/5">
+                <Carousel className="w-full">
+                  <CarouselContent className="-ml-0">
+                    {allMedia.map((url: string, index: number) => (
+                      <CarouselItem key={index} className="pl-0">
+                        <img 
+                          src={url} 
+                          alt={`Post detail ${index + 1}`} 
+                          className="w-full h-auto block"
+                          style={{ maxHeight: '70vh', objectFit: 'contain' }}
+                        />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
               </div>
             )}
           </div>
@@ -131,7 +148,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           ) : comments && comments.length > 0 ? (
             comments.map((comment: any) => (
               <div key={comment.id} className="flex gap-3 animate-in fade-in slide-in-from-right-1 duration-300">
-                <Avatar className="h-8 w-8 border">
+                <Avatar className="h-8 w-8 border rounded-none">
                   <AvatarImage src={comment.authorAvatar} alt={comment.authorName} />
                   <AvatarFallback>{comment.authorName?.[0]}</AvatarFallback>
                 </Avatar>
