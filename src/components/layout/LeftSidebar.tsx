@@ -28,7 +28,6 @@ export default function LeftSidebar() {
     );
   }
 
-  // التأكد من أن الإدارة تظهر للمسؤول دائماً
   const isAdmin = user?.email === ADMIN_EMAIL || profile?.role === 'admin';
 
   return (

@@ -205,7 +205,7 @@ export default function ProfilePage() {
       <Navbar />
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
-          <div className="h-28 bg-primary/10 relative">
+          <div className="h-32 bg-primary/10 relative">
             {profile.bannerUrl && <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover" />}
             <div className="absolute top-2 left-2 flex gap-2">
               <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
@@ -234,13 +234,30 @@ export default function ProfilePage() {
               {isOwnProfile && <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20" onClick={() => router.push('/settings')}><Settings size={14} /></Button>}
             </div>
           </div>
+
           <div className="px-4 pb-6 relative">
+            {/* Header Content like Twitter (X) */}
             <div className="flex flex-row justify-between items-start -mt-10 mb-4">
-              {/* أزرار التحكم في الجهة اليمنى لتماثل البطاقة */}
+              {/* Avatar and Name on the Right (RTL) */}
+              <div className="flex flex-col items-start text-right">
+                <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
+                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
+                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
+                </Avatar>
+                <div className="text-right">
+                  <div className="flex items-center gap-1.5 justify-start">
+                    <span className="text-md font-bold text-primary">{profile.username}</span>
+                    <VerifiedBadge type={verificationType} size={16} />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{profile.email}</p>
+                </div>
+              </div>
+
+              {/* Action Buttons on the Left (RTL) */}
               <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogTrigger asChild><Button variant="outline" className="rounded-full gap-2 font-bold h-8 text-[11px]"><Edit3 size={12} /> تعديل الملف</Button></DialogTrigger>
+                    <DialogTrigger asChild><Button variant="outline" className="rounded-full gap-2 font-bold h-8 text-[11px] px-6">تعديل الملف</Button></DialogTrigger>
                     <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                       <DialogHeader><DialogTitle className="text-sm font-bold">تعديل الملف الشخصي</DialogTitle></DialogHeader>
                       <div className="grid gap-6 py-4">
@@ -283,26 +300,14 @@ export default function ProfilePage() {
                   </Button>
                 )}
               </div>
-
-              {/* معلومات المستخدم في الجهة اليسرى لتماثل البطاقة */}
-              <div className="flex flex-col items-start text-right">
-                <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
-                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
-                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
-                </Avatar>
-                <div className="text-right">
-                  <div className="flex items-center gap-1.5 justify-start">
-                    <span className="text-md font-bold text-primary">{profile.username}</span>
-                    <VerifiedBadge type={verificationType} size={16} />
-                  </div>
-                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
-                </div>
-              </div>
             </div>
 
             <div className="space-y-3 mt-4">
               <p className="text-xs leading-relaxed text-foreground/80 text-right">{profile.bio || 'لا يوجد نبذة شخصية.'}</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground justify-end"><div className="flex items-center gap-1"><MapPin size={10} /><span>تيمقاد، الجزائر</span></div><div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div></div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground justify-end">
+                <div className="flex items-center gap-1"><MapPin size={10} /><span>تيمقاد، الجزائر</span></div>
+                <div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div>
+              </div>
               <div className="flex gap-4 pt-1 justify-end">
                 <Link href={`/profile/${id}/connections?tab=following`} className="flex gap-1 items-center text-xs hover:bg-secondary/50 px-2 py-1 rounded-sm transition-colors">
                   <span className="font-bold text-primary">{profile.followingIds?.length || 0}</span>
@@ -334,7 +339,23 @@ export default function ProfilePage() {
               {isPostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : posts && posts.length > 0 ? posts.map((post: any) => <PostCard key={post.id} post={post} />) : <div className="text-center py-24 bg-card px-8 border-b"><p className="text-muted-foreground text-[10px]">لا توجد منشورات في تيمقاد بعد.</p></div>}
             </TabsContent>
             <TabsContent value="reposts" className="mt-0 space-y-[1px]">
-              {isRepostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : reposts && reposts.length > 0 ? reposts.map((repost: any) => (<div key={repost.id} className="relative"><div className="bg-muted/30 px-4 py-1 flex items-center gap-2 text-[9px] text-muted-foreground font-bold border-b text-right"><Repeat size={10} className="text-green-500" /> أعاد نشر هذا</div><PostCard post={repost.postData} /></div>)) : <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center"><Repeat size={30} className="text-muted-foreground/20 mb-3" /><p className="text-muted-foreground text-[10px]">لا توجد منشورات معاد نشرها.</p></div>}
+              {isRepostsLoading ? (
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div>
+              ) : reposts && reposts.length > 0 ? (
+                reposts.map((repost: any) => (
+                  <div key={repost.id} className="relative">
+                    <div className="bg-muted/30 px-4 py-1 flex items-center gap-2 text-[9px] text-muted-foreground font-bold border-b text-right">
+                      <Repeat size={10} className="text-green-500" /> أعاد نشر هذا
+                    </div>
+                    <PostCard post={repost.postData} />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center">
+                  <Repeat size={30} className="text-muted-foreground/20 mb-3" />
+                  <p className="text-muted-foreground text-[10px]">لا توجد منشورات معاد نشرها.</p>
+                </div>
+              )}
             </TabsContent>
             <TabsContent value="likes" className="mt-0 space-y-[1px]">
               {isLikesLoading ? (

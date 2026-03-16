@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, increment, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, runTransaction } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -158,16 +158,16 @@ export default function PostCard({ post }: { post: PostData }) {
   return (
     <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
       <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
-        {/* النقاط الثلاث في الجهة اليمنى لتماثل اتجاهات تيمقاد */}
+        {/* Actions Button (More) on the LEFT (Twitter RTL style) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="text-xs">
+          <DropdownMenuContent align="start" className="text-xs">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
             {isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteDocumentNonBlocking(doc(firestore!, 'posts', displayPost.id)); toast({ description: "تم الحذف" }); }} className="gap-2 text-destructive cursor-pointer"><Trash2 size={12} /> حذف المنشور</DropdownMenuItem>}
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* معلومات المستخدم في الجهة اليسرى (الشارة ثم الاسم) */}
+        {/* User Info on the RIGHT (Badge then Name) */}
         <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
           <div className="flex flex-col text-right">
             <div className="flex items-center gap-1.5 leading-tight justify-end">
