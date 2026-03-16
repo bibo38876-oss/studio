@@ -7,10 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, EyeOff, Eye } from 'lucide-react';
+import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -111,43 +112,86 @@ export default function SettingsPage() {
         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl" />
         <div className="relative z-10 container max-w-xl mx-auto flex flex-col items-center gap-4">
           <button onClick={() => router.back()} className="absolute right-0 top-0 text-white/80 hover:text-white transition-colors"><ArrowRight size={20} /></button>
-          <div className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center mb-2"><span className="text-2xl font-bold text-white font-headline tracking-tighter">ت</span></div>
-          <div className="text-center"><h1 className="text-xl font-bold text-white font-headline tracking-tighter">تواصل | Tawasul</h1><p className="text-[10px] text-white/60 mt-1 uppercase tracking-widest font-medium">إعدادات المنصة</p></div>
+          <div className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center mb-2">
+            <span className="text-2xl font-bold text-white font-headline tracking-tighter">ت</span>
+          </div>
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-white font-headline tracking-tighter">تواصل | Tawasul</h1>
+            <p className="text-[10px] text-white/60 mt-1 uppercase tracking-widest font-medium">إعدادات المنصة</p>
+          </div>
         </div>
       </div>
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
-        <Card className="border-none shadow-sm rounded-none bg-card mb-4">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">{isDarkMode ? <Moon size={18} /> : <Sun size={18} />}</div>
-              <div className="flex flex-col"><span className="text-xs font-bold text-primary">المظهر</span><span className="text-[9px] text-muted-foreground">{isDarkMode ? 'الوضع الليلي نشط' : 'الوضع النهاري نشط'}</span></div>
-            </div><Switch checked={isDarkMode} onCheckedChange={toggleDarkMode} />
+        {/* المظهر */}
+        <Card className="border-none shadow-sm rounded-none bg-card mb-4 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">
+              <Label htmlFor="dark-mode" className="flex items-center gap-4 flex-1 cursor-pointer">
+                <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary shrink-0">
+                  {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-primary">المظهر</span>
+                  <span className="text-[9px] text-muted-foreground">{isDarkMode ? 'الوضع الليلي نشط' : 'الوضع النهاري نشط'}</span>
+                </div>
+              </Label>
+              <Switch id="dark-mode" checked={isDarkMode} onCheckedChange={toggleDarkMode} />
+            </div>
           </CardContent>
         </Card>
 
+        {/* الخصوصية والأمان */}
         <div className="space-y-2">
           <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mb-1">الخصوصية والأمان</h2>
-          <Card className="border-none shadow-sm rounded-none bg-card">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary"><Shield size={16} /></div>
-                <div className="flex flex-col"><span className="text-xs font-bold text-primary">حساب خاص</span><span className="text-[9px] text-muted-foreground">فقط المتابعون يمكنهم رؤية منشوراتك</span></div>
-              </div><Switch checked={profile?.isPrivate || false} onCheckedChange={togglePrivateAccount} />
+          
+          <Card className="border-none shadow-sm rounded-none bg-card overflow-hidden">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">
+                <Label htmlFor="private-account" className="flex items-center gap-4 flex-1 cursor-pointer">
+                  <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary shrink-0">
+                    <Shield size={16} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-primary">حساب خاص</span>
+                    <span className="text-[9px] text-muted-foreground">فقط المتابعون يمكنهم رؤية منشوراتك</span>
+                  </div>
+                </Label>
+                <Switch id="private-account" checked={profile?.isPrivate || false} onCheckedChange={togglePrivateAccount} />
+              </div>
             </CardContent>
           </Card>
 
           <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
             <DialogTrigger asChild>
-              <Card className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group">
+              <Card className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group overflow-hidden">
                 <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4"><div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all"><Lock size={16} /></div><div className="flex flex-col"><span className="text-xs font-bold text-primary">أمان الحساب</span><span className="text-[9px] text-muted-foreground">تغيير كلمة المرور</span></div></div><ChevronLeft size={14} className="text-muted-foreground/30" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                      <Lock size={16} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-primary">أمان الحساب</span>
+                      <span className="text-[9px] text-muted-foreground">تغيير كلمة المرور</span>
+                    </div>
+                  </div>
+                  <ChevronLeft size={14} className="text-muted-foreground/30" />
                 </CardContent>
               </Card>
             </DialogTrigger>
-            <DialogContent><DialogHeader><DialogTitle className="text-sm font-bold">تغيير كلمة المرور</DialogTitle><DialogDescription className="text-[10px]">أدخل كلمة المرور الجديدة.</DialogDescription></DialogHeader>
-              <div className="py-4"><Input type="password" placeholder="كلمة المرور الجديدة..." className="h-9 rounded-none bg-secondary/30 border-none text-xs" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /></div>
-              <DialogFooter><Button className="w-full rounded-full text-xs h-9 font-bold" onClick={handleChangePassword} disabled={isUpdatingPassword}>{isUpdatingPassword ? <Loader2 className="animate-spin h-4 w-4" /> : "تحديث كلمة المرور"}</Button></DialogFooter>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="text-sm font-bold">تغيير كلمة المرور</DialogTitle>
+                <DialogDescription className="text-[10px]">أدخل كلمة المرور الجديدة.</DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Input type="password" placeholder="كلمة المرور الجديدة..." className="h-9 rounded-none bg-secondary/30 border-none text-xs" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              </div>
+              <DialogFooter>
+                <Button className="w-full rounded-full text-xs h-9 font-bold" onClick={handleChangePassword} disabled={isUpdatingPassword}>
+                  {isUpdatingPassword ? <Loader2 className="animate-spin h-4 w-4" /> : "تحديث كلمة المرور"}
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
 
@@ -157,15 +201,41 @@ export default function SettingsPage() {
             { icon: <HelpCircle size={16} />, label: 'المساعدة', desc: 'مركز الدعم' },
           ].map((option, i) => (
             <Card key={i} className="border-none shadow-sm rounded-none bg-card opacity-60 cursor-not-allowed group">
-              <CardContent className="p-4 flex items-center justify-between"><div className="flex items-center gap-4"><div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">{option.icon}</div><div className="flex flex-col"><div className="flex items-center gap-2"><span className="text-xs font-bold text-primary">{option.label}</span><Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 border-primary/20 text-primary/70 rounded-none">قيد التطوير</Badge></div><span className="text-[9px] text-muted-foreground">{option.desc}</span></div></div><ChevronLeft size={14} className="text-muted-foreground/30" /></CardContent>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">{option.icon}</div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-primary">{option.label}</span>
+                      <Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 border-primary/20 text-primary/70 rounded-none">قيد التطوير</Badge>
+                    </div>
+                    <span className="text-[9px] text-muted-foreground">{option.desc}</span>
+                  </div>
+                </div>
+                <ChevronLeft size={14} className="text-muted-foreground/30" />
+              </CardContent>
             </Card>
           ))}
         </div>
 
-        <Card className="border-none shadow-sm rounded-none bg-card mt-8 hover:bg-red-50 transition-colors cursor-pointer border-r-4 border-r-destructive">
-          <CardContent className="p-0"><button onClick={handleLogout} className="w-full p-4 flex items-center justify-between text-destructive"><div className="flex items-center gap-4"><div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center"><LogOut size={16} /></div><div className="flex flex-col text-right"><span className="text-xs font-bold">تسجيل الخروج</span><span className="text-[9px] opacity-70">الخروج من الحساب</span></div></div></button></CardContent>
+        <Card className="border-none shadow-sm rounded-none bg-card mt-8 hover:bg-red-50 transition-colors cursor-pointer border-r-4 border-r-destructive overflow-hidden">
+          <CardContent className="p-0">
+            <button onClick={handleLogout} className="w-full p-4 flex items-center justify-between text-destructive">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center"><LogOut size={16} /></div>
+                <div className="flex flex-col text-right">
+                  <span className="text-xs font-bold">تسجيل الخروج</span>
+                  <span className="text-[9px] opacity-70">الخروج من الحساب</span>
+                </div>
+              </div>
+            </button>
+          </CardContent>
         </Card>
-        <div className="pt-10 text-center space-y-1"><p className="text-[10px] font-bold text-primary/40 tracking-tighter uppercase">Tawasul Platform</p><p className="text-[8px] text-muted-foreground/50">إصدار 1.0.0 • صنع بكل فخر للمجتمع العربي</p></div>
+
+        <div className="pt-10 text-center space-y-1">
+          <p className="text-[10px] font-bold text-primary/40 tracking-tighter uppercase">Tawasul Platform</p>
+          <p className="text-[8px] text-muted-foreground/50">إصدار 1.0.0 • صنع بكل فخر للمجتمع العربي</p>
+        </div>
       </main>
     </div>
   );
