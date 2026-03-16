@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
+import TimgadLogo from '@/components/ui/Logo';
 
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -160,7 +161,7 @@ export default function ProfilePage() {
         bannerUrl: editBanner || profile?.bannerUrl || ""
       });
       setIsEditOpen(false);
-      toast({ description: "تم تحديث الملف الشخصي بنجاح." });
+      toast({ description: "تم تحديث ملفك في تيمقاد بنجاح." });
     } catch (error) {
       toast({ variant: "destructive", description: "فشل تحديث الملف الشخصي." });
     } finally {
@@ -184,7 +185,7 @@ export default function ProfilePage() {
       addDocumentNonBlocking(collection(firestore, 'users', id, 'notifications'), {
         type: 'follow',
         fromUserId: currentUser.uid,
-        fromUsername: currentUserProfile?.username || currentUser.displayName || 'مستخدم تواصل',
+        fromUsername: currentUserProfile?.username || currentUser.displayName || 'مستكشف تيمقاد',
         fromAvatar: currentUserProfile?.profilePictureUrl || '',
         createdAt: serverTimestamp(),
         read: false
@@ -208,7 +209,7 @@ export default function ProfilePage() {
             {isAdmin && isOwnProfile && (
               <div className="absolute top-2 right-2 z-10">
                 <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold bg-black/20 text-white backdrop-blur-md rounded-full gap-1 hover:bg-black/40 border border-white/10" onClick={() => router.push('/admin')}>
-                  <ShieldCheck size={12} className="text-accent" /> إدارة النظام
+                  <ShieldCheck size={12} className="text-accent" /> إدارة تيمقاد
                 </Button>
               </div>
             )}
@@ -219,15 +220,15 @@ export default function ProfilePage() {
                   <DialogTitle className="sr-only">مشاركة الملف الشخصي</DialogTitle>
                   <div className="bg-primary p-6 text-center text-white space-y-4">
                     <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-md">
-                      <span className="text-2xl font-bold font-headline tracking-tighter">ت</span>
+                      <TimgadLogo size={32} variant="white" />
                     </div>
                     <div className="space-y-1">
-                      <h2 className="text-xl font-bold font-headline tracking-tighter">تواصل | Tawasul</h2>
-                      <p className="text-[10px] opacity-80">منصة تواصل اجتماعي عربية متطورة ومبسطة</p>
+                      <h2 className="text-xl font-bold font-headline tracking-tighter">تيمقاد | Timgad</h2>
+                      <p className="text-[10px] opacity-80">منصة اجتماعية عربية عريقة برؤية تقنية عصرية</p>
                     </div>
                   </div>
                   <div className="p-6 space-y-4">
-                    <Card className="border-none bg-secondary/30 rounded-none p-4"><p className="text-xs leading-relaxed text-center font-medium text-primary">انضم إلينا في تواصل، حيث المجتمع العربي يلتقي في بيئة تقنية متطورة.</p></Card>
+                    <Card className="border-none bg-secondary/30 rounded-none p-4"><p className="text-xs leading-relaxed text-center font-medium text-primary">انضم إلينا في تيمقاد، حيث يلتقي التراث بالمستقبل في بيئة تقنية متطورة.</p></Card>
                     <div className="grid grid-cols-3 gap-2">
                       <Button variant="outline" className="rounded-none text-[8px] h-8 font-bold gap-1 px-1" onClick={() => {navigator.clipboard.writeText(window.location.href); toast({description: "تم نسخ الرابط"});}}><Copy size={10} /> نسخ الرابط</Button>
                       <Button className="rounded-none text-[8px] h-8 font-bold gap-1 px-1 bg-green-600" onClick={() => window.open(`https://wa.me/?text=${window.location.href}`)}><ExternalLink size={10} /> واتساب</Button>
@@ -264,7 +265,7 @@ export default function ProfilePage() {
                               <div className="h-16 w-16 rounded-full bg-secondary/30 relative cursor-pointer group overflow-hidden shrink-0" onClick={() => profilePicInputRef.current?.click()}>
                                 {editProfilePic ? <img src={editProfilePic} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-muted-foreground/40 font-bold">{editName?.[0] || 'ت'}</div>}
                                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Camera className="text-white" size={16} /></div>
-                              </div><p className="text-[9px] text-muted-foreground">اضغط لتغيير صورتك.</p>
+                              </div><p className="text-[9px] text-muted-foreground">تغيير صورة ملفك في تيمقاد.</p>
                             </div><input type="file" hidden ref={profilePicInputRef} onChange={(e) => handleImageChange(e, 'profile')} accept="image/*" />
                           </div>
                         </div>
@@ -284,7 +285,7 @@ export default function ProfilePage() {
             <div className="space-y-3">
               <div className="space-y-0.5"><div className="flex items-center gap-1.5"><h1 className="text-md font-bold text-primary">{profile.username}</h1><VerifiedBadge type={verificationType} size={16} /></div><p className="text-[9px] text-muted-foreground">{profile.email}</p></div>
               <p className="text-xs leading-relaxed text-foreground/80">{profile.bio || 'لا يوجد نبذة شخصية.'}</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground"><div className="flex items-center gap-1"><MapPin size={10} /><span>الجزائر</span></div><div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div></div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground"><div className="flex items-center gap-1"><MapPin size={10} /><span>تيمقاد، الجزائر</span></div><div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div></div>
               <div className="flex gap-4 pt-1"><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followingIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">يتابع</span></div><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followerIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">متابع</span></div></div>
             </div>
           </div>
@@ -293,7 +294,7 @@ export default function ProfilePage() {
         {isPrivateAndNotFollowing ? (
           <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center gap-3">
             <Lock size={40} className="text-muted-foreground/30" />
-            <h2 className="text-sm font-bold text-primary">هذا الحساب خاص</h2>
+            <h2 className="text-sm font-bold text-primary">هذا الحساب في تيمقاد خاص</h2>
             <p className="text-[10px] text-muted-foreground max-w-[200px]">يجب عليك متابعة هذا المستخدم لمشاهدة منشوراته وتفاعلاته.</p>
           </div>
         ) : (
@@ -304,7 +305,7 @@ export default function ProfilePage() {
               <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">الإعجابات <span className="text-[9px] opacity-50">({likedPosts?.length || 0})</span></TabsTrigger>
             </TabsList>
             <TabsContent value="posts" className="mt-0 space-y-[1px]">
-              {isPostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : posts && posts.length > 0 ? posts.map((post: any) => <PostCard key={post.id} post={post} />) : <div className="text-center py-24 bg-card px-8 border-b"><p className="text-muted-foreground text-[10px]">لا توجد منشورات.</p></div>}
+              {isPostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : posts && posts.length > 0 ? posts.map((post: any) => <PostCard key={post.id} post={post} />) : <div className="text-center py-24 bg-card px-8 border-b"><p className="text-muted-foreground text-[10px]">لا توجد منشورات في تيمقاد بعد.</p></div>}
             </TabsContent>
             <TabsContent value="reposts" className="mt-0 space-y-[1px]">
               {isRepostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : reposts && reposts.length > 0 ? reposts.map((repost: any) => (<div key={repost.id} className="relative"><div className="bg-muted/30 px-4 py-1 flex items-center gap-2 text-[9px] text-muted-foreground font-bold border-b"><Repeat size={10} className="text-green-500" /> أعاد نشر هذا</div><PostCard post={repost.postData} /></div>)) : <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center"><Repeat size={30} className="text-muted-foreground/20 mb-3" /><p className="text-muted-foreground text-[10px]">لا توجد منشورات معاد نشرها.</p></div>}

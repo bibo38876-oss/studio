@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
+import TimgadLogo from '@/components/ui/Logo';
 
 export default function Navbar() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { firestore, user } = useFirebase();
 
-  // جلب التنبيهات غير المقروءة لإظهار النقطة التنبيهية
   const unreadQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -28,8 +28,9 @@ export default function Navbar() {
     <nav className="fixed top-0 z-50 w-full h-8 border-b bg-background/80 backdrop-blur-md transition-all duration-300">
       <div className="container mx-auto h-full flex items-center justify-between px-4 max-w-5xl gap-4">
         <div className={`flex items-center transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
-          <Link href="/" className="text-xs font-bold text-primary font-headline tracking-tighter whitespace-nowrap">
-            تواصل <span className="text-accent text-[8px]">Tawasul</span>
+          <Link href="/" className="flex items-center gap-1.5 text-xs font-bold text-primary font-headline tracking-tighter whitespace-nowrap">
+            <TimgadLogo size={14} className="text-primary" />
+            تيمقاد <span className="text-accent text-[8px]">Timgad</span>
           </Link>
         </div>
 
@@ -40,7 +41,7 @@ export default function Navbar() {
               className={`absolute right-2.5 top-1/2 -translate-y-1/2 transition-colors ${isSearchFocused ? 'text-primary' : 'text-muted-foreground'}`} 
             />
             <input 
-              placeholder="بحث..." 
+              placeholder="بحث في تيمقاد..." 
               className={`h-6 w-full pr-8 pl-4 bg-secondary/50 border-none rounded-full text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/20 focus:bg-secondary transition-all ${isSearchFocused ? 'shadow-sm' : ''}`}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}

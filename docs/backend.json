@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user profile within the Tawasul social media application.",
+      "description": "Represents a user profile within the Timgad social media application.",
       "properties": {
         "id": { "type": "string" },
         "username": { "type": "string" },
@@ -40,7 +40,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a user post.",
+      "description": "Represents a user post in Timgad.",
       "properties": {
         "id": { "type": "string" },
         "authorId": { "type": "string" },

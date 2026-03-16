@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import TimgadLogo from '@/components/ui/Logo';
 
 export default function LeftSidebar() {
   const { user, firestore } = useFirebase();
@@ -29,14 +30,16 @@ export default function LeftSidebar() {
   return (
     <aside className="hidden md:block w-64 space-y-4">
       <Card className="border-none shadow-none rounded-none overflow-hidden bg-card">
-        <div className="h-16 bg-primary/10 w-full" />
+        <div className="h-16 bg-primary/10 w-full flex items-center justify-center">
+          <TimgadLogo size={32} className="text-primary/40" />
+        </div>
         <CardContent className="relative pt-0 px-4 pb-6">
           <Avatar className="h-16 w-16 absolute -top-8 right-4 border-4 border-card rounded-full bg-background text-primary">
             {profile?.profilePictureUrl ? <AvatarImage src={profile?.profilePictureUrl} alt={profile?.username} /> : null}
             <AvatarFallback className="font-bold text-lg">{profile?.username?.[0] || 'ت'}</AvatarFallback>
           </Avatar>
           <div className="mt-10 space-y-0.5">
-            <h3 className="font-bold text-md text-primary">{profile?.username || 'مستخدم جديد'}</h3>
+            <h3 className="font-bold text-md text-primary">{profile?.username || 'مستكشف تيمقاد'}</h3>
             <p className="text-[10px] text-muted-foreground">{profile?.email}</p>
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
@@ -57,7 +60,7 @@ export default function LeftSidebar() {
 
       <div className="bg-card rounded-none p-1 space-y-0.5">
         {[
-          { icon: <Compass size={18} />, label: 'استكشف', path: '/explore' },
+          { icon: <Compass size={18} />, label: 'استكشف تيمقاد', path: '/explore' },
           { icon: <MessageSquare size={18} />, label: 'المجموعات', path: '/groups' },
           { icon: <Settings size={18} />, label: 'الإعدادات', path: '/settings' },
         ].map((item, i) => (

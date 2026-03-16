@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import TimgadLogo from '@/components/ui/Logo';
 import {
   Dialog,
   DialogContent,
@@ -113,17 +114,16 @@ export default function SettingsPage() {
         <div className="relative z-10 container max-w-xl mx-auto flex flex-col items-center gap-4">
           <button onClick={() => router.back()} className="absolute right-0 top-0 text-white/80 hover:text-white transition-colors"><ArrowRight size={20} /></button>
           <div className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center mb-2">
-            <span className="text-2xl font-bold text-white font-headline tracking-tighter">ت</span>
+            <TimgadLogo size={32} variant="white" />
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-white font-headline tracking-tighter">تواصل | Tawasul</h1>
+            <h1 className="text-xl font-bold text-white font-headline tracking-tighter">تيمقاد | Timgad</h1>
             <p className="text-[10px] text-white/60 mt-1 uppercase tracking-widest font-medium">إعدادات المنصة</p>
           </div>
         </div>
       </div>
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
-        {/* المظهر */}
         <Card className="border-none shadow-sm rounded-none bg-card mb-4 overflow-hidden">
           <CardContent className="p-0">
             <div className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">
@@ -141,7 +141,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* الخصوصية والأمان */}
         <div className="space-y-2">
           <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mb-1">الخصوصية والأمان</h2>
           
@@ -225,7 +224,7 @@ export default function SettingsPage() {
                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center"><LogOut size={16} /></div>
                 <div className="flex flex-col text-right">
                   <span className="text-xs font-bold">تسجيل الخروج</span>
-                  <span className="text-[9px] opacity-70">الخروج من الحساب</span>
+                  <span className="text-[9px] opacity-70">الخروج من حساب تيمقاد</span>
                 </div>
               </div>
             </button>
@@ -233,8 +232,8 @@ export default function SettingsPage() {
         </Card>
 
         <div className="pt-10 text-center space-y-1">
-          <p className="text-[10px] font-bold text-primary/40 tracking-tighter uppercase">Tawasul Platform</p>
-          <p className="text-[8px] text-muted-foreground/50">إصدار 1.0.0 • صنع بكل فخر للمجتمع العربي</p>
+          <p className="text-[10px] font-bold text-primary/40 tracking-tighter uppercase">Timgad Platform</p>
+          <p className="text-[8px] text-muted-foreground/50">إصدار 1.0.0 • صُنع بكل فخر للمجتمع العربي</p>
         </div>
       </main>
     </div>
