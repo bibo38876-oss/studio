@@ -163,24 +163,63 @@ export default function PostCard({ post }: { post: PostData }) {
     }
   };
 
-  const handlePromote = (impressions: number) => {
-    if (!firestore || !displayPost.id) return;
+  const handlePromote = (impressions: number, cost: number) => {
+    if (!firestore || !displayPost.id || !user?.uid || !currentUserProfile) return;
+
+    if ((currentUserProfile.coins || 0) < cost) {
+      toast({
+        variant: "destructive",
+        title: "رصيد غير كافٍ",
+        description: `تحتاج إلى ${cost} عملة تيمقاد لتفعيل هذه الباقة الترويجية.`,
+      });
+      return;
+    }
+
+    // خصم العملات من المستخدم
+    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+      coins: increment(-cost)
+    });
+
+    // تفعيل الترويج للمنشور
     updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), {
       promoted: true,
       impressions_left: increment(impressions)
     });
+
     setIsPromoteOpen(false);
-    toast({ title: "تم الترويج!", description: `سيبدأ منشورك بالظهور لـ ${impressions} مستخدم إضافي.` });
+    toast({ 
+      title: "تم الترويج بنجاح!", 
+      description: `لقد دفعت ${cost} عملة مقابل ${impressions} مشاهدة مستهدفة في مجتمع تيمقاد.` 
+    });
   };
 
   const handleSupport = (amount: number) => {
     if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user) return;
+    if (!firestore || !user || !currentUserProfile) return;
+
+    if ((currentUserProfile.coins || 0) < amount) {
+      toast({
+        variant: "destructive",
+        title: "رصيد غير كافٍ",
+        description: "لا تملك عملات كافية لإرسال هذا الدعم.",
+      });
+      return;
+    }
 
     setShowSupportAnim(true);
     setTimeout(() => setShowSupportAnim(false), 2000);
 
-    // تسجيل الدعم في قاعدة البيانات
+    // خصم العملات من الداعم
+    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+      coins: increment(-amount)
+    });
+
+    // إضافة العملات لصاحب المنشور
+    updateDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId), {
+      coins: increment(amount)
+    });
+
+    // تسجيل الدعم في سجلات الداعم
     const supportedUserRef = doc(firestore, 'users', user.uid, 'supportedPeople', displayPost.authorId);
     setDocumentNonBlocking(supportedUserRef, {
       userId: displayPost.authorId,
@@ -520,37 +559,49 @@ export default function PostCard({ post }: { post: PostData }) {
         </Card>
       </motion.div>
 
-      {/* نافذة الترويج */}
+      {/* نافذة الترويج المحدثة للعملات */}
       <Dialog open={isPromoteOpen} onOpenChange={setIsPromoteOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold flex items-center gap-2">
-              <Rocket className="text-accent" size={18} /> ترويج المنشور
+              <Rocket className="text-accent" size={18} /> ترويج المنشور بالعملات
             </DialogTitle>
           </DialogHeader>
           <div className="py-6 space-y-4">
-            <p className="text-xs text-muted-foreground text-center mb-4">اختر باقة الترويج لزيادة عدد الوصول لمنشورك في مجتمع تيمقاد.</p>
+            <div className="flex items-center justify-between bg-primary/5 p-3 border border-primary/10 rounded-sm mb-4">
+              <div className="flex flex-col text-right">
+                <span className="text-[8px] text-muted-foreground uppercase font-bold">رصيدك المتاح</span>
+                <span className="text-sm font-bold text-primary">{currentUserProfile?.coins || 0} عملة</span>
+              </div>
+              <TimgadCoin size={32} />
+            </div>
+            
+            <p className="text-[10px] text-muted-foreground text-center mb-4">اختر الباقة المناسبة لزيادة رقعة انتشار منشورك في تيمقاد.</p>
+            
             {[
-              { price: "$1", impressions: 1000, label: "باقة البرونزية" },
-              { price: "$3", impressions: 5000, label: "باقة الفضية" },
-              { price: "$5", impressions: 10000, label: "باقة الذهبية" },
+              { coins: 100, impressions: 4000, label: "باقة الانطلاق" },
+              { coins: 200, impressions: 10000, label: "باقة التوسع" },
+              { coins: 500, impressions: 30000, label: "باقة الهيمنة" },
             ].map((tier, i) => (
               <Button 
                 key={i} 
                 variant="outline" 
-                className="w-full h-14 justify-between px-6 rounded-none hover:bg-primary/5 group border-muted/20"
-                onClick={() => handlePromote(tier.impressions)}
+                className="w-full h-16 justify-between px-6 rounded-none hover:bg-primary/5 group border-muted/20"
+                onClick={() => handlePromote(tier.impressions, tier.coins)}
               >
                 <div className="flex flex-col items-start">
                   <span className="text-xs font-bold text-primary">{tier.label}</span>
-                  <span className="text-[10px] text-muted-foreground">{tier.impressions} ظهور مستهدف</span>
+                  <span className="text-[10px] text-muted-foreground">{tier.impressions.toLocaleString()} مشاهدة مستهدفة</span>
                 </div>
-                <span className="text-sm font-bold text-accent group-hover:scale-110 transition-transform">{tier.price}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-accent group-hover:scale-110 transition-transform">{tier.coins}</span>
+                  <TimgadCoin size={20} />
+                </div>
               </Button>
             ))}
           </div>
           <DialogFooter>
-            <p className="text-[8px] text-muted-foreground text-center w-full italic">بضغطك على إحدى الباقات، سيتم تفعيل الترويج فوراً (محاكاة).</p>
+            <p className="text-[8px] text-muted-foreground text-center w-full italic">سيتم خصم العملات من رصيدك فوراً ويبدأ الترويج تلقائياً.</p>
           </DialogFooter>
         </DialogContent>
       </Dialog>
