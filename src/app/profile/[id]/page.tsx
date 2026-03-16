@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Lock, Heart, Repeat, UserRoundPlus } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, Image as ImageIcon, Lock, Heart, Repeat, UserRoundPlus } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -236,6 +236,22 @@ export default function ProfilePage() {
           </div>
           <div className="px-4 pb-6 relative">
             <div className="flex justify-between items-start -mt-10 mb-4">
+              {/* القسم الأيمن: الصورة الشخصية والاسم */}
+              <div className="flex flex-col items-center">
+                <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
+                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
+                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
+                </Avatar>
+                <div className="text-center">
+                  <div className="flex items-center gap-1.5 justify-center">
+                    <span className="text-md font-bold text-primary">{profile.username}</span>
+                    <VerifiedBadge type={verificationType} size={16} />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
+                </div>
+              </div>
+
+              {/* القسم الأيسر: الأزرار */}
               <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -281,20 +297,6 @@ export default function ProfilePage() {
                     {isFollowing ? 'متابع' : isFollowingMe ? 'رد المتابعة' : 'متابعة'}
                   </Button>
                 )}
-              </div>
-
-              <div className="flex flex-col items-center">
-                <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
-                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
-                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
-                </Avatar>
-                <div className="text-center">
-                  <div className="flex items-center gap-1.5 justify-center">
-                    <span className="text-md font-bold text-primary">{profile.username}</span>
-                    <VerifiedBadge type={verificationType} size={16} />
-                  </div>
-                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
-                </div>
               </div>
             </div>
 
