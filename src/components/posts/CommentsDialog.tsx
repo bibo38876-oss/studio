@@ -151,15 +151,15 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col justify-center">
-                <div className="flex items-center gap-1 leading-tight">
-                  <span className="text-xs font-bold text-primary">{post.authorName}</span>
+                <div className="flex items-center gap-1 leading-tight justify-end">
                   <VerifiedBadge type={post.email === 'adelbenmaza8@gmail.com' ? 'blue' : (post.authorVerificationType || 'none')} />
+                  <span className="text-xs font-bold text-primary">{post.authorName}</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground">@{post.email?.split('@')[0] || 'مستخدم'}</span>
               </div>
             </div>
             {post.content && (
-              <p className="px-4 pb-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
+              <p className="px-4 pb-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight text-right">
                 {renderContent(post.content)}
               </p>
             )}
@@ -206,9 +206,9 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 </Avatar>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
+                    <div className="flex items-center gap-1 justify-end">
                       <VerifiedBadge type={comment.authorVerificationType || (comment.authorEmail === 'adelbenmaza8@gmail.com' ? 'blue' : 'none')} size={12} />
+                      <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[8px] text-muted-foreground">
@@ -236,7 +236,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                       </DropdownMenu>
                     </div>
                   </div>
-                  <div className="text-xs text-foreground/90 leading-relaxed bg-secondary/30 p-2 rounded-none">
+                  <div className="text-xs text-foreground/90 leading-relaxed bg-secondary/30 p-2 rounded-none text-right">
                     {renderContent(comment.content)}
                   </div>
                 </div>

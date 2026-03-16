@@ -314,8 +314,8 @@ export default function PostCard({ post }: { post: PostData }) {
           <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col text-right">
               <div className="flex items-center gap-1.5 leading-tight justify-end">
-                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
                 <VerifiedBadge type={verificationType} size={13} />
+                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
               </div>
               <span className="text-[9px] text-muted-foreground text-right">
                 {formattedDate}

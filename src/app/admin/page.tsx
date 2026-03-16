@@ -112,16 +112,16 @@ export default function AdminPage() {
   const isLoading = isUsersLoading || isPostsLoading;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-right">
       <Navbar />
       
       <main className="container mx-auto max-w-4xl pt-10 pb-20 px-4">
-        <div className="flex items-center gap-3 mb-8 bg-primary/5 p-6 border-b border-primary/20">
-          <ShieldCheck size={32} className="text-primary" />
-          <div>
-            <h1 className="text-xl font-bold text-primary">لوحة إدارة تواصل</h1>
+        <div className="flex items-center gap-3 mb-8 bg-primary/5 p-6 border-b border-primary/20 justify-end">
+          <div className="text-right">
+            <h1 className="text-xl font-bold text-primary">لوحة إدارة تيمقاد</h1>
             <p className="text-xs text-muted-foreground">إحصائيات المنصة والتحكم في المستخدمين</p>
           </div>
+          <ShieldCheck size={32} className="text-primary" />
         </div>
 
         <Tabs defaultValue="analytics" className="w-full">
@@ -138,10 +138,10 @@ export default function AdminPage() {
 
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="border-none shadow-sm rounded-none bg-primary/5">
+              <Card className="border-none shadow-sm rounded-none bg-primary/5 text-right">
                 <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-[10px] text-muted-foreground uppercase flex items-center gap-2">
-                    <Users size={12} /> إجمالي المستخدمين
+                  <CardTitle className="text-[10px] text-muted-foreground uppercase flex items-center gap-2 justify-end">
+                    إجمالي المستخدمين <Users size={12} />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -149,10 +149,10 @@ export default function AdminPage() {
                   <p className="text-[8px] text-muted-foreground mt-1">نشط حالياً في النظام</p>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-sm rounded-none bg-accent/5">
+              <Card className="border-none shadow-sm rounded-none bg-accent/5 text-right">
                 <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-[10px] text-muted-foreground uppercase flex items-center gap-2">
-                    <MessageSquare size={12} /> إجمالي التفاعل
+                  <CardTitle className="text-[10px] text-muted-foreground uppercase flex items-center gap-2 justify-end">
+                    إجمالي التفاعل <MessageSquare size={12} />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -160,10 +160,10 @@ export default function AdminPage() {
                   <p className="text-[8px] text-muted-foreground mt-1">إعجابات، تعليقات، وإعادة نشر</p>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-sm rounded-none bg-secondary/50">
+              <Card className="border-none shadow-sm rounded-none bg-secondary/50 text-right">
                 <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-[10px] text-muted-foreground uppercase flex items-center gap-2">
-                    <TrendingUp size={12} /> المواضيع الرائجة
+                  <CardTitle className="text-[10px] text-muted-foreground uppercase flex items-center gap-2 justify-end">
+                    المواضيع الرائجة <TrendingUp size={12} />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -174,7 +174,7 @@ export default function AdminPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-6">
-              <Card className="border-none shadow-sm rounded-none">
+              <Card className="border-none shadow-sm rounded-none text-right">
                 <CardHeader>
                   <CardTitle className="text-sm font-bold">نمو المنصة (بيانات حقيقية موزعة)</CardTitle>
                   <CardDescription className="text-[10px]">عرض توزيع إجمالي {stats.totalUsers} مستخدم و {stats.totalPosts} منشور</CardDescription>
@@ -189,7 +189,7 @@ export default function AdminPage() {
                         <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
                         <YAxis fontSize={10} axisLine={false} tickLine={false} />
                         <Tooltip 
-                          contentStyle={{ fontSize: '10px', borderRadius: '0', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
+                          contentStyle={{ fontSize: '10px', borderRadius: '0', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', textAlign: 'right' }} 
                         />
                         <Line type="monotone" dataKey="users" name="المستخدمين" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                         <Line type="monotone" dataKey="posts" name="المنشورات" stroke="hsl(var(--accent))" strokeWidth={3} dot={{ r: 4 }} />
@@ -206,7 +206,7 @@ export default function AdminPage() {
               <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input 
                 placeholder="ابحث عن مستخدم للتوثيق..." 
-                className="pr-10 h-10 rounded-none bg-secondary/30 border-none text-xs"
+                className="pr-10 h-10 rounded-none bg-secondary/30 border-none text-xs text-right"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -217,16 +217,16 @@ export default function AdminPage() {
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
               ) : filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
-                  <div key={user.id} className="bg-card p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
+                  <div key={user.id} className="bg-card p-4 border flex flex-col sm:flex-row-reverse sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 flex-row-reverse">
                       <Avatar className="h-10 w-10 border">
                         <AvatarImage src={user.profilePictureUrl} alt={user.username} />
                         <AvatarFallback>{user.username?.[0]}</AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-primary">{user.username}</span>
+                      <div className="flex flex-col text-right">
+                        <div className="flex items-center gap-1.5 justify-end">
                           <VerifiedBadge type={user.email === ADMIN_EMAIL ? 'blue' : (user.verificationType || 'none')} />
+                          <span className="text-xs font-bold text-primary">{user.username}</span>
                         </div>
                         <span className="text-[10px] text-muted-foreground">{user.email}</span>
                       </div>

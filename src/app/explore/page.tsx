@@ -116,7 +116,7 @@ export default function ExplorePage() {
             <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input 
               placeholder="ابحث عن أشخاص أو وسم #..." 
-              className="w-full pr-10 pl-10 h-10 rounded-full bg-secondary/50 border-none text-sm focus-visible:ring-1 focus-visible:ring-primary/30"
+              className="w-full pr-10 pl-10 h-10 rounded-full bg-secondary/50 border-none text-sm focus-visible:ring-1 focus-visible:ring-primary/30 text-right"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -158,7 +158,7 @@ export default function ExplorePage() {
 
             <TabsContent value="trending" className="mt-0">
               <div className="p-3 bg-primary/5 border-b border-primary/10 flex items-center justify-between">
-                <div className="flex flex-col">
+                <div className="flex flex-col text-right">
                   <span className="text-[10px] font-bold text-primary uppercase tracking-wider">خوارزمية التداول</span>
                   <span className="text-[8px] text-muted-foreground">تحليل المنشورات والهاشتاجات النشطة حالياً في تواصل</span>
                 </div>
@@ -173,10 +173,10 @@ export default function ExplorePage() {
                     className="p-4 hover:bg-muted/10 cursor-pointer flex justify-between items-center group transition-colors"
                     onClick={() => setSearchQuery(tag.name)}
                   >
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">رائج الآن</span>
+                    <div className="flex flex-col text-right">
+                      <div className="flex items-center gap-2 justify-end">
                         <span className="text-[8px] text-green-600 font-bold">{tag.growth}</span>
+                        <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">رائج الآن</span>
                       </div>
                       <span className="text-sm font-bold text-primary group-hover:text-accent transition-colors">{tag.name}</span>
                       <span className="text-[9px] text-muted-foreground">{tag.displayCount} تفاعل</span>
@@ -207,10 +207,10 @@ export default function ExplorePage() {
                             <AvatarImage src={user.profilePictureUrl} alt={user.username} />
                             <AvatarFallback>{user.username?.[0]}</AvatarFallback>
                           </Avatar>
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-1 leading-tight">
-                              <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
+                          <div className="flex flex-col text-right">
+                            <div className="flex items-center gap-1 leading-tight justify-end">
                               {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
+                              <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
                             </div>
                             <span className="text-[10px] text-muted-foreground">{user.email}</span>
                           </div>

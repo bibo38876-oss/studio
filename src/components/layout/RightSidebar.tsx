@@ -54,7 +54,7 @@ export default function RightSidebar() {
   return (
     <aside className="hidden lg:block w-80 space-y-6">
       <Card className="border-none shadow-none rounded-none bg-card">
-        <CardHeader className="pb-3 px-4 pt-4">
+        <CardHeader className="pb-3 px-4 pt-4 text-right">
           <CardTitle className="text-sm font-bold text-primary">اقتراحات المتابعة</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 px-4 pb-4">
@@ -73,10 +73,10 @@ export default function RightSidebar() {
                       <AvatarImage src={user.profilePictureUrl} alt={user.username} />
                       <AvatarFallback>{user.username?.[0]}</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-1 leading-tight">
-                        <span className="text-xs font-bold text-primary group-hover:underline">{user.username}</span>
+                    <div className="flex flex-col text-right">
+                      <div className="flex items-center gap-1 leading-tight justify-end">
                         {isVerified && <BadgeCheck size={12} className="text-accent fill-current" />}
+                        <span className="text-xs font-bold text-primary group-hover:underline">{user.username}</span>
                       </div>
                       <span className="text-[8px] text-muted-foreground">{user.email || 'مستخدم تواصل'}</span>
                     </div>

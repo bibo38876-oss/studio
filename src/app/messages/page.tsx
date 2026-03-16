@@ -1,3 +1,4 @@
+
 "use client"
 
 import Navbar from '@/components/layout/Navbar';
@@ -28,12 +29,12 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-right">
       <Navbar />
       
       <main className="container mx-auto max-xl pt-7 pb-20 px-0 md:px-4">
         <div className="bg-background sticky top-7 z-30 p-4 border-b">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-row-reverse">
             <h1 className="text-sm font-bold text-primary">الرسائل</h1>
             <Badge variant="outline" className="text-[8px] h-4 px-1.5 bg-primary/5 border-primary/20 text-primary rounded-none">الرسائل الخاصة قيد التطوير</Badge>
           </div>
@@ -41,7 +42,7 @@ export default function MessagesPage() {
             <Search size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input 
               placeholder="ابحث عن محادثة..." 
-              className="h-8 pr-9 text-[10px] rounded-full bg-secondary/50 border-none"
+              className="h-8 pr-9 text-[10px] rounded-full bg-secondary/50 border-none text-right"
               disabled
             />
           </div>
@@ -56,16 +57,16 @@ export default function MessagesPage() {
             {chats.filter(u => u.id !== user.uid).map((chat: any) => {
               const isVerified = chat.email === 'adelbenmaza8@gmail.com' || chat.role === 'admin';
               return (
-                <div key={chat.id} className="p-4 flex items-center gap-3 hover:bg-muted/10 cursor-not-allowed transition-colors group">
+                <div key={chat.id} className="p-4 flex items-center gap-3 hover:bg-muted/10 cursor-not-allowed transition-colors group flex-row-reverse">
                   <Avatar className="h-12 w-12 border border-muted/20">
                     <AvatarImage src={chat.profilePictureUrl} alt={chat.username} />
                     <AvatarFallback>{chat.username?.[0]}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 flex flex-col gap-0.5">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-1 leading-tight">
-                        <span className="text-xs font-bold text-primary">{chat.username}</span>
+                  <div className="flex-1 flex flex-col gap-0.5 text-right">
+                    <div className="flex justify-between items-center flex-row-reverse">
+                      <div className="flex items-center gap-1 leading-tight justify-end">
                         {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
+                        <span className="text-xs font-bold text-primary">{chat.username}</span>
                       </div>
                       <span className="text-[8px] text-muted-foreground">الآن</span>
                     </div>
