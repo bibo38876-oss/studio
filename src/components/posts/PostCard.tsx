@@ -115,12 +115,12 @@ export default function PostCard({ post }: { post: PostData }) {
   return (
     <>
       <Card 
-        className="border-none shadow-none rounded-none w-full bg-card mb-[1px] last:mb-0 transition-colors hover:bg-muted/5 cursor-pointer"
+        className="border-none shadow-none rounded-none w-full bg-card mb-[1px] last:mb-0 transition-all duration-200 hover:bg-secondary/20 cursor-pointer active:scale-[0.99]"
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
           <Link href={`/profile/${post.authorId}`} className="flex gap-2.5 group" onClick={(e) => e.stopPropagation()}>
-            <Avatar className="h-9 w-9 border border-muted/20">
+            <Avatar className="h-9 w-9 border border-muted/20 transition-transform group-hover:scale-105">
               <AvatarImage src={post.authorAvatar} alt={post.authorName} />
               <AvatarFallback>{post.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
@@ -134,16 +134,16 @@ export default function PostCard({ post }: { post: PostData }) {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full">
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full hover:bg-secondary">
                 <MoreHorizontal size={14} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-xs">
-              <DropdownMenuItem onClick={handleBookmark} className="gap-2">
-                <Bookmark size={14} fill={isBookmarked ? "currentColor" : "none"} />
+            <DropdownMenuContent align="end" className="text-xs rounded-none border-none shadow-xl">
+              <DropdownMenuItem onClick={handleBookmark} className="gap-2 cursor-pointer">
+                <Bookmark size={14} className={isBookmarked ? "fill-primary text-primary" : ""} />
                 {isBookmarked ? 'إزالة من العلامات' : 'حفظ المنشور'}
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 text-destructive">
+              <DropdownMenuItem className="gap-2 text-destructive cursor-pointer">
                 إبلاغ
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -156,12 +156,12 @@ export default function PostCard({ post }: { post: PostData }) {
           </p>
           
           {post.mediaUrl && (
-            <div className="relative w-full aspect-square bg-muted mt-2">
+            <div className="relative w-full aspect-square bg-muted mt-2 overflow-hidden">
               <Image 
                 src={post.mediaUrl} 
                 alt="Post media" 
                 fill 
-                className="object-cover"
+                className="object-cover transition-transform duration-500 hover:scale-105"
                 sizes="(max-width: 768px) 100vw, 600px"
               />
             </div>
@@ -172,17 +172,17 @@ export default function PostCard({ post }: { post: PostData }) {
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`h-8 flex-1 gap-1.5 rounded-none ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
+            className={`h-8 flex-1 gap-1.5 rounded-none transition-colors ${isLiked ? 'text-red-500 bg-red-500/5' : 'text-muted-foreground hover:bg-secondary/50'}`}
             onClick={handleLike}
           >
-            <Heart size={16} fill={isLiked ? "currentColor" : "none"} />
+            <Heart size={16} className={isLiked ? "fill-current" : ""} />
             <span className="text-[10px] font-bold">{post.likesCount || 0}</span>
           </Button>
           
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none"
+            className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none hover:bg-secondary/50"
             onClick={(e) => {
               e.stopPropagation();
               setIsCommentsOpen(true);
@@ -192,18 +192,18 @@ export default function PostCard({ post }: { post: PostData }) {
             <span className="text-[10px] font-bold">{post.commentsCount || 0}</span>
           </Button>
 
-          <Button variant="ghost" size="sm" className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none" onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="sm" className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none hover:bg-secondary/50" onClick={(e) => e.stopPropagation()}>
             <Repeat size={16} />
           </Button>
 
-          <Button variant="ghost" size="sm" className="h-8 flex-1 text-muted-foreground rounded-none" onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="sm" className="h-8 flex-1 text-muted-foreground rounded-none hover:bg-secondary/50" onClick={(e) => e.stopPropagation()}>
             <Share2 size={16} />
           </Button>
         </CardFooter>
       </Card>
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-        <DialogContent className="sm:max-w-full h-[100dvh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col sm:max-w-[600px] sm:h-[90vh] sm:rounded-lg">
+        <DialogContent className="sm:max-w-full h-[100dvh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col sm:max-w-[600px] sm:h-[90vh] sm:rounded-none animate-in fade-in zoom-in-95 duration-200">
           <DialogTitle className="sr-only">تفاصيل المنشور والتعليقات</DialogTitle>
           <CommentsDialog 
             postId={post.id} 

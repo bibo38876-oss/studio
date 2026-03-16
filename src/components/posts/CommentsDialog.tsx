@@ -27,7 +27,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
 
   const isAnonymous = !user || user.isAnonymous;
 
-  // Get current user profile for comment data
+  // استرجاع ملف المستخدم الحالي لبيانات التعليق
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user || isAnonymous) return null;
     return doc(firestore, 'users', user.uid);
@@ -51,22 +51,23 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     }
     if (!commentText.trim() || !user || !firestore) return;
 
+    const content = commentText.trim();
+    setCommentText(''); // مسح المدخل فوراً لتحسين تجربة الاستجابة
+
     const commentData = {
       authorId: user.uid,
       authorName: profile?.username || user.displayName || 'مستخدم تواصل',
       authorAvatar: profile?.profilePictureUrl || '',
-      content: commentText.trim(),
+      content: content,
       createdAt: serverTimestamp(),
     };
 
     addDocumentNonBlocking(collection(firestore, 'posts', postId, 'comments'), commentData);
     
-    // Update post comment count
     updateDoc(doc(firestore, 'posts', postId), {
       commentsCount: increment(1)
     });
 
-    // Create notification for post owner
     if (user.uid !== postAuthorId) {
       addDocumentNonBlocking(collection(firestore, 'users', postAuthorId, 'notifications'), {
         type: 'comment',
@@ -78,26 +79,24 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
         read: false
       });
     }
-
-    setCommentText('');
   };
 
   return (
-    <div className="flex flex-col h-full bg-background animate-in slide-in-from-left duration-300">
-      {/* Header */}
-      <div className="flex items-center gap-4 p-2 border-b sticky top-0 bg-background/80 backdrop-blur-md z-20 h-10">
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
+    <div className="flex flex-col h-full bg-background animate-in slide-in-from-left-2 duration-300">
+      {/* Header - Slim */}
+      <div className="flex items-center gap-4 p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-20 h-10">
+        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full hover:bg-secondary transition-colors">
           <ChevronRight size={20} />
         </Button>
         <div className="flex flex-col">
-          <span className="text-[11px] font-bold text-primary">المنشور</span>
+          <span className="text-[11px] font-bold text-primary leading-tight">المنشور</span>
           <span className="text-[8px] text-muted-foreground">عرض التفاصيل والتعليقات</span>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto pb-20 scroll-smooth">
         {post && (
-          <div className="p-4 border-b bg-muted/5">
+          <div className="p-4 border-b bg-muted/10">
             <div className="flex gap-3 mb-4">
               <Avatar className="h-10 w-10 border border-muted/20">
                 <AvatarImage src={post.authorAvatar} alt={post.authorName} />
@@ -105,24 +104,24 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
               </Avatar>
               <div className="flex flex-col justify-center">
                 <span className="text-xs font-bold text-primary leading-tight">{post.authorName}</span>
-                <span className="text-[10px] text-muted-foreground">@{post.authorId?.slice(0, 8)}</span>
+                <span className="text-[10px] text-muted-foreground">@{post.email?.split('@')[0] || 'مستخدم'}</span>
               </div>
             </div>
             <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap mb-4 tracking-tight">
               {post.content}
             </p>
             {post.mediaUrl && (
-              <div className="relative w-full aspect-square bg-muted rounded-none overflow-hidden mb-4">
-                <Image src={post.mediaUrl} alt="Post media" fill className="object-cover" />
+              <div className="relative w-full aspect-square bg-muted rounded-none overflow-hidden mb-4 border">
+                <Image src={post.mediaUrl} alt="Post media" fill className="object-cover" sizes="600px" />
               </div>
             )}
           </div>
         )}
 
-        <div className="p-4 space-y-6">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="p-4 space-y-5">
+          <div className="flex items-center gap-2 mb-2 border-b pb-2">
             <MessageSquareText size={14} className="text-primary" />
-            <span className="text-xs font-bold text-primary">التعليقات</span>
+            <span className="text-[10px] font-bold text-primary uppercase tracking-wider">التعليقات</span>
           </div>
 
           {isLoading ? (
@@ -131,35 +130,35 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
             </div>
           ) : comments && comments.length > 0 ? (
             comments.map((comment: any) => (
-              <div key={comment.id} className="flex gap-3 animate-in fade-in duration-500">
-                <Avatar className="h-8 w-8">
+              <div key={comment.id} className="flex gap-3 animate-in fade-in slide-in-from-right-1 duration-300">
+                <Avatar className="h-8 w-8 border">
                   <AvatarImage src={comment.authorAvatar} alt={comment.authorName} />
                   <AvatarFallback>{comment.authorName?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
-                    <span className="text-[9px] text-muted-foreground">
+                    <span className="text-[8px] text-muted-foreground">
                       {comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { locale: ar }) : 'الآن'}
                     </span>
                   </div>
-                  <p className="text-xs text-foreground leading-relaxed">{comment.content}</p>
+                  <p className="text-xs text-foreground/90 leading-relaxed bg-secondary/30 p-2 rounded-none">{comment.content}</p>
                 </div>
               </div>
             ))
           ) : (
-            <div className="text-center py-20 bg-muted/5 rounded-none border border-dashed">
-              <p className="text-muted-foreground text-[10px]">لا توجد تعليقات بعد. كن أول من يشارك!</p>
+            <div className="text-center py-20 bg-muted/5 rounded-none border border-dashed border-muted">
+              <p className="text-muted-foreground text-[10px] font-medium italic">لا توجد تعليقات بعد. كن أول من يشارك!</p>
             </div>
           )}
         </div>
       </div>
 
-      <div className="p-3 border-t bg-background/80 backdrop-blur-md pb-safe sticky bottom-0 z-30">
-        <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-10">
+      <div className="p-3 border-t bg-background/95 backdrop-blur-sm pb-safe sticky bottom-0 z-30">
+        <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-10 group focus-within:bg-secondary/80 transition-all">
           <Input 
             placeholder={isAnonymous ? "سجل الدخول للتعليق..." : "اكتب تعليقاً..."}
-            className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0"
+            className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0 placeholder:text-muted-foreground/50"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
@@ -169,8 +168,9 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           <Button 
             size="icon" 
             variant="ghost" 
-            className={`h-8 w-8 rounded-full transition-all ${commentText.trim() ? 'text-primary scale-110' : 'text-muted-foreground opacity-50'}`}
+            className={`h-8 w-8 rounded-full transition-all duration-300 ${commentText.trim() ? 'text-primary scale-110' : 'text-muted-foreground opacity-50'}`}
             onClick={handleAddComment}
+            disabled={!commentText.trim()}
           >
             <Send size={16} />
           </Button>
