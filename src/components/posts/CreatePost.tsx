@@ -1,11 +1,10 @@
 
 "use client"
 
-import { useState } from 'react';
-import { Image as ImageIcon, X, Hash, Plus, Trash2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Image as ImageIcon, X, Hash, Plus, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
@@ -18,8 +17,8 @@ interface CreatePostProps {
 export default function CreatePost({ onSuccess }: CreatePostProps) {
   const [content, setContent] = useState('');
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
-  const [newUrl, setNewUrl] = useState('');
-  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
   const { user } = useUser();
@@ -32,11 +31,36 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
   const { data: profile } = useDoc(userRef);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    const newMediaUrls: string[] = [...mediaUrls];
+    let loadedCount = 0;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          newMediaUrls.push(reader.result);
+        }
+        loadedCount++;
+        if (loadedCount === files.length) {
+          setMediaUrls(newMediaUrls);
+          setIsUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handlePost = () => {
-    if (!content.trim() || !db || !user) return;
+    if (!content.trim() && mediaUrls.length === 0) return;
+    if (!db || !user) return;
 
     const postData = {
-      content,
+      content: content.trim(),
       authorId: user.uid,
       authorName: profile?.username || 'مستخدم تواصل',
       authorAvatar: profile?.profilePictureUrl || '',
@@ -46,20 +70,13 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
       hashtags: content.match(/#[^\s#]+/g) || [],
       mediaUrls: mediaUrls.length > 0 ? mediaUrls : null,
       mediaType: mediaUrls.length > 0 ? 'image' : null,
+      email: user.email,
     };
 
     addDocumentNonBlocking(collection(db, 'posts'), postData);
 
     toast({ title: "تم النشر!", description: "تم نشر منشورك بنجاح." });
     if (onSuccess) onSuccess();
-  };
-
-  const addImageUrl = () => {
-    if (newUrl.trim()) {
-      setMediaUrls([...mediaUrls, newUrl.trim()]);
-      setNewUrl('');
-      setShowUrlInput(false);
-    }
   };
 
   const removeImage = (index: number) => {
@@ -75,7 +92,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         <span className="font-bold text-xs text-primary">منشور جديد</span>
         <Button 
           onClick={handlePost} 
-          disabled={!content.trim()} 
+          disabled={(!content.trim() && mediaUrls.length === 0) || isUploading} 
           className="h-7 bg-primary text-white px-5 rounded-full font-bold text-[10px]"
         >
           نشر
@@ -90,7 +107,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
           </Avatar>
           <div className="flex-1">
             <Textarea 
-              placeholder="اكتب شيئاً..." 
+              placeholder="ماذا يدور في ذهنك؟" 
               className="min-h-[120px] resize-none border-none focus-visible:ring-0 p-0 text-md bg-transparent placeholder:text-muted-foreground/40"
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -100,44 +117,48 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         </div>
 
         {mediaUrls.length > 0 && (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             {mediaUrls.map((url, i) => (
-              <div key={i} className="relative aspect-video group">
-                <img src={url} alt="Preview" className="w-full h-full object-cover" />
+              <div key={i} className="relative w-full group bg-secondary/20">
+                <img src={url} alt="Preview" className="w-full h-auto block" />
                 <button 
                   onClick={() => removeImage(i)}
-                  className="absolute top-1 left-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 left-2 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <Trash2 size={12} />
+                  <X size={14} />
                 </button>
               </div>
             ))}
           </div>
         )}
 
-        {showUrlInput && (
-          <div className="flex gap-2 p-2 bg-secondary/30">
-            <Input 
-              placeholder="أدخل رابط الصورة..." 
-              className="h-8 text-[10px] bg-background border-none"
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
-            />
-            <Button size="sm" className="h-8 px-3 text-[10px]" onClick={addImageUrl}>إضافة</Button>
+        {isUploading && (
+          <div className="flex items-center justify-center py-4 gap-2 text-xs text-muted-foreground">
+            <Loader2 size={14} className="animate-spin" />
+            جاري تحضير الصور...
           </div>
         )}
       </div>
 
       <div className="border-t bg-background p-2 pb-safe">
+        <input 
+          type="file" 
+          accept="image/*" 
+          multiple 
+          hidden 
+          ref={fileInputRef} 
+          onChange={handleFileChange}
+        />
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
             size="sm" 
             className="flex-1 flex-col h-12 gap-1 text-muted-foreground hover:text-primary hover:bg-transparent"
-            onClick={() => setShowUrlInput(!showUrlInput)}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
           >
             <ImageIcon size={18} />
-            <span className="text-[8px]">إضافة صورة</span>
+            <span className="text-[8px]">معرض الصور</span>
           </Button>
           
           <Button 

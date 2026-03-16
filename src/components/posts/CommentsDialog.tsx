@@ -111,9 +111,11 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <span className="text-[10px] text-muted-foreground">@{post.email?.split('@')[0] || 'مستخدم'}</span>
               </div>
             </div>
-            <p className="px-4 pb-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
-              {post.content}
-            </p>
+            {post.content && (
+              <p className="px-4 pb-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
+                {post.content}
+              </p>
+            )}
             {allMedia.length > 0 && (
               <div className="w-full bg-black/5">
                 <Carousel className="w-full">
@@ -125,7 +127,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                             src={url} 
                             alt={`Post detail ${index + 1}`} 
                             className="w-full h-auto block"
-                            style={{ maxHeight: '100vh', width: '100%', objectFit: 'contain' }}
+                            style={{ maxHeight: 'none', width: '100%', objectFit: 'contain' }}
                             loading="lazy"
                           />
                         </div>

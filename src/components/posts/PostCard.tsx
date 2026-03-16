@@ -40,6 +40,7 @@ interface PostData {
   likesCount?: number;
   commentsCount?: number;
   hashtags?: string[];
+  email?: string;
 }
 
 export default function PostCard({ post }: { post: PostData }) {
@@ -122,7 +123,7 @@ export default function PostCard({ post }: { post: PostData }) {
   return (
     <>
       <Card 
-        className="border-none shadow-none rounded-none w-full bg-card mb-[1px] last:mb-0 transition-all duration-200 hover:bg-secondary/20 cursor-pointer active:scale-[0.99] border-b"
+        className="border-none shadow-none rounded-none w-full bg-card mb-2 last:mb-0 transition-all duration-200 cursor-pointer border-b border-muted/50"
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
@@ -158,9 +159,11 @@ export default function PostCard({ post }: { post: PostData }) {
         </CardHeader>
         
         <CardContent className="px-0 py-0">
-          <p className="px-3 py-2 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
-            {post.content}
-          </p>
+          {post.content && (
+            <p className="px-3 py-2 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
+              {post.content}
+            </p>
+          )}
           
           {allMedia.length > 0 && (
             <div className="w-full mt-1 bg-black/5 overflow-hidden">
@@ -173,7 +176,7 @@ export default function PostCard({ post }: { post: PostData }) {
                           src={url} 
                           alt={`Post media ${index + 1}`} 
                           className="w-full h-auto block"
-                          style={{ maxHeight: '100vh', width: '100%', objectFit: 'contain' }}
+                          style={{ maxHeight: 'none', width: '100%', objectFit: 'contain' }}
                           loading="lazy"
                         />
                       </div>
@@ -185,7 +188,7 @@ export default function PostCard({ post }: { post: PostData }) {
           )}
         </CardContent>
 
-        <CardFooter className="px-1 py-1 border-t-0 flex justify-around items-center h-9">
+        <CardFooter className="px-1 py-1 border-t-0 flex justify-around items-center h-9 mt-1">
           <Button 
             variant="ghost" 
             size="sm" 
