@@ -9,7 +9,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Force Deploy ID: security_final_social_v10
+    // Force Deploy ID: security_v12_indexed_access
 
     match /posts/{postId} {
       // السماح للقراءة والقائمة لجميع المسجلين لرؤية المحتوى
@@ -49,7 +49,6 @@ service cloud.firestore {
         allow write: if isSignedIn();
       }
       
-      // لدعم نظام التنبيهات والبحث
       match /bookmarks/{postRef} {
         allow read, write: if isOwner(userId);
       }

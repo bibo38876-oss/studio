@@ -202,7 +202,7 @@ export default function ProfilePage() {
               posts.map((post: any) => <PostCard key={post.id} post={post} />)
             ) : (
               <div className="text-center py-24 bg-card px-8 border-b">
-                <p className="text-muted-foreground text-[10px]">لا توجد منشورات لهذا المستخدم بعد.</p>
+                <p className="text-muted-foreground text-[10px]">لا توجد منشورات لهذا المستخدم بعد (تأكد من إنشاء الفهرس المركب في Firebase Console).</p>
               </div>
             )}
           </TabsContent>
