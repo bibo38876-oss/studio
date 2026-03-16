@@ -8,7 +8,7 @@ import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, X } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -84,7 +84,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     });
 
     if (user.uid !== postAuthorId) {
-      // استخدام setDocumentNonBlocking مع معرف فريد لضمان عدم تكرار إشعارات التعليق من نفس المستخدم على نفس المنشور بسرعة
       setDocumentNonBlocking(doc(firestore, 'users', postAuthorId, 'notifications', `${user.uid}_comment_${Date.now()}`), {
         type: 'comment',
         fromUserId: user.uid,
@@ -133,19 +132,15 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
 
   return (
     <div className="flex flex-col h-full bg-background animate-in slide-in-from-left-2 duration-300">
-      <div className="flex items-center justify-between p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-20 h-10">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full hover:bg-secondary transition-colors">
-            <ChevronRight size={20} />
-          </Button>
-          <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-primary leading-tight">المنشور</span>
-            <span className="text-[8px] text-muted-foreground">عرض التفاصيل والتعليقات</span>
-          </div>
-        </div>
+      {/* رأس النافذة موحد بزر رجوع واحد */}
+      <div className="flex items-center gap-3 p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-20 h-10">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full hover:bg-secondary transition-colors">
-          <X size={18} className="text-muted-foreground" />
+          <ChevronRight size={20} />
         </Button>
+        <div className="flex flex-col">
+          <span className="text-[11px] font-bold text-primary leading-tight">المنشور</span>
+          <span className="text-[8px] text-muted-foreground">عرض التفاصيل والتعليقات</span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-20 scroll-smooth">
