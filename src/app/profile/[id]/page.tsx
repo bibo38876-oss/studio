@@ -261,15 +261,15 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="pt-12 flex gap-2">
+              <div className="pt-12 flex gap-2 items-center">
                 {/* عملة تيمقاد */}
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-full h-8 w-8 border border-muted hover:bg-secondary transition-all p-1"
+                  className="rounded-full h-10 w-10 border border-muted hover:bg-secondary transition-all p-1"
                   onClick={() => toast({ title: "عملة تيمقاد", description: "قريبا" })}
                 >
-                  <svg viewBox="0 0 200 200" className="w-5 h-5">
+                  <svg viewBox="0 0 200 200" className="w-7 h-7">
                     <defs>
                       <radialGradient id="gold" cx="45%" cy="35%" r="65%">
                         <stop offset="0%" stopColor="#fff7b5"/>
@@ -307,10 +307,10 @@ export default function ProfilePage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-full h-8 w-8 border border-muted hover:bg-secondary transition-all"
+                  className="rounded-full h-10 w-10 border border-muted hover:bg-secondary transition-all"
                   onClick={() => toast({ title: "ميزة قيد التطوير", description: "قريبا" })}
                 >
-                  <Coffee size={16} className="text-primary" />
+                  <Coffee size={20} className="text-primary" />
                 </Button>
 
                 {isOwnProfile ? (
