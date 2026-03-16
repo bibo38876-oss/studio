@@ -50,8 +50,8 @@ interface PostData {
 
 export default function PostCard({ post }: { post: PostData }) {
   const { user, firestore } = useFirebase();
-  const { toast } = useToast();
   const router = useRouter();
+  const { toast } = useToast();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [isRepostAnimating, setIsRepostAnimating] = useState(false);
@@ -62,13 +62,39 @@ export default function PostCard({ post }: { post: PostData }) {
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
-  // المصدر الوحيد للحقيقة: نتحقق دائماً من وجود المنشور في المجموعة الرئيسية
+  // 1. استدعاء جميع الـ Hooks في البداية لضمان ثبات الترتيب (React Rules of Hooks)
   const centralPostRef = useMemoFirebase(() => {
     if (!firestore || !post.id) return null;
     return doc(firestore, 'posts', post.id);
   }, [firestore, post.id]);
 
   const { data: centralPost, isLoading: isCentralLoading } = useDoc(centralPostRef);
+
+  // نستخدم البيانات الحية من المنشور المركزي إذا كانت متوفرة، لضمان تحديث العدادات والمحتوى في كل مكان
+  const displayPost = centralPost || post;
+
+  const authorRef = useMemoFirebase(() => {
+    if (!firestore || !displayPost.authorId) return null;
+    return doc(firestore, 'users', displayPost.authorId);
+  }, [firestore, displayPost.authorId]);
+  
+  const { data: authorData } = useDoc(authorRef);
+
+  const likeRef = useMemoFirebase(() => {
+    if (!firestore || !user || !displayPost.id) return null;
+    return doc(firestore, 'posts', displayPost.id, 'likes', user.uid);
+  }, [firestore, displayPost.id, user]);
+
+  const { data: likeData } = useDoc(likeRef);
+  const isLiked = !!likeData;
+
+  const repostRef = useMemoFirebase(() => {
+    if (!firestore || !user || !displayPost.id) return null;
+    return doc(firestore, 'users', user.uid, 'reposts', displayPost.id);
+  }, [firestore, displayPost.id, user]);
+
+  const { data: repostData } = useDoc(repostRef);
+  const isReposted = !!repostData;
 
   // نظام احتساب المشاهدات الاحترافي
   useEffect(() => {
@@ -95,39 +121,14 @@ export default function PostCard({ post }: { post: PostData }) {
     return () => observer.disconnect();
   }, [firestore, post.id]);
 
-  // إذا تم تحميل البيانات واكتشفنا أن المنشور الأصلي غير موجود، لا نعرض شيئاً (إخفاء الأشباح)
+  // 2. الآن نقوم بالتحقق من شروط التوقف بعد استدعاء كافة الـ Hooks
   if (!isCentralLoading && centralPost === null) {
     return null;
   }
 
-  // نستخدم البيانات الحية من المنشور المركزي إذا كانت متوفرة، لضمان تحديث العدادات والمحتوى في كل مكان
-  const displayPost = centralPost || post;
-
-  const authorRef = useMemoFirebase(() => {
-    if (!firestore || !displayPost.authorId) return null;
-    return doc(firestore, 'users', displayPost.authorId);
-  }, [firestore, displayPost.authorId]);
-  const { data: authorData } = useDoc(authorRef);
-
   const verificationType: VerificationType = displayPost.email === 'adelbenmaza8@gmail.com' 
     ? 'blue' 
     : (authorData?.verificationType || displayPost.authorVerificationType || 'none');
-
-  const likeRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'posts', displayPost.id, 'likes', user.uid);
-  }, [firestore, displayPost.id, user]);
-
-  const { data: likeData } = useDoc(likeRef);
-  const isLiked = !!likeData;
-
-  const repostRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid, 'reposts', displayPost.id);
-  }, [firestore, displayPost.id, user]);
-
-  const { data: repostData } = useDoc(repostRef);
-  const isReposted = !!repostData;
 
   const formattedDate = displayPost.createdAt?.toDate 
     ? formatDistanceToNow(displayPost.createdAt.toDate(), { addSuffix: true, locale: ar })
@@ -167,7 +168,7 @@ export default function PostCard({ post }: { post: PostData }) {
         setDocumentNonBlocking(notifRef, {
           type: 'like',
           fromUserId: user.uid,
-          fromUsername: user.displayName || 'مستخدم تواصل',
+          fromUsername: user.displayName || 'مستخدم تيمقاد',
           fromAvatar: user.photoURL || '',
           postId: displayPost.id,
           createdAt: serverTimestamp(),
@@ -208,7 +209,7 @@ export default function PostCard({ post }: { post: PostData }) {
         setDocumentNonBlocking(notifRef, {
           type: 'repost', 
           fromUserId: user.uid,
-          fromUsername: user.displayName || 'مستخدم تواصل',
+          fromUsername: user.displayName || 'مستخدم تيمقاد',
           postId: displayPost.id,
           createdAt: serverTimestamp(),
           read: false
@@ -272,7 +273,7 @@ export default function PostCard({ post }: { post: PostData }) {
             </Avatar>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5 leading-tight">
-                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تواصل'}</span>
+                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
                 <VerifiedBadge type={verificationType} size={14} />
               </div>
               <span className="text-[10px] text-muted-foreground mt-0.5">
@@ -318,7 +319,7 @@ export default function PostCard({ post }: { post: PostData }) {
             <div className="w-full mb-3 rounded-xl overflow-hidden border border-muted/20">
               <Carousel className="w-full">
                 <CarouselContent className="-ml-0">
-                  {allMedia.map((url, index) => (
+                  {allMedia.map((url: string, index: number) => (
                     <CarouselItem key={index} className="pl-0">
                       <div className="relative w-full aspect-auto bg-black/5">
                         <img 
