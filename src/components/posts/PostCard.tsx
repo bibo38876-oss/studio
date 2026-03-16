@@ -177,6 +177,7 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const renderContent = (content: string) => {
     if (!content) return null;
+    // تقسيم النص مع الحفاظ على المسافات لضمان التنسيق العربي RTL
     return content.split(/(\s+)/).map((part, i) => {
       if (part.startsWith('#')) {
         return (

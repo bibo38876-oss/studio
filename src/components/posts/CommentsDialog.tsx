@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import Link from 'next/link';
 
 interface CommentsDialogProps {
   postId: string;
@@ -108,6 +109,25 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     toast({ title: "شكراً لك", description: "تم استلام البلاغ عن هذا التعليق." });
   };
 
+  const renderContent = (content: string) => {
+    if (!content) return null;
+    return content.split(/(\s+)/).map((part, i) => {
+      if (part.startsWith('#')) {
+        return (
+          <Link 
+            key={i} 
+            href={`/explore?q=${encodeURIComponent(part)}`}
+            className="text-accent font-bold hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </Link>
+        );
+      }
+      return part;
+    });
+  };
+
   const allMedia = post?.mediaUrls || (post?.mediaUrl ? [post.mediaUrl] : []);
 
   return (
@@ -140,7 +160,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
             </div>
             {post.content && (
               <p className="px-4 pb-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
-                {post.content}
+                {renderContent(post.content)}
               </p>
             )}
             {allMedia.length > 0 && (
@@ -216,7 +236,9 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                       </DropdownMenu>
                     </div>
                   </div>
-                  <p className="text-xs text-foreground/90 leading-relaxed bg-secondary/30 p-2 rounded-none">{comment.content}</p>
+                  <div className="text-xs text-foreground/90 leading-relaxed bg-secondary/30 p-2 rounded-none">
+                    {renderContent(comment.content)}
+                  </div>
                 </div>
               </div>
             ))
