@@ -60,26 +60,26 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-0 md:px-4 pt-12 flex gap-6">
-        <div className="hidden md:block w-64 pt-4 h-fit sticky top-12">
+      <main className="container mx-auto px-0 md:px-4 pt-8 flex gap-6">
+        <div className="hidden md:block w-64 pt-4 h-fit sticky top-8">
           <LeftSidebar />
         </div>
 
         <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto">
           <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="w-full bg-background border-b border-muted rounded-none h-12 p-0 sticky top-12 z-40">
+            <TabsList className="w-full bg-background border-b border-muted rounded-none h-10 p-0 sticky top-8 z-40">
               <TabsTrigger 
                 value="all" 
-                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-sm gap-2"
+                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2"
               >
-                <LayoutGrid size={18} />
+                <LayoutGrid size={16} />
                 عام
               </TabsTrigger>
               <TabsTrigger 
                 value="following" 
-                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-sm gap-2"
+                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2"
               >
-                <Users size={18} />
+                <Users size={16} />
                 أتابعهم
               </TabsTrigger>
             </TabsList>
@@ -102,8 +102,8 @@ export default function Home() {
               {!profile?.followingIds || profile.followingIds.length === 0 ? (
                 <div className="text-center py-24 bg-card px-8 border-b">
                   <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-primary font-bold text-sm mb-1">ابدأ بمتابعة الآخرين</p>
-                  <p className="text-muted-foreground text-xs">ستظهر منشورات من تتابعهم هنا.</p>
+                  <p className="text-primary font-bold text-xs mb-1">ابدأ بمتابعة الآخرين</p>
+                  <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
                 </div>
               ) : isFollowingLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -120,7 +120,7 @@ export default function Home() {
           </Tabs>
         </div>
 
-        <div className="hidden lg:block w-80 pt-4 h-fit sticky top-12">
+        <div className="hidden lg:block w-80 pt-4 h-fit sticky top-8">
           <RightSidebar />
         </div>
       </main>
