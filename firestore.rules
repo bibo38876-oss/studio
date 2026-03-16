@@ -12,16 +12,13 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.email == 'adelbenmaza8@gmail.com';
     }
 
-    // Force Deploy ID: production_ready_v2_views_fix
-
     match /posts/{postId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
-      // Allow any signed in user to update post metrics like views, but restrict content editing to owner/admin
       allow update: if isSignedIn() && (
         isOwner(resource.data.authorId) || 
         isAdmin() || 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount', 'likesCount', 'repostsCount', 'commentsCount', 'poll'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount', 'likesCount', 'repostsCount', 'commentsCount', 'poll', 'reportsCount'])
       );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
 
@@ -48,7 +45,7 @@ service cloud.firestore {
       allow update: if isSignedIn();
       
       match /notifications/{notifId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
 
       match /following/{targetId} {
@@ -88,6 +85,12 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read, list, create: if isSignedIn();
       }
+    }
+
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow delete: if isAdmin();
     }
   }
 }

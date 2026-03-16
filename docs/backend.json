@@ -60,7 +60,8 @@
         "likesCount": { "type": "number", "default": 0 },
         "commentsCount": { "type": "number", "default": 0 },
         "repostsCount": { "type": "number", "default": 0 },
-        "viewsCount": { "type": "number", "default": 0 }
+        "viewsCount": { "type": "number", "default": 0 },
+        "reportsCount": { "type": "number", "default": 0 }
       },
       "required": ["id", "authorId", "content", "createdAt"]
     },

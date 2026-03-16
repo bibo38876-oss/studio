@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { doc, increment, serverTimestamp, runTransaction, arrayUnion, collection, addDoc } from 'firebase/firestore';
+import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, increment, serverTimestamp, runTransaction, arrayUnion, collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -48,6 +48,7 @@ interface PostData {
   commentsCount?: number;
   repostsCount?: number;
   viewsCount?: number;
+  reportsCount?: number;
   hashtags?: string[];
   email?: string;
   authorVerificationType?: VerificationType;
@@ -146,8 +147,6 @@ export default function PostCard({ post }: { post: PostData }) {
       setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
       updateDocumentNonBlocking(postRef!, { likesCount: increment(1) });
       setDocumentNonBlocking(doc(firestore, 'users', user.uid, 'likedPosts', displayPost.id), { ...displayPost, likedAt: serverTimestamp() }, { merge: true });
-      
-      // تحديث اهتمامات المستخدم للخوارزمية
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { interactedAuthorIds: arrayUnion(displayPost.authorId) });
 
       if (user.uid !== displayPost.authorId) {
@@ -190,6 +189,27 @@ export default function PostCard({ post }: { post: PostData }) {
     }
   };
 
+  const handleReport = () => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !user || !displayPost.id) return;
+
+    // 1. إنشاء مستند بلاغ
+    addDocumentNonBlocking(collection(firestore, 'reports'), {
+      reporterId: user.uid,
+      targetId: displayPost.id,
+      targetType: 'post',
+      createdAt: serverTimestamp(),
+      status: 'pending'
+    });
+
+    // 2. زيادة عداد البلاغات في المنشور
+    updateDocumentNonBlocking(postRef!, {
+      reportsCount: increment(1)
+    });
+
+    toast({ title: "شكراً لك", description: "تم استلام بلاغك، سنقوم بمراجعته قريباً." });
+  };
+
   const renderContent = (content: string) => {
     if (!content) return null;
     const isLong = content.length > 250;
@@ -218,6 +238,7 @@ export default function PostCard({ post }: { post: PostData }) {
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="text-xs">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
+            {!isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleReport(); }} className="gap-2 text-red-500 cursor-pointer"><AlertTriangle size={12} /> إبلاغ عن محتوى مخالف</DropdownMenuItem>}
             {isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteDocumentNonBlocking(doc(firestore!, 'posts', displayPost.id)); toast({ description: "تم الحذف" }); }} className="gap-2 text-destructive cursor-pointer"><Trash2 size={12} /> حذف المنشور</DropdownMenuItem>}
           </DropdownMenuContent>
         </DropdownMenu>
