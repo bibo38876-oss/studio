@@ -12,7 +12,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.email == 'adelbenmaza8@gmail.com';
     }
 
-    // Force Deploy ID: security_fix_v20_posts_access
+    // Force Deploy ID: index_fix_hashtags_v1
 
     match /posts/{postId} {
       allow read, list: if isSignedIn();
