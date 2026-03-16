@@ -130,11 +130,21 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
 
   const allMedia = post?.mediaUrls || (post?.mediaUrl ? [post.mediaUrl] : []);
 
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClose();
+  };
+
   return (
     <div className="flex flex-col h-full bg-background animate-in slide-in-from-left-2 duration-300">
-      {/* رأس النافذة موحد بزر رجوع واحد */}
-      <div className="flex items-center gap-3 p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-20 h-10">
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full hover:bg-secondary transition-colors">
+      <div className="flex items-center gap-3 p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-50 h-10">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={handleBack}
+          className="h-8 w-8 rounded-full hover:bg-secondary transition-colors"
+        >
           <ChevronRight size={20} />
         </Button>
         <div className="flex flex-col">
@@ -284,3 +294,4 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     </div>
   );
 }
+
