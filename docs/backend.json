@@ -83,16 +83,7 @@
           { "fieldPath": "authorId", "order": "ASCENDING" },
           { "fieldPath": "createdAt", "order": "DESCENDING" }
         ],
-        "description": "Required for Profile page posts sorting."
-      },
-      {
-        "collectionGroup": "posts",
-        "queryScope": "COLLECTION",
-        "fields": [
-          { "fieldPath": "authorId", "arrayConfig": "CONTAINS" },
-          { "fieldPath": "createdAt", "order": "DESCENDING" }
-        ],
-        "description": "Alternative for following feed (using array-contains if applicable, or IN operator which requires similar composite index)."
+        "description": "ضروري لعرض المنشورات في الملف الشخصي ولخلاصة المتابعة (IN operator)."
       }
     ]
   }
