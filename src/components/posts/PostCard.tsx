@@ -117,9 +117,9 @@ export default function PostCard({ post }: { post: PostData }) {
       >
         <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
           <Link href={`/profile/${post.authorId}`} className="flex gap-2.5 group" onClick={(e) => e.stopPropagation()}>
-            <Avatar className="h-9 w-9 border border-muted/20 transition-transform group-hover:scale-105 rounded-none">
-              <AvatarImage src={post.authorAvatar} alt={post.authorName} />
-              <AvatarFallback>{post.authorName?.[0] || 'ت'}</AvatarFallback>
+            <Avatar className="h-9 w-9 border border-muted/20 transition-transform group-hover:scale-105 rounded-none bg-primary/10 text-primary">
+              {post.authorAvatar ? <AvatarImage src={post.authorAvatar} alt={post.authorName} /> : null}
+              <AvatarFallback className="text-[10px] font-bold">{post.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col justify-center">
               <span className="text-[11px] font-bold text-primary leading-tight group-hover:underline">{post.authorName || 'مستخدم مجهول'}</span>

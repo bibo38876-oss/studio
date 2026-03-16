@@ -37,12 +37,12 @@ export default function LoginPage() {
         
         await updateProfile(user, { displayName: username });
         
-        // Create Firestore profile
+        // Create Firestore profile - No external image URL used
         await setDoc(doc(firestore, 'users', user.uid), {
           id: user.uid,
           username: username,
           email: email,
-          profilePictureUrl: `https://picsum.photos/seed/${user.uid}/200/200`,
+          profilePictureUrl: "", // Empty URL to trigger fallback initials
           createdAt: new Date().toISOString(),
           bio: 'مرحباً، أنا مستخدم جديد في تواصل',
           followingIds: [],

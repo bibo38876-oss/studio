@@ -32,7 +32,6 @@ export default function ProfilePage() {
     }
   }, [currentUser, isUserLoading, router]);
 
-  // استرجاع بيانات الملف الشخصي - ننتظر حتى يتوفر المستخدم والـ ID بشكل مؤكد
   const profileRef = useMemoFirebase(() => {
     if (!firestore || !id || id === 'undefined' || !currentUser?.uid) return null;
     return doc(firestore, 'users', id);
@@ -40,7 +39,6 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // استرجاع منشورات المستخدم - ننتظر حتى يتوفر المستخدم والـ ID والبيانات
   const postsQuery = useMemoFirebase(() => {
     if (!firestore || !id || id === 'undefined' || !currentUser?.uid) return null;
     return query(
@@ -124,9 +122,9 @@ export default function ProfilePage() {
           </div>
           <div className="px-4 pb-6 relative">
             <div className="flex justify-between items-end -mt-10 mb-4">
-              <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-none">
-                <AvatarImage src={profile.profilePictureUrl} alt={profile.username} />
-                <AvatarFallback>{profile.username?.[0]}</AvatarFallback>
+              <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-none text-primary bg-primary/5">
+                {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
+                <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
               </Avatar>
               <div className="pb-1">
                 {isOwnProfile ? (
