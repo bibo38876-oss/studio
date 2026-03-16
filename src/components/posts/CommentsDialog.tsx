@@ -123,7 +123,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
         {post && (
           <div className="pb-4 border-b bg-muted/5">
             <div className="flex gap-3 p-4">
-              <Avatar className="h-10 w-10 border border-muted/20 rounded-none">
+              <Avatar className="h-10 w-10 border border-muted/20 rounded-full">
                 <AvatarImage src={post.authorAvatar} alt={post.authorName} />
                 <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
               </Avatar>
@@ -174,7 +174,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           ) : comments && comments.length > 0 ? (
             comments.map((comment: any) => (
               <div key={comment.id} className="flex gap-3 animate-in fade-in slide-in-from-right-1 duration-300">
-                <Avatar className="h-8 w-8 border rounded-none">
+                <Avatar className="h-8 w-8 border rounded-full">
                   <AvatarImage src={comment.authorAvatar} alt={comment.authorName} />
                   <AvatarFallback>{comment.authorName?.[0]}</AvatarFallback>
                 </Avatar>

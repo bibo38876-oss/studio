@@ -31,7 +31,7 @@ export default function LeftSidebar() {
       <Card className="border-none shadow-none rounded-none overflow-hidden bg-card">
         <div className="h-16 bg-primary/10 w-full" />
         <CardContent className="relative pt-0 px-4 pb-6">
-          <Avatar className="h-16 w-16 absolute -top-8 right-4 border-4 border-card rounded-none bg-background text-primary">
+          <Avatar className="h-16 w-16 absolute -top-8 right-4 border-4 border-card rounded-full bg-background text-primary">
             {profile?.profilePictureUrl ? <AvatarImage src={profile?.profilePictureUrl} alt={profile?.username} /> : null}
             <AvatarFallback className="font-bold text-lg">{profile?.username?.[0] || 'ت'}</AvatarFallback>
           </Avatar>

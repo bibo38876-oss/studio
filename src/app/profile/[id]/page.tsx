@@ -131,7 +131,7 @@ export default function ProfilePage() {
           </div>
           <div className="px-4 pb-6 relative">
             <div className="flex justify-between items-end -mt-10 mb-4">
-              <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-none text-primary bg-primary/5">
+              <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-full text-primary bg-primary/5">
                 {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
                 <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
               </Avatar>

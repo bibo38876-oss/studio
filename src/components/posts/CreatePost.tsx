@@ -101,7 +101,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-background">
         <div className="flex gap-3">
-          <Avatar className="h-9 w-9 rounded-none">
+          <Avatar className="h-9 w-9 rounded-full">
             <AvatarImage src={profile?.profilePictureUrl} alt={profile?.username} />
             <AvatarFallback>{profile?.username?.[0] || 'ت'}</AvatarFallback>
           </Avatar>
