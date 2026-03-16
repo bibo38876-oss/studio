@@ -63,6 +63,7 @@ export default function PostCard({ post }: { post: PostData }) {
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
+  // Hooks always at the top
   const centralPostRef = useMemoFirebase(() => {
     if (!firestore || !post.id) return null;
     return doc(firestore, 'posts', post.id);
@@ -282,16 +283,16 @@ export default function PostCard({ post }: { post: PostData }) {
     <>
       <Card 
         ref={cardRef}
-        className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/20 hover:bg-muted/5 transition-colors"
+        className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors"
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
           <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
-            <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 shrink-0">
+            <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 shrink-0 order-1 md:order-none">
               {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
               <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col text-right">
+            <div className="flex flex-col text-right order-2 md:order-none">
               <div className="flex items-center gap-1.5 leading-tight">
                 <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
                 <VerifiedBadge type={verificationType} size={13} />
@@ -353,7 +354,7 @@ export default function PostCard({ post }: { post: PostData }) {
           )}
         </CardContent>
 
-        <CardFooter className="px-4 py-1 border-t-0 flex flex-row-reverse justify-between items-center h-9">
+        <CardFooter className="px-4 py-1 border-t-0 flex flex-row justify-between items-center h-9">
           <Button 
             variant="ghost" 
             size="sm" 
