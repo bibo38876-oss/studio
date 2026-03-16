@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useMemo } from 'react';
@@ -31,30 +32,31 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
+  const isAdminUser = currentUser?.email === ADMIN_EMAIL;
 
   useEffect(() => {
-    if (!isUserLoading && (!currentUser || currentUser.email !== ADMIN_EMAIL)) {
+    if (!isUserLoading && !isAdminUser) {
       router.push('/');
     }
-  }, [currentUser, isUserLoading, router]);
+  }, [isAdminUser, isUserLoading, router]);
 
-  // جلب المستخدمين - يتطلب تسجيل الدخول والتأكد من الأدمن
+  // جلب المستخدمين - مسموح فقط للأدمن
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore || !currentUser?.uid) return null;
+    if (!firestore || !isAdminUser) return null;
     return query(collection(firestore, 'users'), limit(100));
-  }, [firestore, currentUser?.uid]);
+  }, [firestore, isAdminUser]);
 
-  // جلب المنشورات العامة للإحصائيات
+  // جلب المنشورات العامة للإحصائيات - مسموح فقط للأدمن
   const postsQuery = useMemoFirebase(() => {
-    if (!firestore || !currentUser?.uid) return null;
+    if (!firestore || !isAdminUser) return null;
     return query(collection(firestore, 'posts'), limit(500));
-  }, [firestore, currentUser?.uid]);
+  }, [firestore, isAdminUser]);
 
-  // جلب المنشورات التي بلغت 100 بلاغ
+  // جلب المنشورات المبلغ عنها - مسموح فقط للأدمن
   const reportedPostsQuery = useMemoFirebase(() => {
-    if (!firestore || !currentUser?.uid) return null;
+    if (!firestore || !isAdminUser) return null;
     return query(collection(firestore, 'posts'), where('reportsCount', '>=', 100), limit(50));
-  }, [firestore, currentUser?.uid]);
+  }, [firestore, isAdminUser]);
 
   const { data: users, isLoading: isUsersLoading } = useCollection(usersQuery);
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
@@ -98,7 +100,7 @@ export default function AdminPage() {
   ) || [];
 
   const handleUpdateVerification = (userId: string, type: string) => {
-    if (!firestore) return;
+    if (!firestore || !isAdminUser) return;
     updateDocumentNonBlocking(doc(firestore, 'users', userId), {
       verificationType: type,
     });
@@ -106,7 +108,7 @@ export default function AdminPage() {
   };
 
   const handleDeleteViolatingPost = (post: any) => {
-    if (!firestore) return;
+    if (!firestore || !isAdminUser) return;
 
     deleteDocumentNonBlocking(doc(firestore, 'posts', post.id));
 
@@ -121,7 +123,7 @@ export default function AdminPage() {
     toast({ title: "تم الحذف", description: "تم حذف المنشور وإرسال تنبيه للمستخدم." });
   };
 
-  if (isUserLoading || !currentUser || currentUser.email !== ADMIN_EMAIL) {
+  if (isUserLoading || !isAdminUser) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
   }
 
