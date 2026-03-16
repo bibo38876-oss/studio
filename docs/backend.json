@@ -35,7 +35,8 @@
         "hashtags": { "type": "array", "items": { "type": "string" } },
         "likesCount": { "type": "number" },
         "commentsCount": { "type": "number" },
-        "repostsCount": { "type": "number" }
+        "repostsCount": { "type": "number" },
+        "viewsCount": { "type": "number" }
       },
       "required": ["id", "authorId", "content", "createdAt"]
     },

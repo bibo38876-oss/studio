@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Trash2, AlertTriangle } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,7 @@ interface PostData {
   likesCount?: number;
   commentsCount?: number;
   repostsCount?: number;
+  viewsCount?: number;
   hashtags?: string[];
   email?: string;
 }
@@ -124,7 +125,6 @@ export default function PostCard({ post }: { post: PostData }) {
         postId: post.id, 
         repostedAt: serverTimestamp(),
         originalAuthorId: post.authorId,
-        // تخزين نسخة من البيانات للعرض السريع في التبويب
         postData: { ...post, createdAt: post.createdAt?.toDate()?.toISOString() || new Date().toISOString() }
       }, { merge: true });
       updateDoc(postRef, { repostsCount: increment(1) });
@@ -133,7 +133,7 @@ export default function PostCard({ post }: { post: PostData }) {
       if (post.authorId !== user.uid) {
         const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
         setDocumentNonBlocking(notifRef, {
-          type: 'mention', // سنستخدمها كرمز لإعادة النشر في الوقت الحالي
+          type: 'mention', 
           fromUserId: user.uid,
           fromUsername: user.displayName || 'مستخدم تواصل',
           postId: post.id,
@@ -154,6 +154,13 @@ export default function PostCard({ post }: { post: PostData }) {
   const handleReport = (e: React.MouseEvent) => {
     e.stopPropagation();
     toast({ title: "شكراً لك", description: "تم استلام بلاغك وسنقوم بمراجعته قريباً." });
+  };
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/post/${post.id}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: "تم النسخ", description: "تم نسخ رابط المنشور إلى الحافظة." });
   };
 
   const allMedia = post.mediaUrls || (post.mediaUrl ? [post.mediaUrl] : []);
@@ -185,6 +192,10 @@ export default function PostCard({ post }: { post: PostData }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="text-xs rounded-none border-none shadow-xl">
+              <DropdownMenuItem onClick={handleCopyLink} className="gap-2 cursor-pointer">
+                <LinkIcon size={14} />
+                نسخ الرابط
+              </DropdownMenuItem>
               {isOwner ? (
                 <DropdownMenuItem onClick={handleDeletePost} className="gap-2 text-destructive cursor-pointer">
                   <Trash2 size={14} />
@@ -264,8 +275,14 @@ export default function PostCard({ post }: { post: PostData }) {
             <span className="text-[10px] font-bold">{post.repostsCount || 0}</span>
           </Button>
 
-          <Button variant="ghost" size="sm" className="h-8 flex-1 text-muted-foreground rounded-none hover:bg-secondary/50" onClick={(e) => e.stopPropagation()}>
-            <Share2 size={16} />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none hover:bg-secondary/50"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <BarChart3 size={16} />
+            <span className="text-[10px] font-bold">{post.viewsCount || 0}</span>
           </Button>
         </CardFooter>
       </Card>
