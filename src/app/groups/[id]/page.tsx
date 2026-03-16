@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import VerifiedBadge from '@/components/ui/VerifiedBadge';
 
 export default function GroupChatPage() {
   const params = useParams();
@@ -50,14 +51,12 @@ export default function GroupChatPage() {
 
   const { data: group, isLoading: isGroupLoading } = useDoc(groupRef);
 
-  // جلب بيانات المستخدم للتأكد من المتابعين
   const currentUserRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
   const { data: currentUserProfile } = useDoc(currentUserRef);
 
-  // جلب المتابعين (الأشخاص الذين يتابعهم المستخدم)
   const followingQuery = useMemoFirebase(() => {
     if (!firestore || !currentUserProfile?.followingIds || currentUserProfile.followingIds.length === 0) return null;
     return query(collection(firestore, 'users'), where('id', 'in', currentUserProfile.followingIds.slice(0, 10)));
@@ -102,13 +101,16 @@ export default function GroupChatPage() {
     }
     if (!message.trim() || !firestore || !id) return;
 
-    const content = message.trim();
+    const content = message.trim().substring(0, 150);
     setMessage('');
 
     addDocumentNonBlocking(collection(firestore, 'groups', id, 'messages'), {
       content: content,
       senderId: user.uid,
       senderName: currentUserProfile?.username || user.displayName || 'مستخدم تواصل',
+      senderAvatar: currentUserProfile?.profilePictureUrl || '',
+      senderEmail: user.email,
+      senderVerificationType: user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (currentUserProfile?.verificationType || 'none'),
       createdAt: serverTimestamp(),
     });
   };
@@ -126,7 +128,6 @@ export default function GroupChatPage() {
       return;
     }
 
-    // إرسال دعوة للمستخدم
     const inviteRef = doc(firestore, 'users', targetUser.id, 'groupInvites', id);
     setDocumentNonBlocking(inviteRef, {
       groupId: id,
@@ -238,7 +239,7 @@ export default function GroupChatPage() {
       </div>
 
       <main 
-        className="flex-1 overflow-y-auto pt-20 pb-20 px-4 container max-w-xl mx-auto flex flex-col gap-3 scroll-smooth" 
+        className="flex-1 overflow-y-auto pt-20 pb-20 px-4 container max-w-xl mx-auto flex flex-col gap-4 scroll-smooth" 
         ref={scrollRef}
       >
         {isMessagesLoading ? (
@@ -249,15 +250,28 @@ export default function GroupChatPage() {
             return (
               <div 
                 key={msg.id} 
-                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] ${isMe ? 'self-end' : 'self-start'} animate-in fade-in slide-in-from-bottom-1 duration-300`}
+                className={`flex gap-2 max-w-[90%] ${isMe ? 'flex-row-reverse self-end' : 'flex-row self-start'} animate-in fade-in slide-in-from-bottom-1 duration-300`}
               >
-                {!isMe && <span className="text-[8px] text-muted-foreground mb-0.5 ml-1">{msg.senderName}</span>}
-                <div className={`px-4 py-2 text-xs leading-relaxed shadow-sm ${isMe ? 'bg-primary text-white rounded-l-xl rounded-tr-xl' : 'bg-card border text-foreground rounded-r-xl rounded-tl-xl'}`}>
-                  {msg.content}
+                {!isMe && (
+                  <Avatar className="h-7 w-7 mt-auto shrink-0 border">
+                    <AvatarImage src={msg.senderAvatar} alt={msg.senderName} />
+                    <AvatarFallback className="text-[8px]">{msg.senderName?.[0]}</AvatarFallback>
+                  </Avatar>
+                )}
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                  {!isMe && (
+                    <div className="flex items-center gap-1 mb-0.5 ml-1">
+                      <span className="text-[8px] font-bold text-primary">{msg.senderName}</span>
+                      <VerifiedBadge type={msg.senderVerificationType || 'none'} size={10} />
+                    </div>
+                  )}
+                  <div className={`px-3 py-1.5 text-xs leading-relaxed shadow-sm break-words ${isMe ? 'bg-primary text-white rounded-l-xl rounded-tr-xl' : 'bg-card border text-foreground rounded-r-xl rounded-tl-xl'}`}>
+                    {msg.content}
+                  </div>
+                  <span className="text-[7px] text-muted-foreground mt-1 px-1">
+                    {msg.createdAt?.toDate ? formatDistanceToNow(msg.createdAt.toDate(), { locale: ar }) : 'الآن'}
+                  </span>
                 </div>
-                <span className="text-[7px] text-muted-foreground mt-1 px-1">
-                  {msg.createdAt?.toDate ? formatDistanceToNow(msg.createdAt.toDate(), { locale: ar }) : 'الآن'}
-                </span>
               </div>
             );
           })
@@ -270,13 +284,21 @@ export default function GroupChatPage() {
 
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t p-2 container max-w-xl mx-auto h-12">
         <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-full group focus-within:bg-secondary transition-colors">
-          <Input 
-            placeholder="اكتب رسالة..." 
-            className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full placeholder:text-muted-foreground/50"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-          />
+          <div className="flex-1 relative flex items-center">
+            <Input 
+              placeholder="اكتب رسالة (150 حرفاً)..." 
+              className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0 placeholder:text-muted-foreground/50"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              maxLength={150}
+            />
+            {message.length > 120 && (
+              <span className="absolute left-0 text-[8px] text-primary/50 font-bold">
+                {150 - message.length}
+              </span>
+            )}
+          </div>
           <Button 
             variant="ghost" 
             size="icon" 

@@ -23,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import VerifiedBadge from '@/components/ui/VerifiedBadge';
 
 interface CommentsDialogProps {
   postId: string;
@@ -62,7 +63,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     }
     if (!commentText.trim() || !user || !firestore) return;
 
-    const content = commentText.trim();
+    const content = commentText.trim().substring(0, 150);
     setCommentText('');
 
     const commentData = {
@@ -71,7 +72,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
       authorAvatar: profile?.profilePictureUrl || '',
       content: content,
       createdAt: serverTimestamp(),
-      authorEmail: user.email // Added to track verification badge
+      authorEmail: user.email,
+      authorVerificationType: user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (profile?.verificationType || 'none')
     };
 
     addDocumentNonBlocking(collection(firestore, 'posts', postId, 'comments'), commentData);
@@ -131,7 +133,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
               <div className="flex flex-col justify-center">
                 <div className="flex items-center gap-1 leading-tight">
                   <span className="text-xs font-bold text-primary">{post.authorName}</span>
-                  {post.email === 'adelbenmaza8@gmail.com' && <BadgeCheck size={14} className="text-accent fill-current" />}
+                  <VerifiedBadge type={post.email === 'adelbenmaza8@gmail.com' ? 'blue' : (post.authorVerificationType || 'none')} />
                 </div>
                 <span className="text-[10px] text-muted-foreground">@{post.email?.split('@')[0] || 'مستخدم'}</span>
               </div>
@@ -186,7 +188,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
-                      {comment.authorEmail === 'adelbenmaza8@gmail.com' && <BadgeCheck size={12} className="text-accent fill-current" />}
+                      <VerifiedBadge type={comment.authorVerificationType || (comment.authorEmail === 'adelbenmaza8@gmail.com' ? 'blue' : 'none')} size={12} />
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[8px] text-muted-foreground">
@@ -228,15 +230,23 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
 
       <div className="p-3 border-t bg-background/95 backdrop-blur-sm pb-safe sticky bottom-0 z-30">
         <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-10 group focus-within:bg-secondary/80 transition-all">
-          <Input 
-            placeholder={isAnonymous ? "سجل الدخول للتعليق..." : "اكتب تعليقاً..."}
-            className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0 placeholder:text-muted-foreground/50"
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
-            readOnly={isAnonymous}
-            onClick={() => isAnonymous && router.push('/login')}
-          />
+          <div className="flex-1 relative flex items-center">
+            <Input 
+              placeholder={isAnonymous ? "سجل الدخول للتعليق..." : "اكتب تعليقاً (150 حرفاً)..."}
+              className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0 placeholder:text-muted-foreground/50"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+              readOnly={isAnonymous}
+              onClick={() => isAnonymous && router.push('/login')}
+              maxLength={150}
+            />
+            {commentText.length > 120 && (
+              <span className="absolute left-0 text-[8px] text-primary/50 font-bold">
+                {150 - commentText.length}
+              </span>
+            )}
+          </div>
           <Button 
             size="icon" 
             variant="ghost" 
