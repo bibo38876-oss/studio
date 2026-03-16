@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -17,7 +18,6 @@ export default function BottomNav() {
 
   const isAnonymous = !user || user.isAnonymous;
 
-  // إظهار شريط التنقل فقط في الصفحة الرئيسية لتحسين تجربة المستخدم على الجوال
   if (pathname !== '/') {
     return null;
   }

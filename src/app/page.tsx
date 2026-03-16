@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -20,7 +21,7 @@ export default function Home() {
   const [limitFollowing, setLimitFollowing] = useState(10);
   const router = useRouter();
 
-  // مراجع لاكتشاف نهاية الصفحة
+  // مراجع لاكتشاف نهاية الصفحة للتمرير اللانهائي
   const loadMoreForYouRef = useRef<HTMLDivElement>(null);
   const loadMoreFollowingRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +38,7 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // جلب المنشورات العامة لتبويب "لك" مع حد متغير
+  // جلب المنشورات العامة لتبويب "لك" مع حد متغير للتمرير اللانهائي
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(limitForYou));
@@ -45,7 +46,7 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // جلب المنشورات من المتابعين لتبويب "أتابعهم" مع حد متغير
+  // جلب المنشورات من المتابعين لتبويب "أتابعهم"
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -83,7 +84,7 @@ export default function Home() {
     }).sort((a, b) => b.recommendationScore - a.recommendationScore);
   }, [postsPool, profile]);
 
-  // إعداد مراقب التمرير اللانهائي
+  // إعداد مراقب التمرير اللانهائي (Infinite Scroll)
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -145,7 +146,7 @@ export default function Home() {
                 {isPoolLoading && limitForYou === 10 ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    <p className="text-[10px] text-muted-foreground animate-pulse">جاري تحضير التوصيات...</p>
+                    <p className="text-[10px] text-muted-foreground animate-pulse font-bold">جاري تحضير التوصيات...</p>
                   </div>
                 ) : (
                   <motion.div 
@@ -156,7 +157,7 @@ export default function Home() {
                   >
                     {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
                     
-                    {/* محفز التحميل الإضافي */}
+                    {/* محفز التمرير اللانهائي */}
                     <div ref={loadMoreForYouRef} className="py-10 flex justify-center">
                       {isPoolLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
                     </div>
@@ -184,7 +185,7 @@ export default function Home() {
                   >
                     {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
                     
-                    {/* محفز التحميل الإضافي */}
+                    {/* محفز التمرير اللانهائي */}
                     <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">
                       {isFollowingLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
                     </div>

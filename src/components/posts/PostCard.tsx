@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
@@ -104,6 +105,7 @@ export default function PostCard({ post }: { post: PostData }) {
   }, [firestore, displayPost.id, user]);
   const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
 
+  // مراقب المشاهدات للتمرير
   useEffect(() => {
     if (!firestore || !displayPost.id || viewedRef.current) return;
     const observer = new IntersectionObserver(
@@ -367,7 +369,7 @@ export default function PostCard({ post }: { post: PostData }) {
 
           <CardFooter className="px-4 py-1 flex flex-row justify-between items-center h-9">
             <motion.div whileTap={{ scale: 0.9 }}>
-              <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }} disabled={isLikeLoading}>
+              <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2 transition-all", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }} disabled={isLikeLoading}>
                 <motion.div
                   animate={likeData ? { scale: [1, 1.4, 1.1], rotate: [0, 15, -15, 0] } : { scale: 1 }}
                   transition={{ duration: 0.3 }}
@@ -383,7 +385,7 @@ export default function PostCard({ post }: { post: PostData }) {
             </Button>
 
             <motion.div whileTap={{ scale: 0.9 }}>
-              <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", bookmarkData ? "text-accent" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleBookmark(); }} disabled={isBookmarkLoading}>
+              <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2 transition-all", bookmarkData ? "text-accent" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleBookmark(); }} disabled={isBookmarkLoading}>
                 <motion.div
                   animate={bookmarkData ? { scale: [1, 1.2, 1] } : { scale: 1 }}
                   transition={{ duration: 0.2 }}

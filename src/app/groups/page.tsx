@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import { motion } from 'framer-motion';
 
 export default function GroupsPage() {
   const { firestore, user } = useFirebase();
@@ -26,25 +27,22 @@ export default function GroupsPage() {
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
-  // جلب المجموعات التي يملكها المستخدم
+  // جلب المجموعات
   const myGroupsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'groups'), where('creatorId', '==', user.uid));
   }, [firestore, user]);
 
-  // جلب المجموعات التي المستخدم عضو فيها
   const joinedGroupsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'groups'), where('members', 'array-contains', user.uid));
   }, [firestore, user]);
 
-  // جلب الدعوات المعلقة
   const invitesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'users', user.uid, 'groupInvites'), where('status', '==', 'pending'));
   }, [firestore, user]);
 
-  // جلب مستخدمين للاقتراحات (خوارزمية العدالة)
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'users'), limit(30));
@@ -63,7 +61,7 @@ export default function GroupsPage() {
 
   const hasGroup = myGroups && myGroups.length > 0;
 
-  // خوارزمية الاقتراحات الذكية والعادلة
+  // خوارزمية الاقتراحات العادلة والذكية
   const suggestedUsers = useMemo(() => {
     if (!allUsers || !user) return [];
     
@@ -71,10 +69,9 @@ export default function GroupsPage() {
     const adminAccount = others.find(u => u.email === ADMIN_EMAIL);
     const restOfUsers = others.filter(u => u.email !== ADMIN_EMAIL);
     
-    // خلط بقية المستخدمين لضمان العدالة في الظهور
+    // خلط بقية المستخدمين لضمان العدالة في الظهور وتكافؤ فرص المتابعة
     const shuffledRest = [...restOfUsers].sort(() => Math.random() - 0.5);
     
-    // الإدارة أولاً ثم البقية بشكل عشوائي
     const result = adminAccount ? [adminAccount, ...shuffledRest] : shuffledRest;
     return result.slice(0, 10);
   }, [allUsers, user?.uid]);
@@ -103,27 +100,6 @@ export default function GroupsPage() {
     setGroupName('');
     setGroupDesc('');
     toast({ description: "تم إنشاء مجموعتك بنجاح." });
-  };
-
-  const handleAcceptInvite = (invite: any) => {
-    if (!firestore || !user) return;
-
-    updateDocumentNonBlocking(doc(firestore, 'groups', invite.groupId), {
-      members: arrayUnion(user.uid),
-      membersCount: (invite.currentMembersCount || 0) + 1
-    });
-
-    updateDocumentNonBlocking(doc(firestore, 'users', user.uid, 'groupInvites', invite.id), {
-      status: 'accepted'
-    });
-
-    toast({ description: "تم الانضمام للمجموعة." });
-  };
-
-  const handleRejectInvite = (inviteId: string) => {
-    if (!firestore || !user) return;
-    deleteDocumentNonBlocking(doc(firestore, 'users', user.uid, 'groupInvites', inviteId));
-    toast({ description: "تم رفض الدعوة." });
   };
 
   const handleFollow = (targetId: string, isFollowing: boolean) => {
@@ -211,10 +187,10 @@ export default function GroupsPage() {
                       <span className="text-[8px] text-muted-foreground">دعوة من: {invite.invitedBy}</span>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-green-50 text-green-600 hover:bg-green-100" onClick={() => handleAcceptInvite(invite)}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-green-50 text-green-600 hover:bg-green-100" onClick={() => updateDocumentNonBlocking(doc(firestore!, 'groups', invite.groupId), { members: arrayUnion(user!.uid), membersCount: (invite.currentMembersCount || 0) + 1 })}>
                         <Check size={14} />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-red-50 text-red-600 hover:bg-red-100" onClick={() => handleRejectInvite(invite.id)}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-red-50 text-red-600 hover:bg-red-100" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'users', user!.uid, 'groupInvites', invite.id))}>
                         <X size={14} />
                       </Button>
                     </div>
@@ -233,7 +209,7 @@ export default function GroupsPage() {
                 <Sparkles size={14} className="text-accent" />
                 <h2 className="text-xs font-bold text-primary uppercase tracking-tight">اكتشف أشخاصاً جدد</h2>
               </div>
-              <span className="text-[8px] text-muted-foreground font-medium">خوارزمية العدالة الذكية</span>
+              <span className="text-[8px] text-muted-foreground font-medium uppercase tracking-widest">خوارزمية العدالة الذكية</span>
             </div>
             
             <div className="flex overflow-x-auto gap-3 pb-2 no-scrollbar scroll-smooth">
@@ -242,11 +218,15 @@ export default function GroupsPage() {
                 const isManagement = u.email === ADMIN_EMAIL;
                 
                 return (
-                  <div key={u.id} className="flex flex-col items-center gap-2 min-w-[110px] p-3 bg-secondary/20 rounded-none border border-transparent hover:border-primary/10 transition-all group">
+                  <motion.div 
+                    key={u.id} 
+                    whileHover={{ y: -2 }}
+                    className="flex flex-col items-center gap-2 min-w-[110px] p-3 bg-secondary/20 rounded-none border border-transparent hover:border-primary/10 transition-all group"
+                  >
                     <Link href={`/profile/${u.id}`} className="relative">
                       <Avatar className="h-14 w-14 border-2 border-background shadow-sm group-hover:scale-105 transition-transform">
                         <AvatarImage src={u.profilePictureUrl} />
-                        <AvatarFallback>{u.username?.[0]}</AvatarFallback>
+                        <AvatarFallback className="font-bold text-lg">{u.username?.[0]}</AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-1 -right-1">
                         <VerifiedBadge type={isManagement ? 'blue' : (u.verificationType || 'none')} size={14} />
@@ -259,13 +239,13 @@ export default function GroupsPage() {
                     <Button 
                       size="sm" 
                       variant={isFollowing ? "outline" : "default"} 
-                      className="h-6 w-full text-[8px] font-bold rounded-full px-0"
+                      className="h-6 w-full text-[8px] font-bold rounded-full px-0 gap-1"
                       onClick={() => handleFollow(u.id, !!isFollowing)}
                     >
-                      {isFollowing ? <UserCheck size={10} className="ml-1" /> : <UserPlus size={10} className="ml-1" />}
+                      {isFollowing ? <UserCheck size={10} /> : <UserPlus size={10} />}
                       {isFollowing ? 'متابع' : 'متابعة'}
                     </Button>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
