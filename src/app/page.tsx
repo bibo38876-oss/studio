@@ -67,7 +67,7 @@ export default function Home() {
 
         <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto">
           <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="w-full bg-background border-b border-muted rounded-none h-10 p-0 sticky top-8 z-40">
+            <TabsList className="w-full bg-background border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-8 z-40">
               <TabsTrigger 
                 value="all" 
                 className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2"
@@ -84,13 +84,15 @@ export default function Home() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all" className="mt-0 divide-y divide-muted/30">
+            <TabsContent value="all" className="mt-0">
               {isAllLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : allPosts && allPosts.length > 0 ? (
-                allPosts.map((post: any) => <PostCard key={post.id} post={post} />)
+                <div className="flex flex-col">
+                  {allPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
+                </div>
               ) : (
                 <div className="text-center py-20 bg-card border-b">
                   <p className="text-muted-foreground text-xs font-medium">لا توجد منشورات بعد.</p>
@@ -98,7 +100,7 @@ export default function Home() {
               )}
             </TabsContent>
 
-            <TabsContent value="following" className="mt-0 divide-y divide-muted/30">
+            <TabsContent value="following" className="mt-0">
               {!profile?.followingIds || profile.followingIds.length === 0 ? (
                 <div className="text-center py-24 bg-card px-8 border-b">
                   <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
@@ -110,7 +112,9 @@ export default function Home() {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : followingPosts && followingPosts.length > 0 ? (
-                followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)
+                <div className="flex flex-col">
+                  {followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
+                </div>
               ) : (
                 <div className="text-center py-20 bg-card border-b">
                   <p className="text-muted-foreground text-xs">لا توجد منشورات جديدة ممن تتابعهم.</p>

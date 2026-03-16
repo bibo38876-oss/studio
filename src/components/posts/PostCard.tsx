@@ -282,21 +282,21 @@ export default function PostCard({ post }: { post: PostData }) {
     <>
       <Card 
         ref={cardRef}
-        className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b border-muted/30 hover:bg-muted/5 transition-colors"
+        className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/20 hover:bg-muted/5 transition-colors"
         onClick={() => setIsCommentsOpen(true)}
       >
-        <CardHeader className="p-3 pb-2 flex-row items-start justify-between space-y-0">
-          <Link href={`/profile/${displayPost.authorId}`} className="flex gap-3 group text-start" onClick={(e) => e.stopPropagation()}>
-            <Avatar className="h-10 w-10 border border-muted/20 rounded-full bg-primary/5 shrink-0">
+        <CardHeader className="p-4 pb-2 flex-row items-center justify-between space-y-0">
+          <Link href={`/profile/${displayPost.authorId}`} className="flex gap-3 group text-start items-center" onClick={(e) => e.stopPropagation()}>
+            <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 shrink-0">
               {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
               <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5 leading-tight">
                 <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
-                <VerifiedBadge type={verificationType} size={14} />
+                <VerifiedBadge type={verificationType} size={13} />
               </div>
-              <span className="text-[10px] text-muted-foreground mt-0.5">
+              <span className="text-[9px] text-muted-foreground">
                 {formattedDate}
               </span>
             </div>
@@ -304,23 +304,23 @@ export default function PostCard({ post }: { post: PostData }) {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground rounded-full hover:bg-secondary">
-                <MoreHorizontal size={16} />
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full hover:bg-secondary">
+                <MoreHorizontal size={14} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="text-xs">
               <DropdownMenuItem onClick={handleCopyLink} className="gap-2 cursor-pointer">
-                <LinkIcon size={14} />
+                <LinkIcon size={12} />
                 نسخ الرابط
               </DropdownMenuItem>
               {isOwner ? (
                 <DropdownMenuItem onClick={handleDeletePost} className="gap-2 text-destructive cursor-pointer">
-                  <Trash2 size={14} />
+                  <Trash2 size={12} />
                   حذف المنشور
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem onClick={handleReport} className="gap-2 cursor-pointer">
-                  <AlertTriangle size={14} />
+                  <AlertTriangle size={12} />
                   إبلاغ
                 </DropdownMenuItem>
               )}
@@ -328,11 +328,11 @@ export default function PostCard({ post }: { post: PostData }) {
           </DropdownMenu>
         </CardHeader>
         
-        <CardContent className="px-0 py-0 ps-16 pe-4 text-start">
+        <CardContent className="px-4 py-1 text-start">
           {displayPost.content && renderContent(displayPost.content)}
           
           {allMedia.length > 0 && (
-            <div className="w-full mt-3 mb-3 rounded-xl overflow-hidden border border-muted/20">
+            <div className="w-full mt-2 mb-2 rounded-lg overflow-hidden border border-muted/10">
               <Carousel className="w-full">
                 <CarouselContent className="-ml-0">
                   {allMedia.map((url: string, index: number) => (
@@ -353,68 +353,68 @@ export default function PostCard({ post }: { post: PostData }) {
           )}
         </CardContent>
 
-        <CardFooter className="ps-16 pe-4 py-2 border-t-0 flex justify-between items-center h-10">
+        <CardFooter className="px-4 py-1 border-t-0 flex justify-between items-center h-9">
           <Button 
             variant="ghost" 
             size="sm" 
             className={cn(
-              "h-8 flex items-center gap-1.5 rounded-full px-2 transition-all duration-200 active:scale-90 border-none bg-transparent group",
+              "h-7 flex items-center gap-1.5 rounded-full px-2 transition-all duration-200 active:scale-90 border-none bg-transparent group",
               isLiked ? "text-red-500 hover:bg-red-500/10" : "text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
             )}
             onClick={handleLike}
           >
             <Heart 
-              size={18} 
+              size={16} 
               className={cn(
                 "transition-all duration-300", 
                 isLiked ? "fill-current scale-110" : "",
                 isLikeAnimating ? "animate-icon-pop" : ""
               )} 
             />
-            <span className="text-[11px] font-bold">{displayPost.likesCount || 0}</span>
+            <span className="text-[10px] font-bold">{displayPost.likesCount || 0}</span>
           </Button>
           
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
+            className="h-7 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
             onClick={(e) => {
               e.stopPropagation();
               setIsCommentsOpen(true);
             }}
           >
-            <MessageCircle size={18} />
-            <span className="text-[11px] font-bold">{displayPost.commentsCount || 0}</span>
+            <MessageCircle size={16} />
+            <span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
           </Button>
 
           <Button 
             variant="ghost" 
             size="sm" 
             className={cn(
-              "h-8 flex items-center gap-1.5 rounded-full px-2 transition-all duration-200 active:scale-90 border-none bg-transparent",
+              "h-7 flex items-center gap-1.5 rounded-full px-2 transition-all duration-200 active:scale-90 border-none bg-transparent",
               isReposted ? "text-green-500 hover:bg-green-500/10" : "text-muted-foreground hover:bg-green-500/10 hover:text-green-500"
             )}
             onClick={handleRepost}
           >
             <Repeat 
-              size={18} 
+              size={16} 
               className={cn(
                 "transition-all duration-300", 
                 isReposted ? "stroke-[2.5px] scale-110" : "",
                 isRepostAnimating ? "animate-icon-pop" : ""
               )} 
             />
-            <span className="text-[11px] font-bold">{displayPost.repostsCount || 0}</span>
+            <span className="text-[10px] font-bold">{displayPost.repostsCount || 0}</span>
           </Button>
 
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-secondary hover:text-foreground transition-all active:scale-95"
+            className="h-7 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-secondary hover:text-foreground transition-all active:scale-95"
             onClick={(e) => e.stopPropagation()}
           >
-            <BarChart3 size={18} />
-            <span className="text-[11px] font-bold">{displayPost.viewsCount || 0}</span>
+            <BarChart3 size={16} />
+            <span className="text-[10px] font-bold">{displayPost.viewsCount || 0}</span>
           </Button>
         </CardFooter>
       </Card>
