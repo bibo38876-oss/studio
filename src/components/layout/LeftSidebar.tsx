@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -36,7 +37,7 @@ export default function LeftSidebar() {
           </Avatar>
           <div className="mt-10 space-y-0.5">
             <h3 className="font-bold text-md text-primary">{profile?.username || 'مستخدم جديد'}</h3>
-            <p className="text-[10px] text-muted-foreground">@{user?.uid.slice(0, 8)}</p>
+            <p className="text-[10px] text-muted-foreground">{profile?.email}</p>
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
             {profile?.bio || 'لا يوجد نبذة شخصية بعد.'}

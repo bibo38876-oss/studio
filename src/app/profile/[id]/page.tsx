@@ -33,7 +33,7 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // استرجاع منشورات المستخدم - تم التأكد من توافق القواعد مع هذا الاستعلام
+  // استرجاع منشورات المستخدم
   const postsQuery = useMemoFirebase(() => {
     if (!firestore || !id || id === 'undefined') return null;
     return query(
@@ -131,7 +131,7 @@ export default function ProfilePage() {
             <div className="space-y-3">
               <div className="space-y-0.5">
                 <h1 className="text-md font-bold text-primary">{profile.username}</h1>
-                <p className="text-[9px] text-muted-foreground">@{profile.id?.slice(0, 8)}</p>
+                <p className="text-[9px] text-muted-foreground">{profile.email}</p>
               </div>
 
               <p className="text-xs leading-relaxed text-foreground/80">{profile.bio || 'لا يوجد نبذة شخصية.'}</p>

@@ -74,7 +74,7 @@ export default function RightSidebar() {
                     </Avatar>
                     <div className="flex flex-col">
                       <span className="text-xs font-bold text-primary leading-tight group-hover:underline">{user.username}</span>
-                      <span className="text-[10px] text-muted-foreground">@{user.id.slice(0, 5)}</span>
+                      <span className="text-[8px] text-muted-foreground">{user.email || 'مستخدم تواصل'}</span>
                     </div>
                   </Link>
                   <Button 
