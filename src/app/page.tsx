@@ -32,13 +32,13 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // استعلام المنشورات العامة
+  // استعلام المنشورات العامة - تأكد من انتظار UID
   const allPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
   }, [firestore, user?.uid]);
 
-  // استعلام المتابعة - قد يتطلب فهرساً مشابهاً (authorId IN, createdAt DESC)
+  // استعلام المتابعة - يستخدم الفهرس المركب (authorId + createdAt)
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
