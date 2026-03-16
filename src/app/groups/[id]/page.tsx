@@ -4,12 +4,12 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { useFirebase, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, limit, serverTimestamp, doc } from 'firebase/firestore';
+import { useFirebase, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, limit, serverTimestamp, doc, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, Users, MoreVertical, Trash2 } from 'lucide-react';
+import { Loader2, Send, ChevronRight, Users, MoreVertical, Trash2, UserPlus, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
@@ -29,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export default function GroupChatPage() {
   const params = useParams();
@@ -38,6 +39,8 @@ export default function GroupChatPage() {
   const { firestore, user } = useFirebase();
   const [message, setMessage] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [searchInvite, setSearchInvite] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const groupRef = useMemoFirebase(() => {
@@ -46,6 +49,21 @@ export default function GroupChatPage() {
   }, [firestore, id]);
 
   const { data: group, isLoading: isGroupLoading } = useDoc(groupRef);
+
+  // جلب بيانات المستخدم للتأكد من المتابعين
+  const currentUserRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: currentUserProfile } = useDoc(currentUserRef);
+
+  // جلب المتابعين (الأشخاص الذين يتابعهم المستخدم)
+  const followingQuery = useMemoFirebase(() => {
+    if (!firestore || !currentUserProfile?.followingIds || currentUserProfile.followingIds.length === 0) return null;
+    return query(collection(firestore, 'users'), where('id', 'in', currentUserProfile.followingIds.slice(0, 10)));
+  }, [firestore, currentUserProfile?.followingIds]);
+
+  const { data: followingUsers } = useCollection(followingQuery);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -59,6 +77,14 @@ export default function GroupChatPage() {
   const { data: messages, isLoading: isMessagesLoading } = useCollection(messagesQuery);
 
   const isCreator = user && group && user.uid === group.creatorId;
+  const isMember = user && group && (group.members || []).includes(user.uid);
+
+  useEffect(() => {
+    if (!isGroupLoading && group && !isMember) {
+      toast({ variant: "destructive", description: "ليس لديك صلاحية لدخول هذه المجموعة." });
+      router.push('/groups');
+    }
+  }, [group, isGroupLoading, isMember, router, toast]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -82,19 +108,43 @@ export default function GroupChatPage() {
     addDocumentNonBlocking(collection(firestore, 'groups', id, 'messages'), {
       content: content,
       senderId: user.uid,
-      senderName: user.displayName || 'مستخدم تواصل',
+      senderName: currentUserProfile?.username || user.displayName || 'مستخدم تواصل',
       createdAt: serverTimestamp(),
     });
   };
 
+  const handleInviteUser = (targetUser: any) => {
+    if (!firestore || !id || !group) return;
+
+    if ((group.members?.length || 0) >= 100) {
+      toast({ variant: "destructive", description: "عذراً، المجموعة ممتلئة (الحد الأقصى 100 عضو)." });
+      return;
+    }
+
+    if (group.members?.includes(targetUser.id)) {
+      toast({ description: "المستخدم عضو بالفعل في المجموعة." });
+      return;
+    }
+
+    // إرسال دعوة للمستخدم
+    const inviteRef = doc(firestore, 'users', targetUser.id, 'groupInvites', id);
+    setDocumentNonBlocking(inviteRef, {
+      groupId: id,
+      groupName: group.name,
+      invitedBy: currentUserProfile?.username || user?.displayName || 'مستخدم تواصل',
+      invitedById: user?.uid,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+      currentMembersCount: group.members?.length || 0
+    }, { merge: true });
+
+    toast({ description: `تم إرسال دعوة لـ ${targetUser.username}` });
+  };
+
   const handleDeleteGroup = () => {
     if (!firestore || !id || !isCreator) return;
-    
     deleteDocumentNonBlocking(doc(firestore, 'groups', id));
-    toast({
-      title: "تم الحذف",
-      description: "تم حذف المجموعة نهائياً.",
-    });
+    toast({ title: "تم الحذف", description: "تم حذف المجموعة نهائياً." });
     router.push('/groups');
   };
 
@@ -115,29 +165,76 @@ export default function GroupChatPage() {
             </div>
             <div className="flex flex-col truncate">
               <span className="text-[11px] font-bold text-primary leading-tight truncate">{group?.name}</span>
-              <span className="text-[8px] text-muted-foreground">دردشة جماعية</span>
+              <span className="text-[8px] text-muted-foreground">{group?.members?.length || 0}/100 عضو</span>
             </div>
           </div>
         </div>
 
-        {isCreator && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                <MoreVertical size={16} className="text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem 
-                className="text-destructive focus:text-destructive gap-2 cursor-pointer"
-                onClick={() => setIsDeleteDialogOpen(true)}
-              >
-                <Trash2 size={14} />
-                حذف المجموعة
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <div className="flex items-center gap-1">
+          {isCreator && (
+            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-primary hover:bg-primary/5">
+                  <UserPlus size={16} />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="text-sm font-bold">دعوة المتابعين</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="relative">
+                    <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input 
+                      placeholder="ابحث بين متابعيك..." 
+                      className="h-9 pr-9 rounded-none bg-secondary/30 border-none text-xs"
+                      value={searchInvite}
+                      onChange={(e) => setSearchInvite(e.target.value)}
+                    />
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto divide-y">
+                    {followingUsers?.filter(u => u.username.toLowerCase().includes(searchInvite.toLowerCase())).map((fUser: any) => (
+                      <div key={fUser.id} className="py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={fUser.profilePictureUrl} />
+                            <AvatarFallback>{fUser.username?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs font-bold text-primary">{fUser.username}</span>
+                        </div>
+                        <Button size="sm" variant="outline" className="h-7 text-[9px] rounded-full" onClick={() => handleInviteUser(fUser)}>
+                          دعوة
+                        </Button>
+                      </div>
+                    ))}
+                    {(!followingUsers || followingUsers.length === 0) && (
+                      <p className="text-[10px] text-center text-muted-foreground py-10">يجب أن تتابع أشخاصاً أولاً لتتمكن من دعوتهم.</p>
+                    )}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {isCreator && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                  <MoreVertical size={16} className="text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive gap-2 cursor-pointer"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  <Trash2 size={14} />
+                  حذف المجموعة
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
       <main 

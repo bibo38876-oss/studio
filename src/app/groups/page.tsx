@@ -3,32 +3,56 @@
 
 import { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { Loader2, Plus, MessageSquare, Users, ChevronLeft } from 'lucide-react';
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp, where, doc, arrayUnion } from 'firebase/firestore';
+import { Loader2, Plus, MessageSquare, Users, ChevronLeft, Check, X, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 export default function GroupsPage() {
   const { firestore, user } = useFirebase();
   const router = useRouter();
+  const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupDesc, setGroupDesc] = useState('');
 
-  const groupsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'groups'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+  // جلب المجموعات التي يملكها المستخدم
+  const myGroupsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'groups'), where('creatorId', '==', user.uid));
+  }, [firestore, user]);
 
-  const { data: groups, isLoading } = useCollection(groupsQuery);
+  // جلب المجموعات التي المستخدم عضو فيها
+  const joinedGroupsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'groups'), where('members', 'array-contains', user.uid));
+  }, [firestore, user]);
+
+  // جلب الدعوات المعلقة
+  const invitesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users', user.uid, 'groupInvites'), where('status', '==', 'pending'));
+  }, [firestore, user]);
+
+  const { data: myGroups, isLoading: isMyGroupsLoading } = useCollection(myGroupsQuery);
+  const { data: joinedGroups, isLoading: isJoinedLoading } = useCollection(joinedGroupsQuery);
+  const { data: invites, isLoading: isInvitesLoading } = useCollection(invitesQuery);
+
+  const hasGroup = myGroups && myGroups.length > 0;
 
   const handleCreateGroup = () => {
     if (!user || user.isAnonymous) {
       router.push('/login');
+      return;
+    }
+    if (hasGroup) {
+      toast({ variant: "destructive", description: "يمكنك إنشاء مجموعة واحدة فقط." });
       return;
     }
     if (!groupName.trim() || !firestore) return;
@@ -38,12 +62,37 @@ export default function GroupsPage() {
       description: groupDesc.trim(),
       creatorId: user.uid,
       createdAt: serverTimestamp(),
+      members: [user.uid],
       membersCount: 1
     });
 
     setIsCreateOpen(false);
     setGroupName('');
     setGroupDesc('');
+    toast({ description: "تم إنشاء مجموعتك بنجاح." });
+  };
+
+  const handleAcceptInvite = (invite: any) => {
+    if (!firestore || !user) return;
+
+    // إضافة العضو للمجموعة
+    updateDocumentNonBlocking(doc(firestore, 'groups', invite.groupId), {
+      members: arrayUnion(user.uid),
+      membersCount: (invite.currentMembersCount || 0) + 1
+    });
+
+    // تحديث حالة الدعوة
+    updateDocumentNonBlocking(doc(firestore, 'users', user.uid, 'groupInvites', invite.id), {
+      status: 'accepted'
+    });
+
+    toast({ description: "تم الانضمام للمجموعة." });
+  };
+
+  const handleRejectInvite = (inviteId: string) => {
+    if (!firestore || !user) return;
+    deleteDocumentNonBlocking(doc(firestore, 'users', user.uid, 'groupInvites', inviteId));
+    toast({ description: "تم رفض الدعوة." });
   };
 
   return (
@@ -53,71 +102,123 @@ export default function GroupsPage() {
       <main className="container mx-auto max-w-xl pt-7 pb-20 px-0 md:px-4">
         <div className="bg-background sticky top-7 z-30 p-4 border-b flex justify-between items-center">
           <h1 className="text-sm font-bold text-primary">مجموعات الدردشة</h1>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-7 text-[10px] rounded-full gap-1 px-3">
-                <Plus size={12} />
-                إنشاء مجموعة
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle className="text-sm font-bold">إنشاء مجموعة جديدة</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label className="text-[10px] font-bold text-muted-foreground">اسم المجموعة</label>
-                  <Input 
-                    value={groupName} 
-                    onChange={(e) => setGroupName(e.target.value)} 
-                    placeholder="مثال: محبي التقنية"
-                    className="h-9 rounded-none bg-secondary/30 border-none text-xs" 
-                  />
+          {!hasGroup && (
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-7 text-[10px] rounded-full gap-1 px-3">
+                  <Plus size={12} />
+                  إنشاء مجموعتي
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="text-sm font-bold">إنشاء مجموعة (واحدة فقط)</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase">اسم المجموعة</label>
+                    <Input 
+                      value={groupName} 
+                      onChange={(e) => setGroupName(e.target.value)} 
+                      placeholder="مثال: نقاشات تقنية"
+                      className="h-9 rounded-none bg-secondary/30 border-none text-xs" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase">الوصف</label>
+                    <Input 
+                      value={groupDesc} 
+                      onChange={(e) => setGroupDesc(e.target.value)} 
+                      placeholder="عن ماذا تتحدث هذه المجموعة؟"
+                      className="h-9 rounded-none bg-secondary/30 border-none text-xs" 
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <label className="text-[10px] font-bold text-muted-foreground">وصف المجموعة</label>
-                  <Input 
-                    value={groupDesc} 
-                    onChange={(e) => setGroupDesc(e.target.value)} 
-                    placeholder="عن ماذا تتحدث هذه المجموعة؟"
-                    className="h-9 rounded-none bg-secondary/30 border-none text-xs" 
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button className="w-full rounded-full font-bold text-xs h-9" onClick={handleCreateGroup}>إنشاء الآن</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <Button className="w-full rounded-full font-bold text-xs h-9" onClick={handleCreateGroup}>إنشاء الآن</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
-        {isLoading ? (
+        {invites && invites.length > 0 && (
+          <div className="p-4 bg-primary/5 border-b">
+            <h2 className="text-[10px] font-bold text-primary mb-3 flex items-center gap-1.5">
+              <Bell size={12} />
+              دعوات انضمام معلقة
+            </h2>
+            <div className="space-y-2">
+              {invites.map((invite: any) => (
+                <Card key={invite.id} className="border-none shadow-none rounded-none bg-card">
+                  <CardContent className="p-3 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-primary">{invite.groupName}</span>
+                      <span className="text-[8px] text-muted-foreground">دعوة من: {invite.invitedBy}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-green-50 text-green-600 hover:bg-green-100" onClick={() => handleAcceptInvite(invite)}>
+                        <Check size={14} />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full bg-red-50 text-red-600 hover:bg-red-100" onClick={() => handleRejectInvite(invite.id)}>
+                        <X size={14} />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(isMyGroupsLoading || isJoinedLoading) ? (
           <div className="flex justify-center py-20">
             <Loader2 className="animate-spin text-primary" />
           </div>
-        ) : groups && groups.length > 0 ? (
+        ) : (
           <div className="divide-y divide-muted">
-            {groups.map((group) => (
+            {hasGroup && myGroups?.map((group) => (
               <Link key={group.id} href={`/groups/${group.id}`} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors group">
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 bg-primary/10 rounded-none flex items-center justify-center text-primary">
+                  <div className="h-12 w-12 bg-primary/10 rounded-none flex items-center justify-center text-primary border border-primary/20">
                     <Users size={20} />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-primary group-hover:underline">{group.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-primary group-hover:underline">{group.name}</span>
+                      <span className="text-[7px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">مجموعتي</span>
+                    </div>
                     <span className="text-[10px] text-muted-foreground line-clamp-1">{group.description || 'لا يوجد وصف.'}</span>
-                    <span className="text-[8px] text-muted-foreground mt-1">انشئت {new Date(group.createdAt?.toDate ? group.createdAt.toDate() : Date.now()).toLocaleDateString('ar-SA')}</span>
+                    <span className="text-[8px] text-muted-foreground mt-1">{group.membersCount || 0}/100 عضو</span>
                   </div>
                 </div>
                 <ChevronLeft size={16} className="text-muted-foreground/30" />
               </Link>
             ))}
-          </div>
-        ) : (
-          <div className="text-center py-32 px-10 flex flex-col items-center">
-            <MessageSquare size={40} className="text-muted-foreground/20 mb-4" />
-            <p className="text-muted-foreground text-xs font-bold">لا توجد مجموعات بعد.</p>
-            <p className="text-[9px] text-muted-foreground mt-1">كن أول من ينشئ مجموعة دردشة في تواصل.</p>
+
+            {joinedGroups?.filter(g => g.creatorId !== user?.uid).map((group) => (
+              <Link key={group.id} href={`/groups/${group.id}`} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 bg-secondary rounded-none flex items-center justify-center text-muted-foreground">
+                    <Users size={20} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-primary group-hover:underline">{group.name}</span>
+                    <span className="text-[10px] text-muted-foreground line-clamp-1">{group.description || 'لا يوجد وصف.'}</span>
+                    <span className="text-[8px] text-muted-foreground mt-1">{group.membersCount || 0}/100 عضو</span>
+                  </div>
+                </div>
+                <ChevronLeft size={16} className="text-muted-foreground/30" />
+              </Link>
+            ))}
+
+            {(!hasGroup && (!joinedGroups || joinedGroups.length === 0)) && (
+              <div className="text-center py-32 px-10 flex flex-col items-center">
+                <MessageSquare size={40} className="text-muted-foreground/20 mb-4" />
+                <p className="text-muted-foreground text-xs font-bold">لا توجد مجموعات بعد.</p>
+                <p className="text-[9px] text-muted-foreground mt-1">أنشئ مجموعتك الخاصة وابدأ بدعوة أصدقائك.</p>
+              </div>
+            )}
           </div>
         )}
       </main>
