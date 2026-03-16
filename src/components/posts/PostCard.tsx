@@ -145,7 +145,7 @@ export default function PostCard({ post }: { post: PostData }) {
       if (post.authorId !== user.uid) {
         const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
         setDocumentNonBlocking(notifRef, {
-          type: 'mention', 
+          type: 'repost', 
           fromUserId: user.uid,
           fromUsername: user.displayName || 'مستخدم تواصل',
           postId: post.id,
@@ -177,7 +177,6 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const renderContent = (content: string) => {
     if (!content) return null;
-    // تقسيم النص مع الحفاظ على المسافات لضمان التنسيق العربي RTL
     return content.split(/(\s+)/).map((part, i) => {
       if (part.startsWith('#')) {
         return (
@@ -200,21 +199,21 @@ export default function PostCard({ post }: { post: PostData }) {
   return (
     <>
       <Card 
-        className="border-none shadow-none rounded-none w-full bg-card mb-2 last:mb-0 transition-all duration-200 cursor-pointer border-b border-muted/50"
+        className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b border-muted/30"
         onClick={() => setIsCommentsOpen(true)}
       >
-        <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
-          <Link href={`/profile/${post.authorId}`} className="flex gap-2.5 group" onClick={(e) => e.stopPropagation()}>
-            <Avatar className="h-9 w-9 border border-muted/20 transition-transform group-hover:scale-105 rounded-full bg-primary/10 text-primary">
+        <CardHeader className="p-3 pb-2 flex-row items-start justify-between space-y-0">
+          <Link href={`/profile/${post.authorId}`} className="flex gap-3 group" onClick={(e) => e.stopPropagation()}>
+            <Avatar className="h-10 w-10 border border-muted/20 rounded-full bg-primary/5">
               {post.authorAvatar ? <AvatarImage src={post.authorAvatar} alt={post.authorName} /> : null}
               <AvatarFallback className="text-[10px] font-bold">{post.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-1 leading-tight">
-                <span className="text-[11px] font-bold text-primary group-hover:underline">{post.authorName || 'مستخدم مجهول'}</span>
-                <VerifiedBadge type={verificationType} />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5 leading-tight">
+                <span className="text-sm font-bold text-primary group-hover:underline">{post.authorName || 'مستخدم تواصل'}</span>
+                <VerifiedBadge type={verificationType} size={14} />
               </div>
-              <span className="text-[9px] text-muted-foreground flex items-center gap-1">
+              <span className="text-[10px] text-muted-foreground mt-0.5">
                 {formattedDate}
               </span>
             </div>
@@ -222,11 +221,11 @@ export default function PostCard({ post }: { post: PostData }) {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full hover:bg-secondary">
-                <MoreHorizontal size={14} />
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground rounded-full hover:bg-secondary">
+                <MoreHorizontal size={16} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-xs rounded-none border-none shadow-xl">
+            <DropdownMenuContent align="end" className="text-xs">
               <DropdownMenuItem onClick={handleCopyLink} className="gap-2 cursor-pointer">
                 <LinkIcon size={14} />
                 نسخ الرابط
@@ -239,32 +238,31 @@ export default function PostCard({ post }: { post: PostData }) {
               ) : (
                 <DropdownMenuItem onClick={handleReport} className="gap-2 cursor-pointer">
                   <AlertTriangle size={14} />
-                  إبلاغ عن محتوى
+                  إبلاغ
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
         
-        <CardContent className="px-0 py-0">
+        <CardContent className="px-0 py-0 pr-16 pl-4">
           {post.content && (
-            <p className="px-3 py-2 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
+            <p className="pb-3 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap tracking-tight">
               {renderContent(post.content)}
             </p>
           )}
           
           {allMedia.length > 0 && (
-            <div className="w-full mt-1 bg-black/5 overflow-hidden">
+            <div className="w-full mb-3 rounded-xl overflow-hidden border border-muted/20">
               <Carousel className="w-full">
                 <CarouselContent className="-ml-0">
                   {allMedia.map((url, index) => (
                     <CarouselItem key={index} className="pl-0">
-                      <div className="relative w-full flex items-center justify-center bg-black/5">
+                      <div className="relative w-full aspect-auto bg-black/5">
                         <img 
                           src={url} 
                           alt={`Post media ${index + 1}`} 
-                          className="w-full h-auto block"
-                          style={{ maxHeight: 'none', width: '100%', objectFit: 'contain' }}
+                          className="w-full h-auto block object-cover"
                           loading="lazy"
                         />
                       </div>
@@ -276,55 +274,55 @@ export default function PostCard({ post }: { post: PostData }) {
           )}
         </CardContent>
 
-        <CardFooter className="px-1 py-1 border-t-0 flex justify-around items-center h-9 mt-1">
+        <CardFooter className="pr-16 pl-4 py-2 border-t-0 flex justify-between items-center h-10">
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`h-8 flex-1 gap-1.5 rounded-none transition-colors ${isLiked ? 'text-red-500 bg-red-500/5' : 'text-muted-foreground hover:bg-secondary/50'}`}
+            className={`h-8 flex items-center gap-1.5 rounded-full px-2 transition-colors border-none bg-transparent hover:bg-red-500/10 ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
             onClick={handleLike}
           >
-            <Heart size={16} className={isLiked ? "fill-current" : ""} />
-            <span className="text-[10px] font-bold">{post.likesCount || 0}</span>
+            <Heart size={18} className={isLiked ? "fill-current" : ""} />
+            <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
           </Button>
           
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none hover:bg-secondary/50"
+            className="h-8 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-primary/10"
             onClick={(e) => {
               e.stopPropagation();
               setIsCommentsOpen(true);
             }}
           >
-            <MessageCircle size={16} />
-            <span className="text-[10px] font-bold">{post.commentsCount || 0}</span>
+            <MessageCircle size={18} />
+            <span className="text-[11px] font-bold">{post.commentsCount || 0}</span>
           </Button>
 
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`h-8 flex-1 gap-1.5 rounded-none transition-colors ${isReposted ? 'text-green-500 bg-green-500/5' : 'text-muted-foreground hover:bg-secondary/50'}`}
+            className={`h-8 flex items-center gap-1.5 rounded-full px-2 transition-colors border-none bg-transparent hover:bg-green-500/10 ${isReposted ? 'text-green-500' : 'text-muted-foreground'}`}
             onClick={handleRepost}
           >
-            <Repeat size={16} className={isReposted ? "stroke-[3px]" : ""} />
-            <span className="text-[10px] font-bold">{post.repostsCount || 0}</span>
+            <Repeat size={18} className={isReposted ? "stroke-[2.5px]" : ""} />
+            <span className="text-[11px] font-bold">{post.repostsCount || 0}</span>
           </Button>
 
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 flex-1 text-muted-foreground gap-1.5 rounded-none hover:bg-secondary/50"
+            className="h-8 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-secondary"
             onClick={(e) => e.stopPropagation()}
           >
-            <BarChart3 size={16} />
-            <span className="text-[10px] font-bold">{post.viewsCount || 0}</span>
+            <BarChart3 size={18} />
+            <span className="text-[11px] font-bold">{post.viewsCount || 0}</span>
           </Button>
         </CardFooter>
       </Card>
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-        <DialogContent className="sm:max-w-full h-[100dvh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col sm:max-w-[600px] sm:h-[95vh] sm:rounded-none animate-in fade-in zoom-in-95 duration-200">
-          <DialogTitle className="sr-only">تفاصيل المنشور والتعليقات</DialogTitle>
+        <DialogContent className="sm:max-w-full h-[100dvh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col sm:max-w-[600px] sm:h-[95vh] animate-in fade-in zoom-in-95 duration-200">
+          <DialogTitle className="sr-only">تفاصيل المنشور</DialogTitle>
           <CommentsDialog 
             postId={post.id} 
             postAuthorId={post.authorId} 

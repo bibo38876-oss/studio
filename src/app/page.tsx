@@ -24,7 +24,6 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // جلب بيانات المستخدم للتأكد من قائمة المتابعة
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
@@ -32,13 +31,11 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // استعلام المنشورات العامة - تأكد من انتظار UID
   const allPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
   }, [firestore, user?.uid]);
 
-  // استعلام المتابعة - يستخدم الفهرس المركب (authorId + createdAt)
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -63,31 +60,31 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-0 md:px-4 pt-10 flex gap-6">
-        <div className="hidden md:block w-64 pt-2 h-fit sticky top-10">
+      <main className="container mx-auto px-0 md:px-4 pt-12 flex gap-6">
+        <div className="hidden md:block w-64 pt-4 h-fit sticky top-12">
           <LeftSidebar />
         </div>
 
         <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto">
           <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="w-full bg-background border-b border-muted rounded-none h-10 p-0 sticky top-8 z-40">
+            <TabsList className="w-full bg-background border-b border-muted rounded-none h-12 p-0 sticky top-12 z-40">
               <TabsTrigger 
                 value="all" 
-                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs"
+                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-sm gap-2"
               >
-                <LayoutGrid size={14} className="ml-1.5" />
+                <LayoutGrid size={18} />
                 عام
               </TabsTrigger>
               <TabsTrigger 
                 value="following" 
-                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs"
+                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-sm gap-2"
               >
-                <Users size={14} className="ml-1.5" />
+                <Users size={18} />
                 أتابعهم
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all" className="mt-0">
+            <TabsContent value="all" className="mt-0 divide-y divide-muted/30">
               {isAllLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -101,12 +98,12 @@ export default function Home() {
               )}
             </TabsContent>
 
-            <TabsContent value="following" className="mt-0">
+            <TabsContent value="following" className="mt-0 divide-y divide-muted/30">
               {!profile?.followingIds || profile.followingIds.length === 0 ? (
                 <div className="text-center py-24 bg-card px-8 border-b">
                   <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
                   <p className="text-primary font-bold text-sm mb-1">ابدأ بمتابعة الآخرين</p>
-                  <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
+                  <p className="text-muted-foreground text-xs">ستظهر منشورات من تتابعهم هنا.</p>
                 </div>
               ) : isFollowingLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -116,14 +113,14 @@ export default function Home() {
                 followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)
               ) : (
                 <div className="text-center py-20 bg-card border-b">
-                  <p className="text-muted-foreground text-[10px]">لا توجد منشورات جديدة ممن تتابعهم.</p>
+                  <p className="text-muted-foreground text-xs">لا توجد منشورات جديدة ممن تتابعهم.</p>
                 </div>
               )}
             </TabsContent>
           </Tabs>
         </div>
 
-        <div className="hidden lg:block w-80 pt-2 h-fit sticky top-10">
+        <div className="hidden lg:block w-80 pt-4 h-fit sticky top-12">
           <RightSidebar />
         </div>
       </main>
