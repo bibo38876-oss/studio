@@ -47,13 +47,13 @@ export default function ExplorePage() {
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
   }, [firestore, currentUser?.uid]);
 
-  // جلب نتائج الوسوم (يتطلب فهرس مركب: hashtags: array-contains + createdAt: desc)
+  // جلب نتائج الوسوم - يتطلب الفهرس الذي تقوم بإنشائه الآن
   const hashtagResultsQuery = useMemoFirebase(() => {
     if (!firestore || !currentUser?.uid || !searchQuery || !searchQuery.startsWith('#')) return null;
     return query(
       collection(firestore, 'posts'),
       where('hashtags', 'array-contains', searchQuery),
-      orderBy('createdAt', 'desc'),
+      orderBy('createdAt', 'desc'), // تأكد أن هذا يطابق الفهرس (Descending)
       limit(50)
     );
   }, [firestore, currentUser?.uid, searchQuery]);
