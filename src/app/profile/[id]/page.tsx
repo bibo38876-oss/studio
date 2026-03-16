@@ -74,7 +74,9 @@ export default function ProfilePage() {
 
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
-  const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === 'admin@tawasul.com'; // شرط المسؤول
+  
+  // التحقق من أن المستخدم هو المسؤول (بناءً على الدور في Firestore أو البريد الإلكتروني المخصص)
+  const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === 'admin@tawasul.com';
 
   const handleUpdateProfile = () => {
     if (!firestore || !currentUser?.uid) return;
@@ -142,10 +144,15 @@ export default function ProfilePage() {
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
-            {/* زر الإدارة فوق البنر - يظهر فقط لصاحب التطبيق */}
+            {/* زر الإدارة فوق البنر - يظهر فقط لصاحب التطبيق المسجل كمسؤول */}
             {isAdmin && (
               <div className="absolute top-2 right-2 z-10">
-                <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold bg-black/20 text-white backdrop-blur-md rounded-full gap-1 hover:bg-black/40 border border-white/10" onClick={() => router.push('/admin')}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-[9px] font-bold bg-black/20 text-white backdrop-blur-md rounded-full gap-1 hover:bg-black/40 border border-white/10" 
+                  onClick={() => router.push('/admin')}
+                >
                   <ShieldCheck size={12} className="text-accent" />
                   إدارة النظام
                 </Button>
