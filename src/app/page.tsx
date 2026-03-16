@@ -51,14 +51,14 @@ export default function Home() {
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
-  // تطبيق خوارزمية التوصيات
+  // تطبيق خوارزمية التوصيات المستوحاة من تيك توك وتويتر
   const recommendedPosts = useMemo(() => {
     if (!postsPool || !profile) return [];
 
     return [...postsPool].map(post => {
       let score = 0;
       
-      // 1. التفاعل العضوي
+      // 1. التفاعل العضوي (الإعجابات والتعليقات)
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
 
@@ -115,7 +115,7 @@ export default function Home() {
                 className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2"
               >
                 <Sparkles size={14} className={activeTab === 'for-you' ? 'text-primary' : ''} />
-                لك (خوارزمية)
+                لك
               </TabsTrigger>
               <TabsTrigger 
                 value="following" 
