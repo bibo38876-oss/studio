@@ -19,6 +19,7 @@ import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonB
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import TimgadLogo from '@/components/ui/Logo';
+import Link from 'next/link';
 
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -127,7 +128,6 @@ export default function ProfilePage() {
 
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
-  // هل الشخص يتابعني؟ (لأعرض "رد المتابعة")
   const isFollowingMe = (profile?.followingIds || []).includes(currentUser?.uid);
   
   const verificationType: VerificationType = profile?.email === ADMIN_EMAIL 
@@ -301,7 +301,16 @@ export default function ProfilePage() {
             <div className="space-y-3 mt-4">
               <p className="text-xs leading-relaxed text-foreground/80 text-right">{profile.bio || 'لا يوجد نبذة شخصية.'}</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground justify-end"><div className="flex items-center gap-1"><MapPin size={10} /><span>تيمقاد، الجزائر</span></div><div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div></div>
-              <div className="flex gap-4 pt-1 justify-end"><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followingIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">يتابع</span></div><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followerIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">متابع</span></div></div>
+              <div className="flex gap-4 pt-1 justify-end">
+                <Link href={`/profile/${id}/connections?tab=following`} className="flex gap-1 items-center text-xs hover:bg-secondary/50 px-2 py-1 rounded-sm transition-colors">
+                  <span className="font-bold text-primary">{profile.followingIds?.length || 0}</span>
+                  <span className="text-muted-foreground text-[10px]">يتابع</span>
+                </Link>
+                <Link href={`/profile/${id}/connections?tab=followers`} className="flex gap-1 items-center text-xs hover:bg-secondary/50 px-2 py-1 rounded-sm transition-colors">
+                  <span className="font-bold text-primary">{profile.followerIds?.length || 0}</span>
+                  <span className="text-muted-foreground text-[10px]">متابع</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
