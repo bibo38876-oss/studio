@@ -1,8 +1,7 @@
-
 "use client"
 
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, BadgeCheck } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import CommentsDialog from "./CommentsDialog";
+import VerifiedBadge, { VerificationType } from '../ui/VerifiedBadge';
 import {
   Carousel,
   CarouselContent,
@@ -43,6 +43,7 @@ interface PostData {
   viewsCount?: number;
   hashtags?: string[];
   email?: string;
+  authorVerificationType?: VerificationType;
 }
 
 export default function PostCard({ post }: { post: PostData }) {
@@ -53,7 +54,18 @@ export default function PostCard({ post }: { post: PostData }) {
   
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
-  const isAdmin = post.email === 'adelbenmaza8@gmail.com';
+
+  // جلب بيانات المؤلف للتأكد من حالة التوثيق الحالية
+  const authorRef = useMemoFirebase(() => {
+    if (!firestore || !post.authorId) return null;
+    return doc(firestore, 'users', post.authorId);
+  }, [firestore, post.authorId]);
+  const { data: authorData } = useDoc(authorRef);
+
+  // حساب نوع التوثيق: هاردكود للإدارة، أو من البيانات المخزنة
+  const verificationType: VerificationType = post.email === 'adelbenmaza8@gmail.com' 
+    ? 'grey' 
+    : (authorData?.verificationType || post.authorVerificationType || 'none');
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -181,7 +193,7 @@ export default function PostCard({ post }: { post: PostData }) {
             <div className="flex flex-col justify-center">
               <div className="flex items-center gap-1 leading-tight">
                 <span className="text-[11px] font-bold text-primary group-hover:underline">{post.authorName || 'مستخدم مجهول'}</span>
-                {isAdmin && <BadgeCheck size={14} className="text-accent fill-current" />}
+                <VerifiedBadge type={verificationType} />
               </div>
               <span className="text-[9px] text-muted-foreground flex items-center gap-1">
                 {formattedDate}

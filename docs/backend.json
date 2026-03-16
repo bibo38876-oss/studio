@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -15,7 +14,8 @@
         "followingIds": { "type": "array", "items": { "type": "string" } },
         "followerIds": { "type": "array", "items": { "type": "string" } },
         "email": { "type": "string", "format": "email" },
-        "role": { "type": "string", "enum": ["user", "admin"], "description": "The role of the user in the platform." }
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "The role of the user in the platform." },
+        "verificationType": { "type": "string", "enum": ["none", "blue", "gold", "grey"], "description": "The type of verification badge for the user." }
       },
       "required": ["id", "username", "createdAt"]
     },

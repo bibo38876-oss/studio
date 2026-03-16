@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useParams, useRouter } from 'next/navigation';
@@ -12,11 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, BadgeCheck } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
+import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 
 export default function ProfilePage() {
   const params = useParams();
@@ -79,8 +79,11 @@ export default function ProfilePage() {
   
   // التحقق من أن المستخدم هو المسؤول
   const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === ADMIN_EMAIL;
-  // عرض شارة التحقق للمسؤول
-  const isProfileAdmin = profile?.role === 'admin' || profile?.email === ADMIN_EMAIL;
+  
+  // حساب نوع التوثيق للملف الشخصي
+  const verificationType: VerificationType = profile?.email === ADMIN_EMAIL 
+    ? 'grey' 
+    : (profile?.verificationType || 'none');
 
   const handleUpdateProfile = () => {
     if (!firestore || !currentUser?.uid) return;
@@ -266,7 +269,7 @@ export default function ProfilePage() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-md font-bold text-primary">{profile.username}</h1>
-                  {isProfileAdmin && <BadgeCheck size={18} className="text-accent fill-current" />}
+                  <VerifiedBadge type={verificationType} size={18} />
                 </div>
                 <p className="text-[9px] text-muted-foreground">{profile.email}</p>
               </div>
