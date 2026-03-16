@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Repeat, UserRoundPlus, ShieldCheck, Coffee } from 'lucide-react';
+import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Bookmark, UserRoundPlus, ShieldCheck, Coffee } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -106,15 +106,15 @@ export default function ProfilePage() {
 
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
 
-  const repostsQuery = useMemoFirebase(() => {
+  const bookmarksQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return query(
-      collection(firestore, 'users', id, 'reposts'),
-      orderBy('repostedAt', 'desc')
+      collection(firestore, 'users', id, 'bookmarks'),
+      orderBy('createdAt', 'desc')
     );
   }, [firestore, id]);
 
-  const { data: reposts, isLoading: isRepostsLoading } = useCollection(repostsQuery);
+  const { data: bookmarks, isLoading: isBookmarksLoading } = useCollection(bookmarksQuery);
 
   const likesQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -348,28 +348,23 @@ export default function ProfilePage() {
           <Tabs defaultValue="posts" className="w-full">
             <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0 mb-0.5 sticky top-7 z-40 bg-background/80 backdrop-blur-md overflow-x-auto no-scrollbar">
               <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المنشورات <span className="text-[9px] opacity-50">({posts?.length || 0})</span></TabsTrigger>
-              <TabsTrigger value="reposts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المعاد نشرها <span className="text-[9px] opacity-50">({reposts?.length || 0})</span></TabsTrigger>
+              <TabsTrigger value="bookmarks" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المحفوظات <span className="text-[9px] opacity-50">({bookmarks?.length || 0})</span></TabsTrigger>
               <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">الإعجابات <span className="text-[9px] opacity-50">({likedPosts?.length || 0})</span></TabsTrigger>
             </TabsList>
             <TabsContent value="posts" className="mt-0 space-y-[1px]">
               {isPostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : posts && posts.length > 0 ? posts.map((post: any) => <PostCard key={post.id} post={post} />) : <div className="text-center py-24 bg-card px-8 border-b"><p className="text-muted-foreground text-[10px]">لا توجد منشورات في تيمقاد بعد.</p></div>}
             </TabsContent>
-            <TabsContent value="reposts" className="mt-0 space-y-[1px]">
-              {isRepostsLoading ? (
+            <TabsContent value="bookmarks" className="mt-0 space-y-[1px]">
+              {isBookmarksLoading ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div>
-              ) : reposts && reposts.length > 0 ? (
-                reposts.map((repost: any) => (
-                  <div key={repost.id} className="relative">
-                    <div className="bg-muted/30 px-4 py-1 flex items-center gap-2 text-[9px] text-muted-foreground font-bold border-b text-right">
-                      <Repeat size={10} className="text-green-500" /> أعاد نشر هذا
-                    </div>
-                    <PostCard post={repost.postData} />
-                  </div>
+              ) : bookmarks && bookmarks.length > 0 ? (
+                bookmarks.map((bookmark: any) => (
+                  <PostCard key={bookmark.id} post={bookmark} />
                 ))
               ) : (
                 <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center">
-                  <Repeat size={30} className="text-muted-foreground/20 mb-3" />
-                  <p className="text-muted-foreground text-[10px]">لا توجد منشورات معاد نشرها.</p>
+                  <Bookmark size={30} className="text-muted-foreground/20 mb-3" />
+                  <p className="text-muted-foreground text-[10px]">لا توجد منشورات محفوظة.</p>
                 </div>
               )}
             </TabsContent>

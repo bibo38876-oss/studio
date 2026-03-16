@@ -2,14 +2,14 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, increment, serverTimestamp, runTransaction, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -52,10 +52,8 @@ interface PostData {
   hashtags?: string[];
   email?: string;
   authorVerificationType?: VerificationType;
-  // Metadata for merged feed
   isRepost?: boolean;
   repostedBy?: string;
-  repostedAt?: any;
 }
 
 export default function PostCard({ post }: { post: PostData }) {
@@ -96,11 +94,11 @@ export default function PostCard({ post }: { post: PostData }) {
   }, [firestore, displayPost.id, user]);
   const { data: likeData, isLoading: isLikeLoading } = useDoc(likeRef);
 
-  const repostRef = useMemoFirebase(() => {
+  const bookmarkRef = useMemoFirebase(() => {
     if (!firestore || !user || !displayPost.id) return null;
-    return doc(firestore, 'users', user.uid, 'reposts', displayPost.id);
+    return doc(firestore, 'users', user.uid, 'bookmarks', displayPost.id);
   }, [firestore, displayPost.id, user]);
-  const { data: repostData, isLoading: isRepostLoading } = useDoc(repostRef);
+  const { data: bookmarkData, isLoading: isBookmarkLoading } = useDoc(bookmarkRef);
 
   const userVoteRef = useMemoFirebase(() => {
     if (!firestore || !user || !displayPost.id) return null;
@@ -200,36 +198,16 @@ export default function PostCard({ post }: { post: PostData }) {
     }
   };
 
-  const handleRepost = () => {
+  const handleBookmark = () => {
     if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user || !displayPost.id || isRepostLoading) return;
+    if (!firestore || !user || !displayPost.id || isBookmarkLoading) return;
 
-    if (repostData) {
-      deleteDocumentNonBlocking(repostRef!);
-      updateDocumentNonBlocking(postRef!, { repostsCount: increment(-1) });
+    if (bookmarkData) {
+      deleteDocumentNonBlocking(bookmarkRef!);
+      toast({ description: "تمت إزالة المنشور من المحفوظات." });
     } else {
-      // نضع بيانات إضافية في الـ repost لتسهيل استعلام الـ Feed
-      setDocumentNonBlocking(repostRef!, { 
-        postData: displayPost, 
-        repostedAt: serverTimestamp(),
-        reposterId: user.uid,
-        reposterName: currentUserProfile?.username || user.displayName || 'مستكشف تيمقاد'
-      }, { merge: true });
-      
-      updateDocumentNonBlocking(postRef!, { repostsCount: increment(1) });
-      toast({ description: "تمت إعادة النشر بنجاح." });
-      
-      if (user.uid !== displayPost.authorId) {
-        setDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_repost_${displayPost.id}`), {
-          type: 'repost',
-          fromUserId: user.uid,
-          fromUsername: currentUserProfile?.username || user.displayName || 'مستكشف تيمقاد',
-          fromAvatar: currentUserProfile?.profilePictureUrl || '',
-          postId: displayPost.id,
-          createdAt: serverTimestamp(),
-          read: false
-        }, { merge: true });
-      }
+      setDocumentNonBlocking(bookmarkRef!, { ...displayPost, createdAt: serverTimestamp() }, { merge: true });
+      toast({ description: "تم حفظ المنشور بنجاح." });
     }
   };
 
@@ -277,11 +255,6 @@ export default function PostCard({ post }: { post: PostData }) {
   return (
     <>
       <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
-        {post.isRepost && (
-          <div className="bg-muted/30 px-4 py-1 flex items-center gap-2 text-[9px] text-muted-foreground font-bold border-b text-right">
-            <Repeat size={10} className="text-green-500" /> أعاد {post.repostedBy} نشر هذا
-          </div>
-        )}
         <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
           <div className="flex items-center gap-2">
             <DropdownMenu>
@@ -395,8 +368,8 @@ export default function PostCard({ post }: { post: PostData }) {
           <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
             <MessageCircle size={16} /><span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
           </Button>
-          <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", repostData ? "text-green-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleRepost(); }} disabled={isRepostLoading}>
-            <Repeat size={16} /><span className="text-[10px] font-bold">{displayPost.repostsCount || 0}</span>
+          <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", bookmarkData ? "text-accent" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleBookmark(); }} disabled={isBookmarkLoading}>
+            <Bookmark size={16} className={cn(bookmarkData ? "fill-current" : "")} />
           </Button>
           <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => e.stopPropagation()}>
             <BarChart3 size={16} /><span className="text-[10px] font-bold">{displayPost.viewsCount || 0}</span>
