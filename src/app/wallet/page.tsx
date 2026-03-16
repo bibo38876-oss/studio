@@ -4,20 +4,67 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Info, Sparkles, TrendingUp, Wallet, ShieldCheck, Star, Scale, Gavel, AlertCircle, Package } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChevronRight, Info, Sparkles, TrendingUp, Wallet, ShieldCheck, Star, Scale, Gavel, AlertCircle, Package, BadgeCheck, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { doc, increment } from 'firebase/firestore';
+import TimgadCoin from '@/components/ui/TimgadCoin';
+import { useState } from 'react';
 
 export default function WalletPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { firestore, user } = useFirebase();
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: profile } = useDoc(userRef);
 
   const handlePackageClick = () => {
     toast({
       title: "قريباً في تيمقاد",
       description: "نظام شحن الباقات قيد التطوير والتدقيق القانوني حالياً.",
     });
+  };
+
+  const handleBuyVerification = async () => {
+    if (!firestore || !user || !profile) return;
+    
+    if ((profile.coins || 0) < 500) {
+      toast({
+        variant: "destructive",
+        title: "رصيد غير كافٍ",
+        description: "تحتاج إلى 500 عملة تيمقاد لتوثيق حسابك. يمكنك الحصول عليها من الداعمين أو شراء باقة.",
+      });
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const expiryDate = new Date();
+      expiryDate.setMonth(expiryDate.getMonth() + 3);
+
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+        coins: increment(-500),
+        verificationType: 'blue',
+        verificationExpiresAt: expiryDate.toISOString()
+      });
+
+      toast({
+        title: "تم التوثيق بنجاح!",
+        description: "مبروك! حصلت على الشارة الزرقاء لمدة 3 أشهر وامتيازات إضافية.",
+      });
+    } catch (error) {
+      toast({ variant: "destructive", description: "فشل إتمام العملية." });
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
@@ -45,39 +92,7 @@ export default function WalletPage() {
             className="relative group"
           >
             <div className="absolute inset-0 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-            <svg width="220" height="220" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="relative z-10 drop-shadow-2xl">
-              <defs>
-                <radialGradient id="gold-wallet" cx="45%" cy="35%" r="65%">
-                  <stop offset="0%" stopColor="#fff7b5"/>
-                  <stop offset="30%" stopColor="#f3d34a"/>
-                  <stop offset="55%" stopColor="#d4a017"/>
-                  <stop offset="80%" stopColor="#a87900"/>
-                  <stop offset="100%" stopColor="#6b4f00"/>
-                </radialGradient>
-                <linearGradient id="rim-wallet" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#fff2a8"/>
-                  <stop offset="50%" stopColor="#c99700"/>
-                  <stop offset="100%" stopColor="#6b4f00"/>
-                </linearGradient>
-                <filter id="shadow-wallet">
-                  <feDropShadow dx="0" dy="6" stdDeviation="5" floodOpacity="0.35"/>
-                </filter>
-                <path id="circleText-wallet" d="M100,100 m-60,0 a60,60 0 1,1 120,0 a60,60 0 1,1 -120,0"/>
-              </defs>
-              <ellipse cx="100" cy="178" rx="52" ry="9" fill="black" opacity="0.15"/>
-              <circle cx="100" cy="100" r="88" fill="url(#rim-wallet)" filter="url(#shadow-wallet)"/>
-              <circle cx="100" cy="100" r="84" fill="none" stroke="#8a6500" strokeWidth="6" strokeDasharray="2 4"/>
-              <circle cx="100" cy="100" r="75" fill="url(#gold-wallet)"/>
-              <circle cx="100" cy="100" r="60" fill="none" stroke="#a87900" strokeWidth="3"/>
-              <text fontSize="10" fill="#6b4f00" fontFamily="Arial" letterSpacing="2">
-                <textPath href="#circleText-wallet" startOffset="50%" textAnchor="middle">
-                  TIMGAD • COIN •
-                </textPath>
-              </text>
-              <text x="100" y="120" textAnchor="middle" fontFamily="serif" fontSize="65" fontWeight="bold" fill="#6b4f00" stroke="#4a3500" strokeWidth="1.5">
-                T
-              </text>
-            </svg>
+            <TimgadCoin size={200} className="relative z-10 drop-shadow-2xl" />
           </motion.div>
 
           <div className="space-y-3 px-6">
@@ -95,7 +110,7 @@ export default function WalletPage() {
                 <Wallet size={14} className="text-primary" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
-                <p className="text-3xl font-bold text-primary">0.00</p>
+                <p className="text-3xl font-bold text-primary">{profile?.coins || 0}</p>
                 <p className="text-[8px] text-muted-foreground mt-1 italic">نقاط افتراضية غير قابلة للصرف المالي.</p>
               </CardContent>
             </Card>
@@ -106,11 +121,48 @@ export default function WalletPage() {
                 <TrendingUp size={14} className="text-accent" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
-                <p className="text-3xl font-bold text-accent">STANDARD</p>
+                <p className="text-3xl font-bold text-accent">
+                  {profile?.verificationType === 'gold' ? 'ELITE' : profile?.verificationType === 'blue' ? 'VERIFIED' : 'STANDARD'}
+                </p>
                 <p className="text-[8px] text-muted-foreground mt-1 italic">تفاعلك اليومي يرفع من رتبتك داخل المنصة.</p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Verification Section */}
+          <section className="w-full text-right space-y-6 pt-6">
+            <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
+              <BadgeCheck size={18} />
+              <h3 className="font-bold text-md uppercase tracking-tighter">توثيق الحساب بالشارة الزرقاء</h3>
+            </div>
+            
+            <Card className="border-none shadow-sm rounded-none bg-primary/5 overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="bg-white p-4 rounded-full shadow-sm">
+                    <BadgeCheck size={48} className="text-blue-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-lg font-bold text-primary">اشتراك التوثيق (3 أشهر)</h4>
+                    <p className="text-[10px] text-muted-foreground max-w-xs mx-auto">احصل على الشارة الزرقاء، أولوية في الظهور، وإمكانية رفع صور أكثر ومساحة كتابة أكبر.</p>
+                  </div>
+                  <div className="flex items-center gap-2 py-4">
+                    <span className="text-2xl font-bold text-primary">500</span>
+                    <TimgadCoin size={24} />
+                  </div>
+                  <Button 
+                    className="w-full rounded-full font-bold h-11 gap-2"
+                    onClick={handleBuyVerification}
+                    disabled={isVerifying || profile?.verificationType === 'blue' || profile?.verificationType === 'gold'}
+                  >
+                    {isVerifying ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
+                    {profile?.verificationType === 'none' ? 'وثق حسابي الآن' : 'أنت موثق بالفعل'}
+                  </Button>
+                  <p className="text-[8px] text-muted-foreground italic">سيتم خصم المبلغ من رصيدك الحالي فوراً.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
 
           {/* Coin Packages Section */}
           <section className="w-full text-right space-y-6 pt-6">
@@ -133,10 +185,7 @@ export default function WalletPage() {
                   >
                     <CardContent className="p-6 flex flex-col items-center gap-3 relative">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${pkg.color}`}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                          <text x="12" y="16" textAnchor="middle" fontSize="12" fontWeight="bold" fill="currentColor">T</text>
-                        </svg>
+                        <TimgadCoin size={24} />
                       </div>
                       <div className="text-center">
                         <p className="text-xl font-bold text-primary">{pkg.amount} Coin</p>

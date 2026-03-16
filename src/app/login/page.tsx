@@ -39,21 +39,23 @@ export default function LoginPage() {
         
         await updateProfile(user, { displayName: username });
         
+        // عند التسجيل الجديد، يمنح النظام 10 عملات هدية
         await setDoc(doc(firestore, 'users', user.uid), {
           id: user.uid,
           username: username,
           email: email,
           profilePictureUrl: "",
           createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
           bio: 'مرحباً، أنا مستخدم جديد في تيمقاد. فخور بانضمامي لهذه المنصة العريقة!',
           followingIds: [],
           followerIds: [],
           role: 'user',
           verificationType: 'none',
-          coins: 0
+          coins: 10 // هدية الانضمام
         });
 
-        toast({ title: "تم إنشاء الحساب!", description: "مرحباً بك في تيمقاد. اختر بعض الحسابات لمتابعتها." });
+        toast({ title: "تم إنشاء الحساب!", description: "مرحباً بك في تيمقاد. لقد حصلت على 10 عملات هدية انضمام!" });
         router.push('/onboarding');
       }
     } catch (error: any) {

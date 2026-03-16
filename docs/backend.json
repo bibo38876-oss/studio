@@ -13,6 +13,7 @@
         "profilePictureUrl": { "type": "string", "format": "uri" },
         "bannerUrl": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time" },
+        "lastLoginAt": { "type": "string", "format": "date-time", "description": "Used for daily login rewards." },
         "lastPollCreatedAt": { "type": "string", "format": "date-time" },
         "followingIds": { "type": "array", "items": { "type": "string" } },
         "followerIds": { "type": "array", "items": { "type": "string" } },
@@ -20,6 +21,7 @@
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["user", "admin"] },
         "verificationType": { "type": "string", "enum": ["none", "blue", "gold"] },
+        "verificationExpiresAt": { "type": "string", "format": "date-time" },
         "isPrivate": { "type": "boolean", "default": false },
         "coins": { "type": "number", "default": 0 }
       },
@@ -62,7 +64,9 @@
         "commentsCount": { "type": "number", "default": 0 },
         "repostsCount": { "type": "number", "default": 0 },
         "viewsCount": { "type": "number", "default": 0 },
-        "reportsCount": { "type": "number", "default": 0 }
+        "reportsCount": { "type": "number", "default": 0 },
+        "promoted": { "type": "boolean" },
+        "impressions_left": { "type": "number" }
       },
       "required": ["id", "authorId", "content", "createdAt"]
     },
@@ -90,7 +94,8 @@
       { "path": "posts/{postId}/likes/{userId}", "description": "Users who liked this post." },
       { "path": "posts/{postId}/comments/{commentId}", "description": "Comments on this post." },
       { "path": "posts/{postId}/pollVotes/{userId}", "description": "Individual votes for polls." },
-      { "path": "reports/{reportId}", "definition": { "entityName": "Report" } }
+      { "path": "reports/{reportId}", "definition": { "entityName": "Report" } },
+      { "path": "users/{userId}/supportedPeople/{targetUserId}", "description": "List of people supported by this user." }
     ]
   }
 }

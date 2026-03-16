@@ -8,11 +8,12 @@ import LeftSidebar from '@/components/layout/LeftSidebar';
 import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
-import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, where, limit } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, doc, where, limit, increment } from 'firebase/firestore';
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
@@ -20,6 +21,7 @@ export default function Home() {
   const [limitForYou, setLimitForYou] = useState(10);
   const [limitFollowing, setLimitFollowing] = useState(10);
   const router = useRouter();
+  const { toast } = useToast();
 
   const loadMoreForYouRef = useRef<HTMLDivElement>(null);
   const loadMoreFollowingRef = useRef<HTMLDivElement>(null);
@@ -37,7 +39,28 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // استعلام التغذية العامة: يعتمد على الترتيب الزمني البسيط
+  // نظام مكافأة الدخول اليومي (1 عملة)
+  useEffect(() => {
+    if (!firestore || !user?.uid || !profile) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const lastLogin = profile.lastLoginAt ? profile.lastLoginAt.split('T')[0] : null;
+
+    if (lastLogin !== today) {
+      // منح عملة واحدة للدخول اليومي
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+        coins: increment(1),
+        lastLoginAt: new Date().toISOString()
+      });
+      
+      toast({
+        title: "مكافأة يومية!",
+        description: "لقد حصلت على عملة واحدة لتسجيل دخولك اليومي. استمر في العطاء!",
+      });
+    }
+  }, [firestore, user?.uid, profile, toast]);
+
+  // استعلام التغذية العامة
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(limitForYou));
@@ -45,7 +68,7 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // نظام الإعلانات: يتطلب فهرس (promoted: Asc + impressions_left: Asc) - متوفر في صورتك
+  // نظام الإعلانات
   const promotedQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -58,7 +81,7 @@ export default function Home() {
 
   const { data: promotedPosts } = useCollection(promotedQuery);
 
-  // استعلام المتابعين: يتطلب فهرس (authorId: Asc + createdAt: Desc) - متوفر في صورتك
+  // استعلام المتابعين
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
