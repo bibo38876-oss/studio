@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Info, Sparkles, TrendingUp, Wallet, ShieldCheck, Star } from 'lucide-react';
+import { ChevronRight, Info, Sparkles, TrendingUp, Wallet, ShieldCheck, Star, Scale, Gavel, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 
@@ -23,7 +23,7 @@ export default function WalletPage() {
           </Button>
           <div className="flex flex-col text-right">
             <h1 className="text-sm font-bold text-primary">محفظة تيمقاد الرقمية</h1>
-            <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-medium">نظام المكافآت والعملة الموحدة</span>
+            <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-medium">نظام المكافآت والتحفيز الرقمي</span>
           </div>
         </div>
 
@@ -71,10 +71,10 @@ export default function WalletPage() {
             </svg>
           </motion.div>
 
-          <div className="space-y-3">
-            <h2 className="text-2xl font-bold text-primary">عملة تيمقاد: اقتصاد المستقبل</h2>
+          <div className="space-y-3 px-6">
+            <h2 className="text-2xl font-bold text-primary">عملة تيمقاد: وسام التفاعل الرقمي</h2>
             <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-              نحن نبني نظاماً اقتصادياً رقمياً عادلاً يكافئ القيمة الحقيقية للتفاعل. كن جزءاً من النخبة التي ستشكل ملامح تيمقاد المالية.
+              نظام "عملة تيمقاد" هو آلية تقنية مبتكرة صُممت حصرياً لمكافأة جودة المحتوى وتعزيز روح المجتمع داخل المنصة.
             </p>
           </div>
 
@@ -82,50 +82,94 @@ export default function WalletPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
             <Card className="border-none shadow-none rounded-none bg-primary/5 border-r-4 border-primary">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-primary">الرصيد الحالي</CardTitle>
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-primary">رصيد النقاط الحالي</CardTitle>
                 <Wallet size={14} className="text-primary" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
                 <p className="text-3xl font-bold text-primary">0.00</p>
-                <p className="text-[8px] text-muted-foreground mt-1 italic">سيتم تفعيل الرصيد عند الإطلاق الرسمي للشبكة.</p>
+                <p className="text-[8px] text-muted-foreground mt-1 italic">نقاط افتراضية غير قابلة للصرف المالي.</p>
               </CardContent>
             </Card>
 
             <Card className="border-none shadow-none rounded-none bg-accent/5 border-r-4 border-accent">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-accent">مستوى التعدين</CardTitle>
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-accent">المساهمة المجتمعية</CardTitle>
                 <TrendingUp size={14} className="text-accent" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
-                <p className="text-3xl font-bold text-accent">ELITE</p>
-                <p className="text-[8px] text-muted-foreground mt-1 italic">تفاعلك اليومي يرفع من فرصك في كسب العملات.</p>
+                <p className="text-3xl font-bold text-accent">STANDARD</p>
+                <p className="text-[8px] text-muted-foreground mt-1 italic">تفاعلك اليومي يرفع من رتبتك داخل المنصة.</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Info Section */}
+          {/* Legal Compliance Section - NEW */}
           <section className="w-full text-right space-y-6 pt-10">
+            <div className="flex items-center gap-3 text-destructive border-r-4 border-destructive pr-3">
+              <Scale size={18} />
+              <h3 className="font-bold text-md uppercase tracking-tighter">الإيضاح القانوني والامتثال التشريعي</h3>
+            </div>
+            
+            <div className="bg-destructive/5 p-6 space-y-5 border border-destructive/10">
+              <div className="flex items-start gap-3">
+                <AlertCircle size={16} className="text-destructive mt-1 shrink-0" />
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-destructive">طبيعة الوحدات الرقمية</h4>
+                  <p className="text-[10px] text-foreground/80 leading-relaxed">
+                    تُعرف "عملة تيمقاد" (TIMGAD COIN) بأنها **وحدات حسابية افتراضية داخلية (Internal Virtual Points)**. هي ليست عملة نقدية، ولا صكاً مالياً، ولا تمتلك أي قيمة مادية خارج بيئة منصة تيمقاد الرقمية.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Gavel size={16} className="text-destructive mt-1 shrink-0" />
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-destructive">الالتزام بالقانون الجزائري (المادة 117)</h4>
+                  <p className="text-[10px] text-foreground/80 leading-relaxed italic">
+                    "يمنع منعاً باتاً شراء أو بيع أو استخدام أو حيازة العملة الافتراضية بأي وسيلة كانت." 
+                    <br />— **قانون المالية لسنة 2018 (القانون رقم 17-11 المؤرخ في 27 ديسمبر 2017)**.
+                  </p>
+                  <p className="text-[10px] text-foreground/80 leading-relaxed">
+                    بموجب هذا التشريع الصارم، توضح إدارة تيمقاد أن هذه الوحدات **لا تندرج تحت فئة "العملات الرقمية" أو "الافتراضية" المحظورة**؛ كونها نقاطاً تحفيزية مغلقة النظام، ولا يمكن بأي حال من الأحوال تحويلها إلى عملات ورقية (دينار جزائري أو غيره)، ولا يمكن سحبها أو تداولها خارج المنصة كأداة دفع.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <ShieldCheck size={16} className="text-primary mt-1 shrink-0" />
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-primary">سياسة الاستخدام العادل</h4>
+                  <p className="text-[10px] text-foreground/80 leading-relaxed">
+                    تخضع كافة عمليات كسب النقاط لرقابة صارمة لضمان عدم استغلال المنصة في أي نشاط مخالف للأنظمة النقدية والمصرفية المعمول بها في الجمهورية الجزائرية الديمقراطية الشعبية. تيمقاد تلتزم بالشفافية الكاملة مع السلطات التنظيمية والمالية.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Info Section */}
+          <section className="w-full text-right space-y-6 pt-6">
             <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
               <Info size={18} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">بروتوكول المكافآت الرقمي</h3>
+              <h3 className="font-bold text-md uppercase tracking-tighter">كيفية عمل نظام المكافآت</h3>
             </div>
             
             <div className="grid gap-4">
               {[
                 { 
                   icon: <Star size={14} />, 
-                  title: "التفاعل النوعي", 
-                  desc: "خوارزمية تيمقاد تكافئ المنشورات ذات القيمة المعرفية العالية والتعليقات التي تحظى بتفاعل إيجابي." 
+                  title: "المساهمة المعرفية", 
+                  desc: "تُمنح النقاط بناءً على جودة المنشورات الأصلية التي تثري المحتوى العربي وتلقى قبولاً من المجتمع." 
                 },
                 { 
                   icon: <ShieldCheck size={14} />, 
-                  title: "نظام التوثيق", 
-                  desc: "الحسابات الموثقة (الأزرق والذهبي) ستحصل على معامل ضرب (Multiplier) مضاعف لكل عملية كسب." 
+                  title: "امتيازات التوثيق", 
+                  desc: "الحسابات الموثقة تمتلك معامل ضرب (Multiplier) يرفع من رصيد نقاطهم كتقدير لمصداقيتهم." 
                 },
                 { 
                   icon: <Sparkles size={14} />, 
-                  title: "دعم المبدعين", 
-                  desc: "ستتمكن قريباً من إرسال واستقبال عملة تيمقاد كنوع من التقدير للمحتوى المميز داخل المنصة." 
+                  title: "دعم المبدعين داخلياً", 
+                  desc: "ستتمكن قريباً من إهداء هذه النقاط للمنشورات التي تعجبك كنوع من "التصفيق الرقمي" داخل التطبيق." 
                 }
               ].map((item, i) => (
                 <div key={i} className="bg-secondary/30 p-4 flex gap-4 items-start border border-transparent hover:border-primary/10 transition-colors">
@@ -142,8 +186,8 @@ export default function WalletPage() {
           </section>
 
           <footer className="pt-16 pb-10 opacity-40">
-            <p className="text-[9px] font-bold tracking-[0.2em] uppercase text-primary">Timgad Digital Economy Division</p>
-            <p className="text-[8px] text-muted-foreground mt-1">Experimental Feature • 2024-2025</p>
+            <p className="text-[9px] font-bold tracking-[0.2em] uppercase text-primary">Timgad Digital Compliance Division</p>
+            <p className="text-[8px] text-muted-foreground mt-1">Regulatory & Legal Framework • 2024-2025</p>
           </footer>
         </div>
       </main>
