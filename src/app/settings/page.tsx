@@ -1,15 +1,59 @@
+
 "use client"
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut } from '@/firebase';
-import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight } from 'lucide-react';
+import { updatePassword } from 'firebase/auth';
+import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
 
 export default function SettingsPage() {
   const { auth, user } = useFirebase();
   const router = useRouter();
+  const { toast } = useToast();
+  
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // التحكم في الوضع الليلي
+  useEffect(() => {
+    const theme = localStorage.getItem('theme');
+    if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const toggleDarkMode = (checked: boolean) => {
+    setIsDarkMode(checked);
+    if (checked) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+    toast({
+      description: checked ? "تم تفعيل الوضع الليلي 🌙" : "تم تفعيل الوضع النهاري ☀️",
+    });
+  };
 
   const handleLogout = () => {
     if (!auth) return;
@@ -17,17 +61,35 @@ export default function SettingsPage() {
     router.push('/login');
   };
 
+  const handleChangePassword = async () => {
+    if (!auth.currentUser || newPassword.length < 6) {
+      toast({ variant: "destructive", description: "يجب أن تكون كلمة المرور 6 أحرف على الأقل." });
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      await updatePassword(auth.currentUser, newPassword);
+      toast({ title: "تم التحديث", description: "تم تغيير كلمة المرور بنجاح." });
+      setIsPasswordDialogOpen(false);
+      setNewPassword('');
+    } catch (error: any) {
+      toast({ 
+        variant: "destructive", 
+        title: "خطأ", 
+        description: error.code === 'auth/requires-recent-login' 
+          ? "يجب إعادة تسجيل الدخول لتغيير كلمة المرور." 
+          : "فشل تحديث كلمة المرور." 
+      });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   if (!user || user.isAnonymous) {
     if (typeof window !== 'undefined') router.push('/login');
     return null;
   }
-
-  const settingsOptions = [
-    { icon: <User size={16} />, label: 'إعدادات الحساب', desc: 'تغيير البريد الإلكتروني، كلمة المرور', status: 'soon' },
-    { icon: <Bell size={16} />, label: 'التنبيهات والإشعارات', desc: 'إدارة كيفية وصول التنبيهات إليك', status: 'soon' },
-    { icon: <Shield size={16} />, label: 'الخصوصية والأمان', desc: 'التحكم في من يشاهد محتواك', status: 'soon' },
-    { icon: <HelpCircle size={16} />, label: 'المساعدة والدعم', desc: 'مركز المساعدة وقوانين المنصة', status: 'soon' },
-  ];
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -54,25 +116,87 @@ export default function SettingsPage() {
       </div>
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
+        <Card className="border-none shadow-sm rounded-none bg-card mb-4">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">
+                {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-primary">المظهر</span>
+                <span className="text-[9px] text-muted-foreground">{isDarkMode ? 'الوضع الليلي نشط' : 'الوضع النهاري نشط'}</span>
+              </div>
+            </div>
+            <Switch checked={isDarkMode} onCheckedChange={toggleDarkMode} />
+          </CardContent>
+        </Card>
+
         <div className="space-y-2">
-          {settingsOptions.map((option, i) => (
-            <Card key={i} className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group">
+          {/* إعدادات الحساب */}
+          <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+            <DialogTrigger asChild>
+              <Card className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                      <Lock size={16} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-primary">أمان الحساب</span>
+                      <span className="text-[9px] text-muted-foreground">تغيير كلمة المرور الخاصة بك</span>
+                    </div>
+                  </div>
+                  <ChevronLeft size={14} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-[-4px] transition-all" />
+                </CardContent>
+              </Card>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="text-sm font-bold">تغيير كلمة المرور</DialogTitle>
+                <DialogDescription className="text-[10px]">أدخل كلمة المرور الجديدة أدناه. يجب أن تكون قوية.</DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Input 
+                  type="password" 
+                  placeholder="كلمة المرور الجديدة..." 
+                  className="h-9 rounded-none bg-secondary/30 border-none text-xs"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button 
+                  className="w-full rounded-full text-xs h-9 font-bold" 
+                  onClick={handleChangePassword}
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword ? <Loader2 className="animate-spin h-4 w-4" /> : "تحديث كلمة المرور"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* خيارات قيد التطوير */}
+          {[
+            { icon: <Bell size={16} />, label: 'التنبيهات والإشعارات', desc: 'إدارة كيفية وصول التنبيهات إليك' },
+            { icon: <Shield size={16} />, label: 'الخصوصية والأمان', desc: 'التحكم في من يشاهد محتواك' },
+            { icon: <HelpCircle size={16} />, label: 'المساعدة والدعم', desc: 'مركز المساعدة وقوانين المنصة' },
+          ].map((option, i) => (
+            <Card key={i} className="border-none shadow-sm rounded-none bg-card opacity-60 cursor-not-allowed group">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                  <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">
                     {option.icon}
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-primary">{option.label}</span>
-                      {option.status === 'soon' && (
-                        <Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 border-primary/20 text-primary/70 rounded-none">قيد التطوير</Badge>
-                      )}
+                      <Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 border-primary/20 text-primary/70 rounded-none">قيد التطوير</Badge>
                     </div>
                     <span className="text-[9px] text-muted-foreground">{option.desc}</span>
                   </div>
                 </div>
-                <ChevronLeft size={14} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-[-4px] transition-all" />
+                <ChevronLeft size={14} className="text-muted-foreground/30" />
               </CardContent>
             </Card>
           ))}
