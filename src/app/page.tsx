@@ -9,7 +9,7 @@ import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, where, limit } from 'firebase/firestore';
+import { collection, query, orderBy, doc, where, limit, collectionGroup } from 'firebase/firestore';
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -31,7 +31,7 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // جلب مجموعة كبيرة من المنشورات لفرزها بالخوارزمية
+  // جلب المنشورات العامة لتبويب "لك"
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
@@ -39,6 +39,7 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
+  // جلب المنشورات من المتابعين
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -51,36 +52,59 @@ export default function Home() {
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
-  // تطبيق خوارزمية التوصيات الذكية (بدون كلمة "خوارزمية" في الواجهة)
+  // جلب الـ Reposts من المتابعين عبر Collection Group
+  const followingRepostsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
+    return query(
+      collectionGroup(firestore, 'reposts'),
+      where('reposterId', 'in', profile.followingIds.slice(0, 10)),
+      orderBy('repostedAt', 'desc'),
+      limit(20)
+    );
+  }, [firestore, user?.uid, profile?.followingIds]);
+
+  const { data: followingReposts } = useCollection(followingRepostsQuery);
+
+  // دمج المنشورات الأصلية والمعاد نشرها في خلاصة "أتابعهم"
+  const combinedFollowingFeed = useMemo(() => {
+    const posts = followingPosts || [];
+    const reposts = (followingReposts || []).map(r => ({
+      ...r.postData,
+      id: `${r.id}_repost`, // معرف فريد للـ Repost
+      isRepost: true,
+      repostedBy: r.reposterName,
+      repostedAt: r.repostedAt,
+      feedSortDate: r.repostedAt?.toDate?.() || new Date()
+    }));
+
+    const originalPosts = posts.map(p => ({
+      ...p,
+      feedSortDate: p.createdAt?.toDate?.() || new Date()
+    }));
+
+    // دمج وترتيب حسب التاريخ (الأحدث أولاً)
+    return [...originalPosts, ...reposts].sort((a, b) => b.feedSortDate - a.feedSortDate);
+  }, [followingPosts, followingReposts]);
+
+  // خوارزمية التوصيات لتبويب "لك"
   const recommendedPosts = useMemo(() => {
     if (!postsPool || !profile) return [];
 
     return [...postsPool].map(post => {
       let score = 0;
-      
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
 
-      if (profile.followingIds?.includes(post.authorId)) {
-        score += 20;
-      }
+      if (profile.followingIds?.includes(post.authorId)) score += 20;
 
       const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
       const postAgeMs = Date.now() - postDate.getTime();
       const oneHour = 3600000;
       const oneDay = 86400000;
 
-      if (postAgeMs < oneHour) {
-        score += 30;
-      } else if (postAgeMs < oneDay) {
-        score += 15;
-      } else {
-        score += 5;
-      }
-
-      if (profile.interactedAuthorIds?.includes(post.authorId)) {
-        score += 25;
-      }
+      if (postAgeMs < oneHour) score += 30;
+      else if (postAgeMs < oneDay) score += 15;
+      else score += 5;
 
       return { ...post, recommendationScore: score };
     }).sort((a, b) => b.recommendationScore - a.recommendationScore);
@@ -150,9 +174,9 @@ export default function Home() {
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
-              ) : followingPosts && followingPosts.length > 0 ? (
+              ) : combinedFollowingFeed.length > 0 ? (
                 <div className="flex flex-col">
-                  {followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
+                  {combinedFollowingFeed.map((post: any) => <PostCard key={post.id} post={post} />)}
                 </div>
               ) : (
                 <div className="text-center py-20 bg-card border-b">
