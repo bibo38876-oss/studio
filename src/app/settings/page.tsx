@@ -7,9 +7,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck } from 'lucide-react';
+import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -219,6 +219,25 @@ export default function SettingsPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mt-4 mb-1">معلومات المنصة</h2>
+          
+          <Link href="/privacy">
+            <Card className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group overflow-hidden">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                    <FileText size={16} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-primary">سياسة الخصوصية</span>
+                    <span className="text-[9px] text-muted-foreground">كيفية حماية بياناتك في تيمقاد</span>
+                  </div>
+                </div>
+                <ChevronLeft size={14} className="text-muted-foreground/30" />
+              </CardContent>
+            </Card>
+          </Link>
 
           <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mt-4 mb-1">عام</h2>
           {[
