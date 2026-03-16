@@ -38,6 +38,7 @@ export default function Home() {
   const { data: profile } = useDoc(userProfileRef);
 
   // الخوارزمية: جلب أحدث المنشورات لفرزها برمجياً (Pool)
+  // هذا الاستعلام بسيط ولا يحتاج فهرس مركب
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(limitForYou));
@@ -45,20 +46,20 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // نظام الإعلانات: جلب المنشورات المروجة (يتطلب فهرس مركب: promoted + impressions_left)
+  // نظام الإعلانات: يتطلب الفهرس الذي أنشأته للتو (promoted: Asc + impressions_left: Asc)
   const promotedQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'posts'),
       where('promoted', '==', true),
       where('impressions_left', '>', 0),
-      limit(10)
+      limit(5)
     );
   }, [firestore, user?.uid]);
 
   const { data: promotedPosts } = useCollection(promotedQuery);
 
-  // استعلام المتابعين (يتطلب فهرس مركب: authorId + createdAt)
+  // استعلام المتابعين: يتطلب الفهرس (authorId: Asc + createdAt: Desc)
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -71,7 +72,7 @@ export default function Home() {
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
-  // خوارزمية التوصيات المتقدمة + دمج الإعلانات
+  // خوارزمية التوصيات الذكية + دمج الإعلانات
   const recommendedPosts = useMemo(() => {
     if (!postsPool || !profile) return [];
 
@@ -81,16 +82,11 @@ export default function Home() {
       score += (post.commentsCount || 0) * 5;
       score += (post.viewsCount || 0) * 0.1;
       if (profile.followingIds?.includes(post.authorId)) score += 50;
-      if (profile.interactedAuthorIds?.includes(post.authorId)) score += 30;
-
+      
       const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : (post.createdAt ? new Date(post.createdAt) : new Date());
       const postAgeMs = Date.now() - postDate.getTime();
       const oneHour = 3600000;
-      const oneDay = 86400000;
-
       if (postAgeMs < oneHour) score += 40;
-      else if (postAgeMs < oneDay) score += 20;
-      else score -= 10;
 
       return { ...post, recommendationScore: score };
     }).sort((a, b) => b.recommendationScore - a.recommendationScore);
@@ -101,6 +97,7 @@ export default function Home() {
 
     basePosts.forEach((post, i) => {
       finalFeed.push(post);
+      // إدخال إعلان كل 5 منشورات
       if ((i + 1) % 5 === 0 && ads[adIdx]) {
         finalFeed.push(ads[adIdx]);
         adIdx++;
