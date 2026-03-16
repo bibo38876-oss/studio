@@ -65,7 +65,7 @@ export default function RightSidebar() {
           ) : suggestions.length > 0 ? (
             suggestions.map((user) => {
               const isFollowing = (user.followerIds || []).includes(currentUser?.uid);
-              const isVerified = user.email === 'adelbenmaza8@gmail.com' || user.role === 'admin';
+              const isVerified = user.email === 'adelbenmaza8@gmail.com' || user.role === 'admin' || user.verificationType === 'blue' || user.verificationType === 'gold';
               return (
                 <div key={user.id} className="flex items-center justify-between">
                   <Link href={`/profile/${user.id}`} className="flex items-center gap-3 group">
@@ -75,8 +75,8 @@ export default function RightSidebar() {
                     </Avatar>
                     <div className="flex flex-col text-right">
                       <div className="flex items-center gap-1 leading-tight justify-end">
-                        {isVerified && <BadgeCheck size={12} className="text-accent fill-current" />}
                         <span className="text-xs font-bold text-primary group-hover:underline">{user.username}</span>
+                        {isVerified && <BadgeCheck size={12} className="text-accent fill-current" />}
                       </div>
                       <span className="text-[8px] text-muted-foreground">{user.email || 'مستخدم تواصل'}</span>
                     </div>

@@ -209,8 +209,8 @@ export default function ExplorePage() {
                           </Avatar>
                           <div className="flex flex-col text-right">
                             <div className="flex items-center gap-1 leading-tight justify-end">
-                              {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
                               <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
+                              {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
                             </div>
                             <span className="text-[10px] text-muted-foreground">{user.email}</span>
                           </div>

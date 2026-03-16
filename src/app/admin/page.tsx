@@ -225,8 +225,8 @@ export default function AdminPage() {
                       </Avatar>
                       <div className="flex flex-col text-right">
                         <div className="flex items-center gap-1.5 justify-end">
-                          <VerifiedBadge type={user.email === ADMIN_EMAIL ? 'blue' : (user.verificationType || 'none')} />
                           <span className="text-xs font-bold text-primary">{user.username}</span>
+                          <VerifiedBadge type={user.email === ADMIN_EMAIL ? 'blue' : (user.verificationType || 'none')} />
                         </div>
                         <span className="text-[10px] text-muted-foreground">{user.email}</span>
                       </div>

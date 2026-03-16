@@ -283,7 +283,13 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="space-y-3">
-              <div className="space-y-0.5"><div className="flex items-center gap-1.5 justify-end"><VerifiedBadge type={verificationType} size={16} /><h1 className="text-md font-bold text-primary">{profile.username}</h1></div><p className="text-[9px] text-muted-foreground">{profile.email}</p></div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5 justify-end">
+                  <h1 className="text-md font-bold text-primary">{profile.username}</h1>
+                  <VerifiedBadge type={verificationType} size={16} />
+                </div>
+                <p className="text-[9px] text-muted-foreground">{profile.email}</p>
+              </div>
               <p className="text-xs leading-relaxed text-foreground/80 text-right">{profile.bio || 'لا يوجد نبذة شخصية.'}</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground justify-end"><div className="flex items-center gap-1"><MapPin size={10} /><span>تيمقاد، الجزائر</span></div><div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div></div>
               <div className="flex gap-4 pt-1 justify-end"><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followingIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">يتابع</span></div><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followerIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">متابع</span></div></div>

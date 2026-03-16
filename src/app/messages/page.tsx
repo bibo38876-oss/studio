@@ -55,7 +55,7 @@ export default function MessagesPage() {
         ) : chats && chats.length > 0 ? (
           <div className="divide-y divide-muted opacity-60">
             {chats.filter(u => u.id !== user.uid).map((chat: any) => {
-              const isVerified = chat.email === 'adelbenmaza8@gmail.com' || chat.role === 'admin';
+              const isVerified = chat.email === 'adelbenmaza8@gmail.com' || chat.role === 'admin' || chat.verificationType === 'blue' || chat.verificationType === 'gold';
               return (
                 <div key={chat.id} className="p-4 flex items-center gap-3 hover:bg-muted/10 cursor-not-allowed transition-colors group flex-row-reverse">
                   <Avatar className="h-12 w-12 border border-muted/20">
@@ -65,8 +65,8 @@ export default function MessagesPage() {
                   <div className="flex-1 flex flex-col gap-0.5 text-right">
                     <div className="flex justify-between items-center flex-row-reverse">
                       <div className="flex items-center gap-1 leading-tight justify-end">
-                        {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
                         <span className="text-xs font-bold text-primary">{chat.username}</span>
+                        {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
                       </div>
                       <span className="text-[8px] text-muted-foreground">الآن</span>
                     </div>
