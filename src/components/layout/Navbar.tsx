@@ -5,9 +5,24 @@ import Link from 'next/link';
 import { Search, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 export default function Navbar() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const { firestore, user } = useFirebase();
+
+  // جلب التنبيهات غير المقروءة لإظهار النقطة التنبيهية
+  const unreadQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'notifications'),
+      where('read', '==', false)
+    );
+  }, [firestore, user]);
+
+  const { data: unreadNotifications } = useCollection(unreadQuery);
+  const hasUnread = unreadNotifications && unreadNotifications.length > 0;
 
   return (
     <nav className="fixed top-0 z-50 w-full h-8 border-b bg-background/80 backdrop-blur-md transition-all duration-300">
@@ -37,7 +52,9 @@ export default function Navbar() {
           <Link href="/notifications">
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full relative hover:bg-secondary">
               <Bell size={16} className="text-muted-foreground" />
-              <span className="absolute top-2 left-2 w-1.5 h-1.5 bg-accent rounded-full border border-background"></span>
+              {hasUnread && (
+                <span className="absolute top-2 left-2 w-1.5 h-1.5 bg-accent rounded-full border border-background animate-pulse"></span>
+              )}
             </Button>
           </Link>
         </div>

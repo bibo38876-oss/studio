@@ -3,9 +3,9 @@
 
 import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, limit, doc, writeBatch, getDocs, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Heart, UserPlus, MessageCircle, Repeat, CheckCircle2 } from 'lucide-react';
+import { Loader2, Heart, UserPlus, MessageCircle, Repeat, CheckCircle2, Bell } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -49,17 +49,20 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container mx-auto max-w-2xl pt-7 pb-20 px-0 md:px-4">
-        <div className="bg-background sticky top-7 z-30 p-4 border-b flex justify-between items-center">
-          <h1 className="text-sm font-bold text-primary">التنبيهات</h1>
+      <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
+        <div className="bg-background sticky top-8 z-30 p-3 border-b flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Bell size={16} className="text-primary" />
+            <h1 className="text-xs font-bold text-primary">التنبيهات</h1>
+          </div>
           {notifications && notifications.some(n => !n.read) && (
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-7 text-[10px] font-bold text-accent gap-1 hover:bg-accent/5"
+              className="h-6 text-[9px] font-bold text-accent gap-1 hover:bg-accent/5 rounded-full"
               onClick={handleMarkAllAsRead}
             >
-              <CheckCircle2 size={12} />
+              <CheckCircle2 size={10} />
               تحديد الكل كمقروء
             </Button>
           )}
@@ -67,33 +70,37 @@ export default function NotificationsPage() {
 
         {isLoading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="animate-spin text-primary" />
+            <Loader2 className="animate-spin text-primary h-6 w-6" />
           </div>
         ) : notifications && notifications.length > 0 ? (
-          <div className="divide-y divide-muted">
+          <div className="divide-y divide-muted/30">
             {notifications.map((notif: any) => (
               <Link 
                 key={notif.id} 
                 href={notif.postId ? `/?post=${notif.postId}` : `/profile/${notif.fromUserId}`}
-                className={`p-4 flex items-start gap-3 hover:bg-muted/10 transition-colors ${!notif.read ? 'bg-primary/5 border-r-4 border-primary' : ''}`}
+                className={`p-4 flex items-start gap-3 transition-all duration-300 ${
+                  !notif.read 
+                    ? 'bg-primary/5 border-r-2 border-primary' 
+                    : 'bg-card opacity-70'
+                } hover:bg-secondary/20`}
                 onClick={() => {
                   if (!notif.read && firestore && user) {
                     updateDocumentNonBlocking(doc(firestore, 'users', user.uid, 'notifications', notif.id), { read: true });
                   }
                 }}
               >
-                <div className="mt-1">
-                  {notif.type === 'like' && <Heart size={16} className="text-red-500 fill-red-500" />}
-                  {notif.type === 'follow' && <UserPlus size={16} className="text-primary" />}
-                  {notif.type === 'comment' && <MessageCircle size={16} className="text-accent" />}
-                  {notif.type === 'repost' && <Repeat size={16} className="text-green-500" />}
+                <div className="mt-1 shrink-0">
+                  {notif.type === 'like' && <Heart size={14} className="text-red-500 fill-red-500" />}
+                  {notif.type === 'follow' && <UserPlus size={14} className="text-primary" />}
+                  {notif.type === 'comment' && <MessageCircle size={14} className="text-accent" />}
+                  {notif.type === 'repost' && <Repeat size={14} className="text-green-500" />}
                 </div>
-                <Avatar className="h-10 w-10 border">
+                <Avatar className="h-9 w-9 border rounded-full">
                   <AvatarImage src={notif.fromAvatar} alt={notif.fromUsername} />
-                  <AvatarFallback>{notif.fromUsername?.[0]}</AvatarFallback>
+                  <AvatarFallback className="text-[10px]">{notif.fromUsername?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 flex flex-col gap-0.5">
-                  <p className="text-xs">
+                  <p className="text-[11px] leading-tight">
                     <span className="font-bold text-primary">{notif.fromUsername}</span>
                     <span className="text-muted-foreground mr-1">
                       {notif.type === 'like' && 'أعجب بمنشورك'}
@@ -102,18 +109,21 @@ export default function NotificationsPage() {
                       {notif.type === 'repost' && 'أعاد نشر محتواك'}
                     </span>
                   </p>
-                  <span className="text-[9px] text-muted-foreground">
+                  <span className="text-[8px] text-muted-foreground">
                     {notif.createdAt?.toDate ? formatDistanceToNow(notif.createdAt.toDate(), { addSuffix: true, locale: ar }) : 'منذ قليل'}
                   </span>
                 </div>
+                {!notif.read && (
+                  <div className="w-1.5 h-1.5 bg-accent rounded-full mt-2"></div>
+                )}
               </Link>
             ))}
           </div>
         ) : (
-          <div className="text-center py-32 px-10 flex flex-col items-center">
-            <CheckCircle2 size={40} className="text-muted-foreground/20 mb-4" />
-            <p className="text-muted-foreground text-xs font-bold">صندوق التنبيهات فارغ.</p>
-            <p className="text-[9px] text-muted-foreground mt-1 italic">عندما يتفاعل الآخرون معك، ستظهر التنبيهات هنا.</p>
+          <div className="text-center py-32 px-10 flex flex-col items-center gap-2">
+            <CheckCircle2 size={32} className="text-muted-foreground/20" />
+            <p className="text-muted-foreground text-[10px] font-bold">صندوق التنبيهات فارغ.</p>
+            <p className="text-[8px] text-muted-foreground italic">تفاعل مع الآخرين لتبدأ باستقبال التنبيهات!</p>
           </div>
         )}
       </main>
