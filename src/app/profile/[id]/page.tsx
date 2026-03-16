@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Hourglass, Lock, Heart } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Lock, Heart } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -241,12 +241,8 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="px-4 pb-6 relative">
-            <div className="flex justify-between items-end -mt-10 mb-4">
-              <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-full text-primary bg-primary/5">
-                {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
-                <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
-              </Avatar>
-              <div className="pb-1">
+            <div className="flex justify-between items-start -mt-10 mb-4">
+              <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogTrigger asChild><Button variant="outline" className="rounded-full gap-2 font-bold h-8 text-[11px]"><Edit3 size={12} /> تعديل الملف</Button></DialogTrigger>
@@ -281,16 +277,23 @@ export default function ProfilePage() {
                   </Button>
                 )}
               </div>
-            </div>
-            <div className="space-y-3">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 justify-end">
-                  {/* استعادة الملف الشخصي السابق: الاسم ثم الشارة */}
-                  <h1 className="text-md font-bold text-primary">{profile.username}</h1>
-                  <VerifiedBadge type={verificationType} size={16} />
+              
+              <div className="flex flex-col items-end">
+                <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
+                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
+                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
+                </Avatar>
+                <div className="text-right">
+                  <div className="flex items-center gap-1.5 justify-end">
+                    <h1 className="text-md font-bold text-primary">{profile.username}</h1>
+                    <VerifiedBadge type={verificationType} size={16} />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
                 </div>
-                <p className="text-[9px] text-muted-foreground">{profile.email}</p>
               </div>
+            </div>
+
+            <div className="space-y-3 mt-4">
               <p className="text-xs leading-relaxed text-foreground/80 text-right">{profile.bio || 'لا يوجد نبذة شخصية.'}</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground justify-end"><div className="flex items-center gap-1"><MapPin size={10} /><span>تيمقاد، الجزائر</span></div><div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div></div>
               <div className="flex gap-4 pt-1 justify-end"><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followingIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">يتابع</span></div><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followerIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">متابع</span></div></div>
