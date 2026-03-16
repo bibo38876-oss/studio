@@ -226,8 +226,8 @@ export default function PostCard({ post }: { post: PostData }) {
     );
   };
 
-  const verificationType: VerificationType = displayPost.email === 'adelbenmaza8@gmail.com' 
-    ? 'blue' : (authorData?.verificationType || displayPost.authorVerificationType || 'none');
+  // الأولوية لبيانات المؤلف في الوقت الفعلي، ثم ما تم تخزينه في المنشور
+  const verificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
 
   return (
     <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>

@@ -130,9 +130,8 @@ export default function ProfilePage() {
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
   const isFollowingMe = (profile?.followingIds || []).includes(currentUser?.uid);
   
-  const verificationType: VerificationType = profile?.email === ADMIN_EMAIL 
-    ? 'blue' 
-    : (profile?.verificationType || 'none');
+  // الاعتماد على نوع التوثيق المخزن في قاعدة البيانات حصراً
+  const verificationType: VerificationType = profile?.verificationType || 'none';
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
     const file = e.target.files?.[0];
@@ -208,7 +207,6 @@ export default function ProfilePage() {
           <div className="h-32 bg-primary/10 relative">
             {profile.bannerUrl && <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover" />}
             
-            {/* أيقونة الإدارة للمسؤول في زاوية البنر */}
             {currentUser?.email === ADMIN_EMAIL && (
               <Button 
                 variant="ghost" 

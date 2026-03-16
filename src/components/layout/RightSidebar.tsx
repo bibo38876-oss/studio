@@ -75,7 +75,7 @@ export default function RightSidebar() {
             suggestions.map((user) => {
               const isFollowing = (user.followerIds || []).includes(currentUser?.uid);
               const isFollowingMe = (user.followingIds || []).includes(currentUser?.uid);
-              const verificationType = user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none');
+              const verificationType = user.verificationType || 'none';
               return (
                 <div key={user.id} className="flex items-center justify-between">
                   <Link href={`/profile/${user.id}`} className="flex items-center gap-3 group">

@@ -109,10 +109,8 @@ export default function AdminPage() {
   const handleDeleteViolatingPost = (post: any) => {
     if (!firestore) return;
 
-    // 1. حذف المنشور
     deleteDocumentNonBlocking(doc(firestore, 'posts', post.id));
 
-    // 2. إرسال تنبيه لصاحب المنشور
     addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), {
       type: 'violation',
       message: 'تم حذف منشورك لمخالفته إرشادات مجتمع تيمقاد.',
@@ -308,7 +306,7 @@ export default function AdminPage() {
                       </Avatar>
                       <div className="flex flex-col text-right">
                         <div className="flex items-center gap-1.5 leading-tight">
-                          <VerifiedBadge type={user.email === ADMIN_EMAIL ? 'blue' : (user.verificationType || 'none')} />
+                          <VerifiedBadge type={user.verificationType || 'none'} />
                           <span className="text-xs font-bold text-primary">{user.username}</span>
                         </div>
                         <span className="text-[10px] text-muted-foreground">{user.email}</span>
@@ -316,7 +314,7 @@ export default function AdminPage() {
                     </div>
 
                     <Select 
-                      defaultValue={user.email === ADMIN_EMAIL ? 'blue' : (user.verificationType || 'none')} 
+                      defaultValue={user.verificationType || 'none'} 
                       onValueChange={(val) => handleUpdateVerification(user.id, val)}
                     >
                       <SelectTrigger className="h-8 text-[10px] w-[120px] rounded-none bg-secondary/50 border-none">

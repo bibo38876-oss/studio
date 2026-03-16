@@ -179,7 +179,7 @@ export default function ExplorePage() {
                   <div className="divide-y divide-muted">
                     {filteredUsers.map((u) => {
                       const isFollowing = currentUserProfile?.followingIds?.includes(u.id);
-                      const verificationType = u.email === 'adelbenmaza8@gmail.com' ? 'blue' : (u.verificationType || 'none');
+                      const verificationType = u.verificationType || 'none';
                       return (
                         <div key={u.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
                           <Link href={`/profile/${u.id}`} className="flex items-center gap-3">
@@ -292,7 +292,7 @@ export default function ExplorePage() {
                 <div className="divide-y divide-muted">
                   {filteredUsers.map((u) => {
                     const isFollowing = currentUserProfile?.followingIds?.includes(u.id);
-                    const verificationType = u.email === 'adelbenmaza8@gmail.com' ? 'blue' : (u.verificationType || 'none');
+                    const verificationType = u.verificationType || 'none';
                     return (
                       <div key={u.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
                         <Link href={`/profile/${u.id}`} className="flex items-center gap-3">
