@@ -163,17 +163,18 @@ export default function PostCard({ post }: { post: PostData }) {
           </p>
           
           {allMedia.length > 0 && (
-            <div className="w-full mt-2 bg-muted/20">
+            <div className="w-full mt-1 bg-black/5 overflow-hidden">
               <Carousel className="w-full">
                 <CarouselContent className="-ml-0">
                   {allMedia.map((url, index) => (
                     <CarouselItem key={index} className="pl-0">
-                      <div className="relative w-full">
+                      <div className="relative w-full flex items-center justify-center bg-black/5">
                         <img 
                           src={url} 
                           alt={`Post media ${index + 1}`} 
                           className="w-full h-auto block"
-                          style={{ maxHeight: '80vh', objectFit: 'contain' }}
+                          style={{ maxHeight: '100vh', width: '100%', objectFit: 'contain' }}
+                          loading="lazy"
                         />
                       </div>
                     </CarouselItem>

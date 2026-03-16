@@ -120,12 +120,15 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                   <CarouselContent className="-ml-0">
                     {allMedia.map((url: string, index: number) => (
                       <CarouselItem key={index} className="pl-0">
-                        <img 
-                          src={url} 
-                          alt={`Post detail ${index + 1}`} 
-                          className="w-full h-auto block"
-                          style={{ maxHeight: '70vh', objectFit: 'contain' }}
-                        />
+                        <div className="relative w-full flex items-center justify-center bg-black/5">
+                          <img 
+                            src={url} 
+                            alt={`Post detail ${index + 1}`} 
+                            className="w-full h-auto block"
+                            style={{ maxHeight: '100vh', width: '100%', objectFit: 'contain' }}
+                            loading="lazy"
+                          />
+                        </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
