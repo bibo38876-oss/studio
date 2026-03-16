@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
@@ -156,14 +156,18 @@ export default function ProfilePage() {
                         انضم إلينا في تواصل، حيث المجتمع العربي يلتقي في بيئة تقنية متطورة، فائقة السرعة، ومصممة خصيصاً لتناسب احتياجاتك.
                       </p>
                     </Card>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button variant="outline" className="rounded-none text-[10px] font-bold gap-2" onClick={copyShareLink}>
-                        <Copy size={12} />
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button variant="outline" className="rounded-none text-[8px] h-8 font-bold gap-1 px-1" onClick={copyShareLink}>
+                        <Copy size={10} />
                         نسخ الرابط
                       </Button>
-                      <Button className="rounded-none text-[10px] font-bold gap-2" onClick={() => window.open(`https://wa.me/?text=انضم%20إلي%20في%20تواصل!%20${window.location.origin}`)}>
-                        <ExternalLink size={12} />
+                      <Button className="rounded-none text-[8px] h-8 font-bold gap-1 px-1 bg-green-600 hover:bg-green-700" onClick={() => window.open(`https://wa.me/?text=انضم%20إلي%20في%20تواصل!%20${window.location.origin}`)}>
+                        <ExternalLink size={10} />
                         واتساب
+                      </Button>
+                      <Button className="rounded-none text-[8px] h-8 font-bold gap-1 px-1 bg-black hover:bg-black/90" onClick={() => window.open(`https://twitter.com/intent/tweet?text=انضم%20إلي%20في%20تواصل!&url=${window.location.origin}`)}>
+                        <Twitter size={10} />
+                        تويتر
                       </Button>
                     </div>
                   </div>
