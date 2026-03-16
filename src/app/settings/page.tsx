@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut } from '@/firebase';
 import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 
 export default function SettingsPage() {
   const { auth, user } = useFirebase();
@@ -23,15 +23,14 @@ export default function SettingsPage() {
   }
 
   const settingsOptions = [
-    { icon: <User size={16} />, label: 'إعدادات الحساب', desc: 'تغيير البريد الإلكتروني، كلمة المرور' },
-    { icon: <Bell size={16} />, label: 'التنبيهات والإشعارات', desc: 'إدارة كيفية وصول التنبيهات إليك' },
-    { icon: <Shield size={16} />, label: 'الخصوصية والأمان', desc: 'التحكم في من يشاهد محتواك' },
-    { icon: <HelpCircle size={16} />, label: 'المساعدة والدعم', desc: 'مركز المساعدة وقوانين المنصة' },
+    { icon: <User size={16} />, label: 'إعدادات الحساب', desc: 'تغيير البريد الإلكتروني، كلمة المرور', status: 'soon' },
+    { icon: <Bell size={16} />, label: 'التنبيهات والإشعارات', desc: 'إدارة كيفية وصول التنبيهات إليك', status: 'soon' },
+    { icon: <Shield size={16} />, label: 'الخصوصية والأمان', desc: 'التحكم في من يشاهد محتواك', status: 'soon' },
+    { icon: <HelpCircle size={16} />, label: 'المساعدة والدعم', desc: 'مركز المساعدة وقوانين المنصة', status: 'soon' },
   ];
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* المستطيل الأزرق العلوي */}
       <div className="bg-primary pt-12 pb-10 px-6 relative overflow-hidden">
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl" />
@@ -55,7 +54,6 @@ export default function SettingsPage() {
       </div>
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
-        {/* مستطيلات الخيارات */}
         <div className="space-y-2">
           {settingsOptions.map((option, i) => (
             <Card key={i} className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group">
@@ -65,7 +63,12 @@ export default function SettingsPage() {
                     {option.icon}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-primary">{option.label}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-primary">{option.label}</span>
+                      {option.status === 'soon' && (
+                        <Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 border-primary/20 text-primary/70 rounded-none">قيد التطوير</Badge>
+                      )}
+                    </div>
                     <span className="text-[9px] text-muted-foreground">{option.desc}</span>
                   </div>
                 </div>
@@ -75,7 +78,6 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        {/* مستطيل تسجيل الخروج */}
         <Card className="border-none shadow-sm rounded-none bg-card mt-8 hover:bg-red-50 transition-colors cursor-pointer group border-r-4 border-r-destructive">
           <CardContent className="p-0">
             <button 

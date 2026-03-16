@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useParams, useRouter } from 'next/navigation';
@@ -12,12 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Hourglass } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
+import { Badge } from '@/components/ui/badge';
 
 // دالة لضغط الصور
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
@@ -132,7 +132,6 @@ export default function ProfilePage() {
 
     try {
       setIsSaving(true);
-      // ضغط الصورة بناءً على نوعها
       const maxWidth = type === 'banner' ? 1200 : 400;
       const maxHeight = type === 'banner' ? 600 : 400;
       const compressedData = await compressImage(file, maxWidth, maxHeight, 0.7);
@@ -315,7 +314,6 @@ export default function ProfilePage() {
                         <DialogTitle className="text-sm font-bold">تعديل الملف الشخصي</DialogTitle>
                       </DialogHeader>
                       <div className="grid gap-6 py-4">
-                        {/* تعديل الصور */}
                         <div className="space-y-4">
                           <div className="space-y-2">
                             <label className="text-[10px] font-bold text-muted-foreground uppercase">صورة البنر</label>
@@ -465,8 +463,12 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="likes" className="mt-0">
-            <div className="text-center py-24 bg-card px-8 border-b">
-              <p className="text-muted-foreground text-[10px]">سيتم عرض الإعجابات هنا قريباً.</p>
+            <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center gap-3">
+              <Hourglass size={32} className="text-primary/20 animate-pulse" />
+              <div className="space-y-1">
+                <p className="text-primary font-bold text-xs uppercase tracking-widest">قيد التطوير</p>
+                <p className="text-muted-foreground text-[10px]">سيتم عرض المنشورات التي أعجبت بها هنا في التحديث القادم.</p>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

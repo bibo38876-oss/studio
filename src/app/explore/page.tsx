@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from 'react';
@@ -12,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,6 +82,10 @@ export default function ExplorePage() {
           </TabsList>
 
           <TabsContent value="trending" className="mt-0">
+            <div className="p-3 bg-primary/5 border-b border-primary/10 flex items-center justify-between">
+              <span className="text-[10px] font-bold text-primary">المواضيع المتداولة حالياً</span>
+              <Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-white border-primary/20 text-primary rounded-none">خوارزمية قيد التطوير</Badge>
+            </div>
             <div className="divide-y divide-muted">
               {trendingTags.map((tag, i) => (
                 <div key={i} className="p-4 hover:bg-muted/10 cursor-pointer flex justify-between items-center group">
