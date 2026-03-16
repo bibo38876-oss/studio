@@ -2,7 +2,7 @@
 "use client"
 
 import Link from 'next/link';
-import { Compass, Settings, MessageSquare, Loader2 } from 'lucide-react';
+import { Compass, Settings, MessageSquare, Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
@@ -11,6 +11,7 @@ import TimgadLogo from '@/components/ui/Logo';
 
 export default function LeftSidebar() {
   const { user, firestore } = useFirebase();
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -26,6 +27,8 @@ export default function LeftSidebar() {
       </aside>
     );
   }
+
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   return (
     <aside className="hidden md:block w-64 space-y-4">
@@ -73,6 +76,15 @@ export default function LeftSidebar() {
             <span className="text-sm font-medium">{item.label}</span>
           </Link>
         ))}
+        {isAdmin && (
+          <Link 
+            href="/admin" 
+            className="flex items-center gap-3 p-3 text-accent hover:bg-accent/10 transition-all rounded-lg mt-2 border-t border-accent/10"
+          >
+            <ShieldCheck size={18} />
+            <span className="text-sm font-bold">لوحة الإدارة</span>
+          </Link>
+        )}
       </div>
     </aside>
   );

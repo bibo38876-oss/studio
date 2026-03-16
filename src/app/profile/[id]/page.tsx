@@ -235,16 +235,15 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="px-4 pb-6 relative">
-            {/* Header Content Swapped: Info Right, Buttons Left */}
             <div className="flex justify-between items-start -mt-10 mb-4">
-              {/* القسم الأيمن: الصورة الشخصية والاسم (تحتها) */}
-              <div className="flex flex-col items-center">
+              {/* معلومات المستخدم على اليمين لتطابق البطاقة (في نظام RTL) */}
+              <div className="flex flex-col items-start text-right">
                 <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
                   {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
                   <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
                 </Avatar>
-                <div className="text-center">
-                  <div className="flex items-center gap-1.5 justify-center">
+                <div className="text-right">
+                  <div className="flex items-center gap-1.5 justify-start">
                     <span className="text-md font-bold text-primary">{profile.username}</span>
                     <VerifiedBadge type={verificationType} size={16} />
                   </div>
@@ -252,7 +251,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* القسم الأيسر: أزرار التحكم */}
+              {/* أزرار التحكم على اليسار لتطابق البطاقة */}
               <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2 } from 'lucide-react';
+import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -24,6 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
+import Link from 'next/link';
 
 export default function SettingsPage() {
   const { auth, user, firestore } = useFirebase();
@@ -34,6 +35,9 @@ export default function SettingsPage() {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -141,7 +145,29 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-2">
+        {isAdmin && (
+          <div className="space-y-2">
+            <h2 className="text-[10px] font-bold text-accent uppercase px-1 mb-1">لوحة التحكم</h2>
+            <Link href="/admin">
+              <Card className="border-none shadow-sm rounded-none bg-accent/5 hover:bg-accent/10 transition-colors cursor-pointer group overflow-hidden border-r-4 border-r-accent">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center text-accent">
+                      <ShieldCheck size={18} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-accent">الإدارة</span>
+                      <span className="text-[9px] text-muted-foreground">التحكم في المنصة والمستخدمين</span>
+                    </div>
+                  </div>
+                  <ChevronLeft size={14} className="text-accent/30" />
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        )}
+
+        <div className="space-y-2 pt-2">
           <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mb-1">الخصوصية والأمان</h2>
           
           <Card className="border-none shadow-sm rounded-none bg-card overflow-hidden">
