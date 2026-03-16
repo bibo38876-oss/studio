@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
@@ -174,8 +175,22 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const handleSupport = (amount: number) => {
     if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !user) return;
+
     setShowSupportAnim(true);
     setTimeout(() => setShowSupportAnim(false), 2000);
+
+    // تسجيل الدعم في قاعدة البيانات
+    const supportedUserRef = doc(firestore, 'users', user.uid, 'supportedPeople', displayPost.authorId);
+    setDocumentNonBlocking(supportedUserRef, {
+      userId: displayPost.authorId,
+      username: displayPost.authorName,
+      avatar: displayPost.authorAvatar,
+      totalAmount: increment(amount),
+      lastSupportedAt: serverTimestamp(),
+      verificationType: displayPost.authorVerificationType || 'none'
+    }, { merge: true });
+
     toast({
       title: "تم إرسال الدعم",
       description: `لقد أرسلت ${amount} عملة تيمقاد لدعم هذا المحتوى. شكراً لك!`,

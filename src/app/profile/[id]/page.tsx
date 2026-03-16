@@ -12,13 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Bookmark, UserRoundPlus, ShieldCheck, Coffee } from 'lucide-react';
+import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Bookmark, UserRoundPlus, ShieldCheck, Coffee, Sparkles } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import TimgadLogo from '@/components/ui/Logo';
+import TimgadCoin from '@/components/ui/TimgadCoin';
 import Link from 'next/link';
 
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
@@ -64,6 +65,7 @@ export default function ProfilePage() {
   const { firestore, user: currentUser, isUserLoading } = useFirebase();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSupportersOpen, setIsSupportersOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
   const [editProfilePic, setEditProfilePic] = useState<string | null>(null);
@@ -106,25 +108,15 @@ export default function ProfilePage() {
 
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
 
-  const bookmarksQuery = useMemoFirebase(() => {
+  const supportedPeopleQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return query(
-      collection(firestore, 'users', id, 'bookmarks'),
-      orderBy('createdAt', 'desc')
+      collection(firestore, 'users', id, 'supportedPeople'),
+      orderBy('lastSupportedAt', 'desc')
     );
   }, [firestore, id]);
 
-  const { data: bookmarks, isLoading: isBookmarksLoading } = useCollection(bookmarksQuery);
-
-  const likesQuery = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
-    return query(
-      collection(firestore, 'users', id, 'likedPosts'),
-      orderBy('likedAt', 'desc')
-    );
-  }, [firestore, id]);
-
-  const { data: likedPosts, isLoading: isLikesLoading } = useCollection(likesQuery);
+  const { data: supportedPeople, isLoading: isSupportersLoading } = useCollection(supportedPeopleQuery);
 
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
@@ -262,14 +254,65 @@ export default function ProfilePage() {
               </div>
 
               <div className="pt-12 flex gap-2 items-center">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="rounded-full h-12 w-12 border border-muted hover:bg-secondary transition-all"
-                  onClick={() => router.push('/wallet')}
-                >
-                  <Coffee size={24} className="text-primary" />
-                </Button>
+                {/* زر الكوب لعرض قائمة المساهمات */}
+                <Dialog open={isSupportersOpen} onOpenChange={setIsSupportersOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-full h-12 w-12 border border-muted hover:bg-secondary transition-all"
+                    >
+                      <Coffee size={24} className="text-primary" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle className="text-sm font-bold text-primary flex items-center gap-2">
+                        <Sparkles size={16} className="text-accent" />
+                        سجل المساهمات والعطاء
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4 max-h-[400px] overflow-y-auto no-scrollbar">
+                      <p className="text-[10px] text-muted-foreground text-center mb-2">قائمة بالأشخاص الذين قام {profile.username} بدعمهم في تيمقاد.</p>
+                      
+                      {isSupportersLoading ? (
+                        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
+                      ) : supportedPeople && supportedPeople.length > 0 ? (
+                        <div className="space-y-3">
+                          {supportedPeople.map((person: any) => (
+                            <div key={person.id} className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg border border-primary/5">
+                              <Link href={`/profile/${person.userId}`} className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10 border border-muted/20">
+                                  <AvatarImage src={person.avatar} />
+                                  <AvatarFallback>{person.username?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col text-right">
+                                  <div className="flex items-center gap-1 leading-tight">
+                                    <VerifiedBadge type={person.verificationType || 'none'} size={10} />
+                                    <span className="text-xs font-bold text-primary">{person.username}</span>
+                                  </div>
+                                  <span className="text-[8px] text-muted-foreground">آخر دعم: {person.lastSupportedAt?.toDate ? formatDistanceToNow(person.lastSupportedAt.toDate(), { locale: ar }) : 'غير محدد'}</span>
+                                </div>
+                              </Link>
+                              <div className="flex flex-col items-center gap-1">
+                                <TimgadCoin size={20} />
+                                <span className="text-[10px] font-bold text-accent">{person.totalAmount}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-10">
+                          <Coffee size={32} className="mx-auto text-muted-foreground/20 mb-2" />
+                          <p className="text-[10px] text-muted-foreground">لم يقم هذا المستخدم بدعم أحد بعد.</p>
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button className="w-full rounded-full text-xs font-bold" onClick={() => router.push('/wallet')}>شحن محفظتي</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
 
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
