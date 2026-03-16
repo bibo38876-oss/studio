@@ -37,6 +37,7 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
+  // الخوارزمية: جلب أحدث المنشورات لفرزها برمجياً (Pool)
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(limitForYou));
@@ -44,7 +45,7 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // جلب المنشورات المروجة (Ads) - تتطلب تسجيل الدخول لتفادي خطأ الصلاحيات
+  // نظام الإعلانات: جلب المنشورات المروجة (يتطلب فهرس مركب: promoted + impressions_left)
   const promotedQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -57,6 +58,7 @@ export default function Home() {
 
   const { data: promotedPosts } = useCollection(promotedQuery);
 
+  // استعلام المتابعين (يتطلب فهرس مركب: authorId + createdAt)
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -93,7 +95,6 @@ export default function Home() {
       return { ...post, recommendationScore: score };
     }).sort((a, b) => b.recommendationScore - a.recommendationScore);
 
-    // دمج الإعلانات: منشور مروج كل 5 منشورات
     const finalFeed: any[] = [];
     let adIdx = 0;
     const ads = promotedPosts?.filter(ad => !basePosts.some(p => p.id === ad.id)) || [];

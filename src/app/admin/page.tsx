@@ -9,7 +9,7 @@ import { collection, query, doc, limit, where, serverTimestamp } from 'firebase/
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, TrendingUp, AlertTriangle, Trash2, CheckCircle2 } from 'lucide-react';
+import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, TrendingUp, AlertTriangle, Trash2, CheckCircle2, ListFilter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -55,7 +55,7 @@ export default function AdminPage() {
   // جلب المنشورات المبلغ عنها - مسموح فقط للأدمن
   const reportedPostsQuery = useMemoFirebase(() => {
     if (!firestore || !isAdminUser) return null;
-    return query(collection(firestore, 'posts'), where('reportsCount', '>=', 100), limit(50));
+    return query(collection(firestore, 'posts'), where('reportsCount', '>=', 10), limit(50));
   }, [firestore, isAdminUser]);
 
   const { data: users, isLoading: isUsersLoading } = useCollection(usersQuery);
@@ -158,6 +158,9 @@ export default function AdminPage() {
             <TabsTrigger value="users" className="flex-1 text-[10px] font-bold gap-1">
               <Users size={12} /> المستخدمين
             </TabsTrigger>
+            <TabsTrigger value="indexes" className="flex-1 text-[10px] font-bold gap-1">
+              <ListFilter size={12} /> الفهارس
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-6">
@@ -223,7 +226,7 @@ export default function AdminPage() {
                 <AlertTriangle className="text-red-500 shrink-0" />
                 <div className="text-right">
                   <h3 className="text-xs font-bold text-red-700">مراجعة المحتوى المبلغ عنه</h3>
-                  <p className="text-[10px] text-red-600">منشورات تجاوزت 100 بلاغ وتتطلب تدخل الإدارة فوراً.</p>
+                  <p className="text-[10px] text-red-600">منشورات تجاوزت 10 بلاغات وتتطلب تدخل الإدارة.</p>
                 </div>
               </div>
 
@@ -334,6 +337,60 @@ export default function AdminPage() {
                   <p className="text-xs text-muted-foreground">لا يوجد نتائج للبحث.</p>
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="indexes">
+            <div className="space-y-6">
+              <div className="bg-accent/10 p-4 border-r-4 border-accent text-right">
+                <h3 className="text-sm font-bold text-accent mb-1">دليل إنشاء الفهارس (Indexes)</h3>
+                <p className="text-[10px] text-muted-foreground">يجب إنشاء الفهارس التالية في Firebase Console لتعمل ميزات المنصة المتقدمة.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-card p-4 border space-y-2">
+                  <div className="flex justify-between items-center flex-row-reverse">
+                    <Badge className="bg-primary text-white text-[8px]">1. فهرس صفحة الهشتاجات</Badge>
+                    <span className="text-[9px] text-muted-foreground">Required for: Explore</span>
+                  </div>
+                  <div className="bg-secondary/30 p-2 text-[10px] font-mono text-left dir-ltr">
+                    Collection: posts<br />
+                    Fields:<br />
+                    - hashtags: Array Contains<br />
+                    - createdAt: Descending
+                  </div>
+                </div>
+
+                <div className="bg-card p-4 border space-y-2">
+                  <div className="flex justify-between items-center flex-row-reverse">
+                    <Badge className="bg-accent text-white text-[8px]">2. فهرس نظام الإعلانات</Badge>
+                    <span className="text-[9px] text-muted-foreground">Required for: Ads/Promoted</span>
+                  </div>
+                  <div className="bg-secondary/30 p-2 text-[10px] font-mono text-left dir-ltr">
+                    Collection: posts<br />
+                    Fields:<br />
+                    - promoted: Ascending<br />
+                    - impressions_left: Ascending
+                  </div>
+                </div>
+
+                <div className="bg-card p-4 border space-y-2">
+                  <div className="flex justify-between items-center flex-row-reverse">
+                    <Badge className="bg-green-600 text-white text-[8px]">3. فهرس خوارزمية التوصيات</Badge>
+                    <span className="text-[9px] text-muted-foreground">Required for: Following Feed</span>
+                  </div>
+                  <div className="bg-secondary/30 p-2 text-[10px] font-mono text-left dir-ltr">
+                    Collection: posts<br />
+                    Fields:<br />
+                    - authorId: Ascending<br />
+                    - createdAt: Descending
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-muted/20 border border-dashed text-center">
+                <p className="text-[10px] text-muted-foreground italic">ملاحظة: عند تشغيل التطبيق لأول مرة ومحاولة استخدام هذه الميزات، سيظهر لك رابط في "وحدة تحكم المتصفح" (Inspect Console) يمكنك الضغط عليه لإنشاء الفهرس تلقائياً.</p>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
