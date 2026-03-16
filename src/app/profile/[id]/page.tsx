@@ -1,7 +1,8 @@
+
 "use client"
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import PostCard from '@/components/posts/PostCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
@@ -29,6 +30,12 @@ export default function ProfilePage() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
+  const [editProfilePic, setEditProfilePic] = useState<string | null>(null);
+  const [editBanner, setEditBanner] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const profilePicInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
@@ -82,13 +89,38 @@ export default function ProfilePage() {
     ? 'blue' 
     : (profile?.verificationType || 'none');
 
-  const handleUpdateProfile = () => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        if (type === 'profile') setEditProfilePic(reader.result);
+        else setEditBanner(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpdateProfile = async () => {
     if (!firestore || !currentUser?.uid) return;
-    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), {
-      username: editName || profile?.username,
-      bio: editBio || profile?.bio
-    });
-    setIsEditOpen(false);
+    setIsSaving(true);
+    
+    try {
+      updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), {
+        username: editName || profile?.username,
+        bio: editBio || profile?.bio,
+        profilePictureUrl: editProfilePic || profile?.profilePictureUrl || "",
+        bannerUrl: editBanner || profile?.bannerUrl || ""
+      });
+      setIsEditOpen(false);
+      toast({ description: "تم تحديث الملف الشخصي بنجاح." });
+    } catch (error) {
+      toast({ variant: "destructive", description: "فشل تحديث الملف الشخصي." });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleFollow = () => {
@@ -148,6 +180,10 @@ export default function ProfilePage() {
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
+            {profile.bannerUrl && (
+              <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+            )}
+            
             {isAdmin && isOwnProfile && (
               <div className="absolute top-2 right-2 z-10">
                 <Button 
@@ -224,27 +260,81 @@ export default function ProfilePage() {
                       <Button variant="outline" className="rounded-full gap-2 font-bold h-8 text-[11px]" onClick={() => {
                         setEditName(profile.username);
                         setEditBio(profile.bio || '');
+                        setEditProfilePic(profile.profilePictureUrl || null);
+                        setEditBanner(profile.bannerUrl || null);
                       }}>
                         <Edit3 size={12} />
                         تعديل الملف
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle className="text-sm font-bold">تعديل الملف الشخصي</DialogTitle>
                       </DialogHeader>
-                      <div className="grid gap-4 py-4">
+                      <div className="grid gap-6 py-4">
+                        {/* تعديل الصور */}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase">صورة البنر</label>
+                            <div 
+                              className="h-24 bg-secondary/30 relative cursor-pointer group overflow-hidden"
+                              onClick={() => bannerInputRef.current?.click()}
+                            >
+                              {editBanner ? (
+                                <img src={editBanner} alt="Banner preview" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="flex items-center justify-center h-full text-muted-foreground/40">
+                                  <ImageIcon size={24} />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Camera className="text-white" size={20} />
+                              </div>
+                            </div>
+                            <input type="file" hidden ref={bannerInputRef} onChange={(e) => handleImageChange(e, 'banner')} accept="image/*" />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase">الصورة الشخصية</label>
+                            <div className="flex items-center gap-4">
+                              <div 
+                                className="h-16 w-16 rounded-full bg-secondary/30 relative cursor-pointer group overflow-hidden shrink-0"
+                                onClick={() => profilePicInputRef.current?.click()}
+                              >
+                                {editProfilePic ? (
+                                  <img src={editProfilePic} alt="Profile preview" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="flex items-center justify-center h-full text-muted-foreground/40 font-bold">
+                                    {editName?.[0] || 'ت'}
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <Camera className="text-white" size={16} />
+                                </div>
+                              </div>
+                              <p className="text-[9px] text-muted-foreground">اضغط على الدائرة لتغيير صورتك الشخصية.</p>
+                            </div>
+                            <input type="file" hidden ref={profilePicInputRef} onChange={(e) => handleImageChange(e, 'profile')} accept="image/*" />
+                          </div>
+                        </div>
+
                         <div className="grid gap-2">
-                          <label className="text-[10px] font-bold text-muted-foreground">الاسم</label>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">الاسم</label>
                           <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-9 rounded-none bg-secondary/30 border-none text-xs" />
                         </div>
                         <div className="grid gap-2">
-                          <label className="text-[10px] font-bold text-muted-foreground">النبذة الشخصية</label>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">النبذة الشخصية</label>
                           <Textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="rounded-none bg-secondary/30 border-none text-xs min-h-[100px]" />
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button className="w-full rounded-full font-bold text-xs h-9" onClick={handleUpdateProfile}>حفظ التغييرات</Button>
+                        <Button 
+                          className="w-full rounded-full font-bold text-xs h-9" 
+                          onClick={handleUpdateProfile}
+                          disabled={isSaving}
+                        >
+                          {isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : "حفظ التغييرات"}
+                        </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>

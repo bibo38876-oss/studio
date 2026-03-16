@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -10,12 +11,13 @@
         "username": { "type": "string" },
         "bio": { "type": "string" },
         "profilePictureUrl": { "type": "string", "format": "uri" },
+        "bannerUrl": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time" },
         "followingIds": { "type": "array", "items": { "type": "string" } },
         "followerIds": { "type": "array", "items": { "type": "string" } },
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["user", "admin"], "description": "The role of the user in the platform." },
-        "verificationType": { "type": "string", "enum": ["none", "blue", "gold", "grey"], "description": "The type of verification badge for the user." }
+        "verificationType": { "type": "string", "enum": ["none", "blue", "gold"], "description": "The type of verification badge for the user." }
       },
       "required": ["id", "username", "createdAt"]
     },
