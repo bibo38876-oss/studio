@@ -9,7 +9,7 @@ import { updatePassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Badge } from '@/badge';
+import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
