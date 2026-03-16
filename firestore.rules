@@ -9,56 +9,68 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // FORCE_DEPLOY_FINAL_SYNC_106
+    // FORCE_DEPLOY_FINAL_SYNC_108 - تحديث شامل للصلاحيات
 
     match /posts/{postId} {
-      allow read: if true;
+      // السماح بالقراءة الفردية والاستعلام للجميع (الزوار والمسجلين)
+      allow get, list: if true;
+      
+      // السماح بإنشاء المنشورات فقط للمسجلين
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount', 'commentsCount']));
+      
+      // السماح بالتعديل والحذف لصاحب المنشور، أو تعديل عدادات التفاعل للجميع المسجلين
+      allow update, delete: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid || 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount', 'commentsCount'])
+      );
 
       match /likes/{userId} {
-        allow read: if true;
+        allow get, list: if true;
         allow write: if isOwner(userId);
       }
 
       match /comments/{commentId} {
-        allow read: if true;
+        allow get, list: if true;
         allow create: if isSignedIn();
       }
     }
 
     match /users/{userId} {
-      allow read: if true;
+      // الملفات الشخصية عامة للقراءة
+      allow get, list: if true;
+      
+      // التعديل فقط لصاحب الحساب
       allow write: if isOwner(userId);
-      // Allow updates to follower/following counts specifically for the follow system
+      
+      // السماح بالتحديث لجميع المسجلين لدعم نظام المتابعة
       allow update: if isSignedIn();
       
       match /notifications/{notifId} {
-        allow read, write: if isOwner(userId);
+        allow get, list, write: if isOwner(userId);
       }
       
       match /bookmarks/{postId} {
-        allow read, write: if isOwner(userId);
+        allow get, list, write: if isOwner(userId);
       }
 
       match /following/{targetId} {
-        allow read: if true;
+        allow get, list: if true;
         allow write: if isOwner(userId);
       }
 
       match /followers/{followerId} {
-        allow read: if true;
+        allow get, list: if true;
         allow write: if isOwner(followerId);
       }
     }
 
     match /groups/{groupId} {
-      allow read: if true;
+      allow get, list: if true;
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       
       match /messages/{messageId} {
-        allow read: if true;
+        allow get, list: if true;
         allow create: if isSignedIn();
       }
     }
