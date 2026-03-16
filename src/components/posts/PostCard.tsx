@@ -55,18 +55,36 @@ export default function PostCard({ post }: { post: PostData }) {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [isRepostAnimating, setIsRepostAnimating] = useState(false);
+  
+  const cardRef = useRef<HTMLDivElement>(null);
   const viewedRef = useRef(false);
   
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
+  // نظام احتساب المشاهدات الاحترافي (عند الرؤية الفعلية فقط)
   useEffect(() => {
     if (!firestore || !post.id || viewedRef.current) return;
-    const postRef = doc(firestore, 'posts', post.id);
-    updateDocumentNonBlocking(postRef, {
-      viewsCount: increment(1)
-    });
-    viewedRef.current = true;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !viewedRef.current) {
+          viewedRef.current = true;
+          const postRef = doc(firestore, 'posts', post.id);
+          updateDocumentNonBlocking(postRef, {
+            viewsCount: increment(1)
+          });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 } // يجب أن يظهر 50% من المنشور ليتم احتسابه
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
   }, [firestore, post.id]);
 
   const authorRef = useMemoFirebase(() => {
@@ -226,6 +244,7 @@ export default function PostCard({ post }: { post: PostData }) {
   return (
     <>
       <Card 
+        ref={cardRef}
         className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b border-muted/30 hover:bg-muted/5 transition-colors"
         onClick={() => setIsCommentsOpen(true)}
       >
