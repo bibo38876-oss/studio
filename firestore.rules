@@ -1,7 +1,7 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // وظائف مساعدة عالمية
     function isSignedIn() {
       return request.auth != null;
     }
@@ -9,9 +9,8 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // بصمة تحديث إجبارية لضمان النشر الفوري والمؤكد: FORCE_DEPLOY_FINAL_STABLE_VER_101
+    // FORCE_DEPLOY_GROUPS_UPDATE_102
 
-    // قواعد المنشورات - قراءة عامة للجميع
     match /posts/{postId} {
       allow read: if true;
       allow create: if isSignedIn();
@@ -25,14 +24,9 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isSignedIn();
-        allow delete: if isSignedIn() && (
-          resource.data.authorId == request.auth.uid || 
-          get(/databases/$(database)/documents/posts/$(postId)).data.authorId == request.auth.uid
-        );
       }
     }
 
-    // قواعد المستخدمين
     match /users/{userId} {
       allow read: if true;
       allow write: if isOwner(userId);
@@ -44,24 +38,16 @@ service cloud.firestore {
       match /bookmarks/{postId} {
         allow read, write: if isOwner(userId);
       }
-
-      match /following/{followedId} {
-        allow read: if true;
-        allow write: if isOwner(userId);
-      }
-
-      match /followers/{followerId} {
-        allow read: if true;
-        allow create, delete: if isSignedIn();
-      }
     }
 
-    // قواعد الرسائل (Direct Messages)
-    match /chats/{chatId} {
-      allow read, write: if isSignedIn() && (request.auth.uid in chatId.split('_'));
+    match /groups/{groupId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
       
       match /messages/{messageId} {
-        allow read, write: if isSignedIn() && (request.auth.uid in chatId.split('_'));
+        allow read: if true;
+        allow create: if isSignedIn();
       }
     }
   }

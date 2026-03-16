@@ -2,7 +2,7 @@
 "use client"
 
 import Link from 'next/link';
-import { Home, Compass, Bell, User, Plus } from 'lucide-react';
+import { Home, Compass, MessageSquare, User, Plus } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import CreatePost from '@/components/posts/CreatePost';
@@ -28,7 +28,7 @@ export default function BottomNav() {
     { icon: <Home size={14} />, label: 'الرئيسية', path: '/' },
     { icon: <Compass size={14} />, label: 'استكشف', path: '/explore' },
     { icon: null, label: 'نشر', path: 'post' },
-    { icon: <Bell size={14} />, label: 'تنبيهات', path: '/notifications' },
+    { icon: <MessageSquare size={14} />, label: 'المجموعات', path: '/groups' },
     { 
       icon: <User size={14} />, 
       label: 'حسابي', 
@@ -67,7 +67,7 @@ export default function BottomNav() {
             );
           }
 
-          const isActive = pathname === item.path;
+          const isActive = pathname === item.path || (item.path === '/groups' && pathname.startsWith('/groups'));
           return (
             <Link 
               key={index} 

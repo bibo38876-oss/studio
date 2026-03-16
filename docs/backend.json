@@ -38,32 +38,30 @@
       },
       "required": ["id", "authorId", "content", "createdAt"]
     },
-    "Comment": {
-      "title": "Comment",
+    "Group": {
+      "title": "Group",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "authorId": { "type": "string" },
-        "authorName": { "type": "string" },
-        "authorAvatar": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "membersCount": { "type": "number" }
+      },
+      "required": ["name", "creatorId", "createdAt"]
+    },
+    "GroupMessage": {
+      "title": "GroupMessage",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
         "content": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["authorId", "content", "createdAt"]
-    },
-    "Notification": {
-      "title": "Notification",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["like", "follow", "mention", "comment"] },
-        "fromUserId": { "type": "string" },
-        "fromUsername": { "type": "string" },
-        "fromAvatar": { "type": "string" },
-        "postId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "read": { "type": "boolean" }
-      }
+      "required": ["senderId", "content", "createdAt"]
     }
   },
   "auth": {
@@ -72,11 +70,9 @@
   "firestore": {
     "structure": [
       { "path": "users/{userId}", "definition": { "entityName": "User" } },
-      { "path": "users/{userId}/notifications/{notifId}", "definition": { "entityName": "Notification" } },
-      { "path": "users/{userId}/bookmarks/{postId}", "definition": { "entityName": "Post" } },
       { "path": "posts/{postId}", "definition": { "entityName": "Post" } },
-      { "path": "posts/{postId}/likes/{userId}", "definition": { "entityName": "Like" } },
-      { "path": "posts/{postId}/comments/{commentId}", "definition": { "entityName": "Comment" } }
+      { "path": "groups/{groupId}", "definition": { "entityName": "Group" } },
+      { "path": "groups/{groupId}/messages/{messageId}", "definition": { "entityName": "GroupMessage" } }
     ]
   }
 }
