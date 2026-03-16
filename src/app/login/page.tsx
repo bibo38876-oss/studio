@@ -47,11 +47,14 @@ export default function LoginPage() {
           createdAt: new Date().toISOString(),
           bio: 'مرحباً، أنا مستخدم جديد في تيمقاد. فخور بانضمامي لهذه المنصة العريقة!',
           followingIds: [],
-          followerIds: []
+          followerIds: [],
+          role: 'user',
+          verificationType: 'none'
         });
 
-        toast({ title: "تم إنشاء الحساب!", description: "مرحباً بك في مجتمع تيمقاد." });
-        router.push(`/profile/${user.uid}`);
+        toast({ title: "تم إنشاء الحساب!", description: "مرحباً بك في تيمقاد. اختر بعض الحسابات لمتابعتها." });
+        // التحويل إلى صفحة الانضمام للمستخدمين الجدد
+        router.push('/onboarding');
       }
     } catch (error: any) {
       toast({ 
@@ -94,7 +97,7 @@ export default function LoginPage() {
                     placeholder="مثال: أحمد الجزائري" 
                     value={username} 
                     onChange={(e) => setUsername(e.target.value)}
-                    className="h-9 text-xs rounded-none bg-secondary/30 border-none"
+                    className="h-9 text-xs rounded-none bg-secondary/30 border-none text-right"
                     required
                   />
                 </div>
@@ -106,7 +109,7 @@ export default function LoginPage() {
                   placeholder="name@example.com" 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-9 text-xs rounded-none bg-secondary/30 border-none"
+                  className="h-9 text-xs rounded-none bg-secondary/30 border-none text-right"
                   required
                 />
               </div>
@@ -117,7 +120,7 @@ export default function LoginPage() {
                   placeholder="••••••••" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-9 text-xs rounded-none bg-secondary/30 border-none"
+                  className="h-9 text-xs rounded-none bg-secondary/30 border-none text-right"
                   required
                 />
               </div>
