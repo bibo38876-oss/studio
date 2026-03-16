@@ -127,7 +127,6 @@ export default function ProfilePage() {
 
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
-  const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === ADMIN_EMAIL;
   
   const verificationType: VerificationType = profile?.email === ADMIN_EMAIL 
     ? 'blue' 
@@ -206,13 +205,6 @@ export default function ProfilePage() {
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
             {profile.bannerUrl && <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover" />}
-            {isAdmin && isOwnProfile && (
-              <div className="absolute top-2 right-2 z-10">
-                <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold bg-black/20 text-white backdrop-blur-md rounded-full gap-1 hover:bg-black/40 border border-white/10" onClick={() => router.push('/admin')}>
-                  <ShieldCheck size={12} className="text-accent" /> إدارة تيمقاد
-                </Button>
-              </div>
-            )}
             <div className="absolute top-2 left-2 flex gap-2">
               <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
                 <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20"><Share size={14} /></Button></DialogTrigger>
@@ -242,23 +234,7 @@ export default function ProfilePage() {
           </div>
           <div className="px-4 pb-6 relative">
             <div className="flex justify-between items-start -mt-10 mb-4">
-              {/* القسم الأيمن: الصورة والاسم (ليطابق البطاقة) */}
-              <div className="flex flex-col items-end">
-                <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
-                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
-                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
-                </Avatar>
-                <div className="text-right">
-                  <div className="flex items-center gap-1.5 justify-end">
-                    {/* الترتيب المطلوب للملف الشخصي: الاسم ثم الشارة */}
-                    <h1 className="text-md font-bold text-primary">{profile.username}</h1>
-                    <VerifiedBadge type={verificationType} size={16} />
-                  </div>
-                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
-                </div>
-              </div>
-
-              {/* القسم الأيسر: أزرار التحكم (ليطابق البطاقة) */}
+              {/* أزرار التحكم في الجهة اليمنى (عكس البطاقة) */}
               <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -293,6 +269,21 @@ export default function ProfilePage() {
                     {isFollowing ? <UserCheck size={12} /> : <UserPlus size={12} />} {isFollowing ? 'متابع' : 'متابعة'}
                   </Button>
                 )}
+              </div>
+
+              {/* صورة المستخدم والمعلومات في الجهة اليسرى (ليطابق البطاقة) */}
+              <div className="flex flex-col items-center">
+                <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
+                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
+                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
+                </Avatar>
+                <div className="text-center">
+                  <div className="flex items-center gap-1.5 justify-center">
+                    <VerifiedBadge type={verificationType} size={16} />
+                    <h1 className="text-md font-bold text-primary">{profile.username}</h1>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
+                </div>
               </div>
             </div>
 

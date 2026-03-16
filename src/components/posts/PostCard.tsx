@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, increment, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, increment, collection, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -35,7 +35,6 @@ interface PostData {
   authorName?: string;
   authorAvatar?: string;
   content: string;
-  mediaUrl?: string;
   mediaUrl?: string;
   mediaUrls?: string[];
   mediaType?: 'image' | 'video';
@@ -97,13 +96,13 @@ export default function PostCard({ post }: { post: PostData }) {
   const isReposted = !!repostData;
 
   useEffect(() => {
-    if (!firestore || !post.id || viewedRef.current) return;
+    if (!firestore || !displayPost.id || viewedRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !viewedRef.current) {
           viewedRef.current = true;
-          const postRef = doc(firestore, 'posts', post.id);
+          const postRef = doc(firestore, 'posts', displayPost.id);
           updateDocumentNonBlocking(postRef, {
             viewsCount: increment(1)
           });
@@ -118,7 +117,7 @@ export default function PostCard({ post }: { post: PostData }) {
     }
 
     return () => observer.disconnect();
-  }, [firestore, post.id]);
+  }, [firestore, displayPost.id]);
 
   if (!isCentralLoading && centralPost === null) {
     return null;
@@ -287,25 +286,7 @@ export default function PostCard({ post }: { post: PostData }) {
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
-          {/* معلومات المستخدم على اليمين (ليطابق طلب المستخدم) */}
-          <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
-            <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 shrink-0">
-              {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
-              <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col text-right">
-              <div className="flex items-center gap-1.5 leading-tight justify-end">
-                {/* الترتيب الموحد: الشارة ثم الاسم */}
-                <VerifiedBadge type={verificationType} size={13} />
-                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
-              </div>
-              <span className="text-[9px] text-muted-foreground text-right">
-                {formattedDate}
-              </span>
-            </div>
-          </Link>
-
-          {/* النقاط الثلاث على اليسار */}
+          {/* النقاط الثلاث على اليمين (أصبحت أول عنصر في flex-row العربي) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full hover:bg-secondary">
@@ -330,6 +311,23 @@ export default function PostCard({ post }: { post: PostData }) {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* معلومات المستخدم على اليسار (أصبحت ثاني عنصر) */}
+          <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col text-right">
+              <div className="flex items-center gap-1.5 leading-tight justify-end">
+                <VerifiedBadge type={verificationType} size={13} />
+                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
+              </div>
+              <span className="text-[9px] text-muted-foreground text-right">
+                {formattedDate}
+              </span>
+            </div>
+            <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 shrink-0">
+              {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
+              <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
+            </Avatar>
+          </Link>
         </CardHeader>
         
         <CardContent className="px-4 py-1 text-right">

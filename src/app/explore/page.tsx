@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Input } from '@/components/ui/input';
-import { Search, TrendingUp, Users, Loader2, BadgeCheck, ArrowUpRight, Hash, ArrowRight } from 'lucide-react';
+import { Search, TrendingUp, Users, Loader2, ArrowUpRight, Hash, ArrowRight } from 'lucide-react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,7 +29,6 @@ export default function ExplorePage() {
     }
   }, [currentUser, isUserLoading, router]);
 
-  // تحديث البحث عند تغير البارامتر
   useEffect(() => {
     if (initialQuery) setSearchQuery(initialQuery);
   }, [initialQuery]);
@@ -44,7 +43,6 @@ export default function ExplorePage() {
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
   }, [firestore]);
 
-  // استعلام نتائج البحث للأوسمة
   const hashtagResultsQuery = useMemoFirebase(() => {
     if (!firestore || !searchQuery || !searchQuery.startsWith('#')) return null;
     return query(
@@ -75,8 +73,8 @@ export default function ExplorePage() {
       .map(([name, count]) => ({ 
         name, 
         count,
-        displayCount: (count * 1.5).toFixed(1) + 'K', 
-        growth: `+${Math.floor(Math.random() * 50)}%` 
+        displayCount: count === 1 ? 'منشور واحد' : `${count} منشورات`,
+        growth: 'نشط حالياً' 
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
@@ -161,7 +159,7 @@ export default function ExplorePage() {
               <div className="p-3 bg-primary/5 border-b border-primary/10 flex items-center justify-between">
                 <div className="flex flex-col text-right">
                   <span className="text-[10px] font-bold text-primary uppercase tracking-wider">خوارزمية التداول</span>
-                  <span className="text-[8px] text-muted-foreground">تحليل المنشورات والهاشتاجات النشطة حالياً في تواصل</span>
+                  <span className="text-[8px] text-muted-foreground">تحليل المنشورات والهاشتاجات النشطة حالياً في تيمقاد</span>
                 </div>
                 <Badge variant="outline" className="text-[7px] h-4 px-1.5 bg-white border-primary/20 text-primary rounded-none font-bold">LIVE</Badge>
               </div>
@@ -180,7 +178,7 @@ export default function ExplorePage() {
                         <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">رائج الآن</span>
                       </div>
                       <span className="text-sm font-bold text-primary group-hover:text-accent transition-colors">{tag.name}</span>
-                      <span className="text-[9px] text-muted-foreground">{tag.displayCount} تفاعل</span>
+                      <span className="text-[9px] text-muted-foreground">{tag.displayCount}</span>
                     </div>
                     <ArrowUpRight size={18} className="text-muted-foreground/30 group-hover:text-accent/50 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                   </div>
