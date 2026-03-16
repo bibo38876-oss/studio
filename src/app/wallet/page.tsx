@@ -121,10 +121,10 @@ export default function WalletPage() {
             
             <div className="grid grid-cols-2 gap-4">
               {[
-                { amount: "100", label: "باقة البداية", color: "bg-blue-500/10 text-blue-600" },
-                { amount: "500", label: "باقة النشاط", color: "bg-green-500/10 text-green-600" },
-                { amount: "1000", label: "باقة التميز", color: "bg-purple-500/10 text-purple-600" },
-                { amount: "5000", label: "باقة الريادة", color: "bg-amber-500/10 text-amber-600" }
+                { amount: "100", price: "1$", label: "باقة البداية", color: "bg-blue-500/10 text-blue-600" },
+                { amount: "500", price: "4$", label: "باقة النشاط", color: "bg-green-500/10 text-green-600" },
+                { amount: "1000", price: "7$", label: "باقة التميز", color: "bg-purple-500/10 text-purple-600" },
+                { amount: "5000", price: "30$", label: "باقة الريادة", color: "bg-amber-500/10 text-amber-600" }
               ].map((pkg, i) => (
                 <motion.div key={i} whileHover={{ y: -5 }} whileTap={{ scale: 0.95 }}>
                   <Card 
@@ -140,6 +140,7 @@ export default function WalletPage() {
                       </div>
                       <div className="text-center">
                         <p className="text-xl font-bold text-primary">{pkg.amount} Coin</p>
+                        <p className="text-[14px] font-bold text-accent mb-1">{pkg.price}</p>
                         <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">{pkg.label}</p>
                       </div>
                       <div className="w-full h-[1px] bg-muted/30 my-1" />
@@ -219,7 +220,7 @@ export default function WalletPage() {
                 { 
                   icon: <Sparkles size={14} />, 
                   title: "دعم المبدعين داخلياً", 
-                  desc: "ستتمكن قريباً من إهداء هذه النقاط للمنشورات التي تعجبك كنوع من 'التصفيق الرقمي' داخل التطبيق." 
+                  desc: "ستتمكن قريباً من إهداء هذه النقاط للمنشورات التي تعجبك كنوع من التصفيق الرقمي داخل التطبيق." 
                 }
               ].map((item, i) => (
                 <div key={i} className="bg-secondary/30 p-4 flex gap-4 items-start border border-transparent hover:border-primary/10 transition-colors">
