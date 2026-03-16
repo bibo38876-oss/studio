@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
@@ -24,6 +23,7 @@ import {
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import CommentsDialog from "./CommentsDialog";
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
+import TimgadCoin from '@/components/ui/TimgadCoin';
 import {
   Carousel,
   CarouselContent,
@@ -300,13 +300,20 @@ export default function PostCard({ post }: { post: PostData }) {
           {showSupportAnim && (
             <motion.div 
               initial={{ opacity: 0, y: 20, scale: 0.5 }}
-              animate={{ opacity: 1, y: -100, scale: 1.5 }}
+              animate={{ opacity: 1, y: -120, scale: 1.2 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
             >
               <div className="flex flex-col items-center gap-2">
-                <Coffee size={48} className="text-primary fill-primary/20" />
-                <Sparkles size={24} className="text-accent animate-pulse" />
+                <TimgadCoin size={64} className="animate-bounce" />
+                <motion.div 
+                  animate={{ scale: [1, 1.2, 1] }} 
+                  transition={{ repeat: Infinity, duration: 1 }}
+                  className="flex gap-1"
+                >
+                  <Sparkles size={24} className="text-accent" />
+                  <Sparkles size={16} className="text-primary" />
+                </motion.div>
               </div>
             </motion.div>
           )}
@@ -350,19 +357,17 @@ export default function PostCard({ post }: { post: PostData }) {
                         <Coffee size={14} />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="min-w-[150px]">
-                      <DropdownMenuLabel className="text-[10px] font-bold text-primary text-center">دعم صانع المحتوى</DropdownMenuLabel>
+                    <DropdownMenuContent align="center" className="min-w-[160px] p-2">
+                      <DropdownMenuLabel className="text-[10px] font-bold text-primary text-center pb-2 uppercase tracking-tighter">ادعم محتوى {displayPost.authorName}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       {[1, 5, 10, 30, 50].map((amount) => (
                         <DropdownMenuItem 
                           key={amount} 
                           onClick={(e) => { e.stopPropagation(); handleSupport(amount); }}
-                          className="flex justify-between items-center cursor-pointer py-2 hover:bg-primary/5"
+                          className="flex justify-between items-center cursor-pointer py-2 px-3 hover:bg-primary/5 rounded-sm transition-colors"
                         >
-                          <span className="text-xs font-bold">{amount} عملة</span>
-                          <div className="w-5 h-5 bg-accent/10 rounded-full flex items-center justify-center text-accent">
-                            <span className="text-[8px] font-bold">T</span>
-                          </div>
+                          <span className="text-xs font-bold text-primary">{amount} عملة تيمقاد</span>
+                          <TimgadCoin size={20} />
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
