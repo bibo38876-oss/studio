@@ -32,23 +32,23 @@ export default function ProfilePage() {
     }
   }, [currentUser, isUserLoading, router]);
 
-  // استرجاع بيانات الملف الشخصي - ننتظر حتى يتوفر المستخدم والـ ID
+  // استرجاع بيانات الملف الشخصي - ننتظر حتى يتوفر المستخدم والـ ID بشكل مؤكد
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !id || id === 'undefined' || !currentUser) return null;
+    if (!firestore || !id || id === 'undefined' || !currentUser?.uid) return null;
     return doc(firestore, 'users', id);
-  }, [firestore, id, currentUser]);
+  }, [firestore, id, currentUser?.uid]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // استرجاع منشورات المستخدم - ننتظر حتى يتوفر المستخدم والـ ID
+  // استرجاع منشورات المستخدم - ننتظر حتى يتوفر المستخدم والـ ID والبيانات
   const postsQuery = useMemoFirebase(() => {
-    if (!firestore || !id || id === 'undefined' || !currentUser) return null;
+    if (!firestore || !id || id === 'undefined' || !currentUser?.uid) return null;
     return query(
       collection(firestore, 'posts'),
       where('authorId', '==', id),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, id, currentUser]);
+  }, [firestore, id, currentUser?.uid]);
 
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
 
@@ -56,7 +56,7 @@ export default function ProfilePage() {
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
 
   const handleUpdateProfile = () => {
-    if (!firestore || !currentUser) return;
+    if (!firestore || !currentUser?.uid) return;
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), {
       username: editName || profile?.username,
       bio: editBio || profile?.bio
@@ -65,7 +65,7 @@ export default function ProfilePage() {
   };
 
   const handleFollow = () => {
-    if (!currentUser) {
+    if (!currentUser?.uid) {
       router.push('/login');
       return;
     }
@@ -83,10 +83,21 @@ export default function ProfilePage() {
     }
   };
 
-  if (isUserLoading || isProfileLoading) {
+  if (isUserLoading || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="animate-spin text-primary h-8 w-8" />
+      </div>
+    );
+  }
+
+  if (isProfileLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="animate-spin text-primary h-8 w-8" />
+        </div>
       </div>
     );
   }

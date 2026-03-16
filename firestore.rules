@@ -9,10 +9,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Force Deploy ID: auth_enforcement_v3_final
+    // Force Deploy ID: security_enforcement_v5_final_global
 
     match /posts/{postId} {
       allow read: if isSignedIn();
+      allow list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid);

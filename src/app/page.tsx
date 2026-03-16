@@ -24,29 +24,29 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Query for profile - only run if user is loaded
+  // Query for profile - only run if user is strictly loaded and exists
   const userProfileRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // Query for all posts - only run if user is loaded to avoid permission errors
+  // Query for all posts - only run if user is strictly loaded
   const allPostsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   // Query for posts from followed users
   const followingPostsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !profile?.followingIds || profile.followingIds.length === 0) return null;
+    if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 10)),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user, profile?.followingIds]);
+  }, [firestore, user?.uid, profile?.followingIds]);
 
   const { data: allPosts, isLoading: isAllLoading } = useCollection(allPostsQuery);
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
