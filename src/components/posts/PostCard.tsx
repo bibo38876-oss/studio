@@ -55,6 +55,7 @@ export default function PostCard({ post }: { post: PostData }) {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [isRepostAnimating, setIsRepostAnimating] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const cardRef = useRef<HTMLDivElement>(null);
   const viewedRef = useRef(false);
@@ -62,7 +63,7 @@ export default function PostCard({ post }: { post: PostData }) {
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
-  // 1. استدعاء جميع الـ Hooks في البداية لضمان ثبات الترتيب (React Rules of Hooks)
+  // استدعاء جميع الـ Hooks في البداية لضمان ثبات الترتيب
   const centralPostRef = useMemoFirebase(() => {
     if (!firestore || !post.id) return null;
     return doc(firestore, 'posts', post.id);
@@ -70,7 +71,6 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const { data: centralPost, isLoading: isCentralLoading } = useDoc(centralPostRef);
 
-  // نستخدم البيانات الحية من المنشور المركزي إذا كانت متوفرة، لضمان تحديث العدادات والمحتوى في كل مكان
   const displayPost = centralPost || post;
 
   const authorRef = useMemoFirebase(() => {
@@ -96,7 +96,6 @@ export default function PostCard({ post }: { post: PostData }) {
   const { data: repostData } = useDoc(repostRef);
   const isReposted = !!repostData;
 
-  // نظام احتساب المشاهدات الاحترافي
   useEffect(() => {
     if (!firestore || !post.id || viewedRef.current) return;
 
@@ -121,7 +120,6 @@ export default function PostCard({ post }: { post: PostData }) {
     return () => observer.disconnect();
   }, [firestore, post.id]);
 
-  // 2. الآن نقوم بالتحقق من شروط التوقف بعد استدعاء كافة الـ Hooks
   if (!isCentralLoading && centralPost === null) {
     return null;
   }
@@ -239,7 +237,11 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const renderContent = (content: string) => {
     if (!content) return null;
-    return content.split(/(\s+)/).map((part, i) => {
+
+    const isLong = content.length > 250;
+    const displayContent = isLong && !isExpanded ? content.slice(0, 250) + "..." : content;
+
+    const parts = displayContent.split(/(\s+)/).map((part, i) => {
       if (part.startsWith('#')) {
         return (
           <Link 
@@ -254,6 +256,25 @@ export default function PostCard({ post }: { post: PostData }) {
       }
       return part;
     });
+
+    return (
+      <div className="flex flex-col">
+        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap tracking-tight">
+          {parts}
+        </p>
+        {isLong && (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="text-accent text-[10px] font-bold mt-1 text-right hover:underline"
+          >
+            {isExpanded ? 'عرض أقل' : 'اقرأ المزيد'}
+          </button>
+        )}
+      </div>
+    );
   };
 
   const allMedia = displayPost.mediaUrls || (displayPost.mediaUrl ? [displayPost.mediaUrl] : []);
@@ -309,14 +330,10 @@ export default function PostCard({ post }: { post: PostData }) {
         </CardHeader>
         
         <CardContent className="px-0 py-0 pr-16 pl-4">
-          {displayPost.content && (
-            <p className="pb-3 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap tracking-tight">
-              {renderContent(displayPost.content)}
-            </p>
-          )}
+          {displayPost.content && renderContent(displayPost.content)}
           
           {allMedia.length > 0 && (
-            <div className="w-full mb-3 rounded-xl overflow-hidden border border-muted/20">
+            <div className="w-full mt-3 mb-3 rounded-xl overflow-hidden border border-muted/20">
               <Carousel className="w-full">
                 <CarouselContent className="-ml-0">
                   {allMedia.map((url: string, index: number) => (
