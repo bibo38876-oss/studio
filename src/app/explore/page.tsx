@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Input } from '@/components/ui/input';
-import { Search, TrendingUp, Users, Loader2, ArrowUpRight, MessageSquare, ArrowRight } from 'lucide-react';
+import { Search, TrendingUp, Users, Loader2, ArrowUpRight, MessageSquare, ArrowRight, UserPlus, UserCheck } from 'lucide-react';
 import { useFirebase, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useDoc } from '@/firebase';
 import { collection, query, limit, orderBy, where, doc, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,27 +35,27 @@ export default function ExplorePage() {
     if (initialQuery) setSearchQuery(initialQuery);
   }, [initialQuery]);
 
+  // جلب المستخدمين للبحث
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !currentUser) return null;
     return query(collection(firestore, 'users'), limit(100));
   }, [firestore, currentUser]);
 
+  // جلب المنشورات العامة للترند والبحث النصي
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
   }, [firestore]);
 
+  // جلب نتائج الوسوم
   const hashtagResultsQuery = useMemoFirebase(() => {
-    if (!firestore || !searchQuery) return null;
-    if (searchQuery.startsWith('#')) {
-      return query(
-        collection(firestore, 'posts'),
-        where('hashtags', 'array-contains', searchQuery),
-        orderBy('createdAt', 'desc'),
-        limit(50)
-      );
-    }
-    return null;
+    if (!firestore || !searchQuery || !searchQuery.startsWith('#')) return null;
+    return query(
+      collection(firestore, 'posts'),
+      where('hashtags', 'array-contains', searchQuery),
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    );
   }, [firestore, searchQuery]);
 
   const { data: allUsers, isLoading: isUsersLoading } = useCollection(usersQuery);
@@ -68,6 +68,7 @@ export default function ExplorePage() {
   }, [firestore, currentUser?.uid]);
   const { data: currentUserProfile } = useDoc(currentUserProfileRef);
 
+  // حساب الوسوم الأكثر تداولاً
   const trendingTags = useMemo(() => {
     if (!recentPosts) return [];
     const tagCounts: Record<string, number> = {};
@@ -89,17 +90,20 @@ export default function ExplorePage() {
       .slice(0, 10);
   }, [recentPosts]);
 
+  // تصفية المستخدمين بناءً على البحث
   const filteredUsers = useMemo(() => {
     if (!allUsers) return [];
-    if (!searchQuery) return allUsers.filter(u => u.id !== currentUser?.uid).slice(0, 20);
+    const queryStr = searchQuery.startsWith('#') ? searchQuery.slice(1) : searchQuery;
+    if (!queryStr) return allUsers.filter(u => u.id !== currentUser?.uid).slice(0, 20);
     
     return allUsers.filter(u => 
-      (u.username?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-       u.email?.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      (u.username?.toLowerCase().includes(queryStr.toLowerCase()) || 
+       u.email?.toLowerCase().includes(queryStr.toLowerCase())) &&
       u.id !== currentUser?.uid
     );
   }, [allUsers, searchQuery, currentUser?.uid]);
 
+  // تصفية المنشورات نصياً (إذا لم يكن وسماً)
   const textFilteredPosts = useMemo(() => {
     if (!recentPosts || !searchQuery || searchQuery.startsWith('#')) return [];
     return recentPosts.filter(p => 
@@ -118,6 +122,7 @@ export default function ExplorePage() {
     } else {
       updateDoc(curUserRef, { followingIds: arrayUnion(targetUserId) });
       updateDoc(targetUserRef, { followerIds: arrayUnion(currentUser.uid) });
+      
       addDocumentNonBlocking(collection(firestore, 'users', targetUserId, 'notifications'), {
         type: 'follow',
         fromUserId: currentUser.uid,
@@ -144,6 +149,7 @@ export default function ExplorePage() {
       <Navbar />
       
       <main className="container mx-auto max-w-2xl pt-12 pb-20 px-0 md:px-4">
+        {/* شريط البحث العلوي */}
         <div className="sticky top-8 z-30 bg-background/80 backdrop-blur-md p-4 border-b border-muted">
           <div className="relative">
             {searchQuery && (
@@ -166,6 +172,7 @@ export default function ExplorePage() {
           </div>
         </div>
 
+        {/* عرض النتائج أو القوائم الافتراضية */}
         {searchQuery ? (
           <div className="mt-2">
             <Tabs defaultValue={isHashtagSearch ? "posts" : "users"} className="w-full">
@@ -174,6 +181,7 @@ export default function ExplorePage() {
                 <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold">منشورات ({isHashtagSearch ? (searchPosts?.length || 0) : textFilteredPosts.length})</TabsTrigger>
               </TabsList>
 
+              {/* تبويب نتائج المستخدمين */}
               <TabsContent value="users" className="mt-0">
                 {filteredUsers.length > 0 ? (
                   <div className="divide-y divide-muted">
@@ -215,6 +223,7 @@ export default function ExplorePage() {
                 )}
               </TabsContent>
 
+              {/* تبويب نتائج المنشورات */}
               <TabsContent value="posts" className="mt-0">
                 {isHashtagSearch ? (
                   isSearching ? (
@@ -238,6 +247,7 @@ export default function ExplorePage() {
             </Tabs>
           </div>
         ) : (
+          /* القوائم الافتراضية عند عدم وجود بحث */
           <Tabs defaultValue="trending" className="w-full">
             <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0 overflow-x-auto no-scrollbar">
               <TabsTrigger value="trending" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold gap-2">
