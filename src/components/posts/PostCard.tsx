@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus, Rocket } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus, Rocket, Coffee, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import CommentsDialog from "./CommentsDialog";
@@ -29,7 +31,7 @@ import {
 } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Progress } from "@/components/ui/progress";
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PostData {
   id: string;
@@ -64,6 +66,7 @@ export default function PostCard({ post }: { post: PostData }) {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isPromoteOpen, setIsPromoteOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showSupportAnim, setShowSupportAnim] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const viewedRef = useRef(false);
   const promotedViewedRef = useRef(false);
@@ -169,6 +172,16 @@ export default function PostCard({ post }: { post: PostData }) {
     toast({ title: "تم الترويج!", description: `سيبدأ منشورك بالظهور لـ ${impressions} مستخدم إضافي.` });
   };
 
+  const handleSupport = (amount: number) => {
+    if (isAnonymous) { router.push('/login'); return; }
+    setShowSupportAnim(true);
+    setTimeout(() => setShowSupportAnim(false), 2000);
+    toast({
+      title: "تم إرسال الدعم",
+      description: `لقد أرسلت ${amount} عملة تيمقاد لدعم هذا المحتوى. شكراً لك!`,
+    });
+  };
+
   const handleVote = async (optionIndex: number) => {
     if (isAnonymous) { router.push('/login'); return; }
     if (!firestore || !user || !displayPost.poll || userVote || isVoteLoading) return;
@@ -270,6 +283,7 @@ export default function PostCard({ post }: { post: PostData }) {
   };
 
   const verificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
+  const isVerified = verificationType !== 'none';
   const isFollowing = currentUserProfile?.followingIds?.includes(displayPost.authorId);
   const isFollowingMe = currentUserProfile?.followerIds?.includes(displayPost.authorId);
 
@@ -280,7 +294,24 @@ export default function PostCard({ post }: { post: PostData }) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.3 }}
+        className="relative"
       >
+        <AnimatePresence>
+          {showSupportAnim && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20, scale: 0.5 }}
+              animate={{ opacity: 1, y: -100, scale: 1.5 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Coffee size={48} className="text-primary fill-primary/20" />
+                <Sparkles size={24} className="text-accent animate-pulse" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
           {displayPost.promoted && (
             <div className="flex items-center gap-1.5 text-[9px] text-accent font-bold px-4 pt-2 group">
@@ -307,34 +338,66 @@ export default function PostCard({ post }: { post: PostData }) {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {!isOwner && !isUserLoading && (
-                <Button 
-                  size="sm" 
-                  variant={isFollowing ? "outline" : "default"} 
-                  className={cn(
-                    "h-6 px-3 text-[9px] font-bold rounded-full transition-all gap-1.5",
-                    isFollowing ? "border-primary/20 text-primary hover:bg-primary/5" : "bg-primary text-white hover:bg-primary/90"
-                  )}
-                  onClick={handleFollow}
-                >
-                  {isFollowing ? (
-                    <>
-                      <UserCheck size={10} />
-                      متابع
-                    </>
-                  ) : isFollowingMe ? (
-                    <>
-                      <UserRoundPlus size={10} />
-                      رد المتابعة
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus size={10} />
-                      متابعة
-                    </>
-                  )}
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {isVerified && !isOwner && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-all border border-primary/10"
+                      >
+                        <Coffee size={14} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="min-w-[150px]">
+                      <DropdownMenuLabel className="text-[10px] font-bold text-primary text-center">دعم صانع المحتوى</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {[1, 5, 10, 30, 50].map((amount) => (
+                        <DropdownMenuItem 
+                          key={amount} 
+                          onClick={(e) => { e.stopPropagation(); handleSupport(amount); }}
+                          className="flex justify-between items-center cursor-pointer py-2 hover:bg-primary/5"
+                        >
+                          <span className="text-xs font-bold">{amount} عملة</span>
+                          <div className="w-5 h-5 bg-accent/10 rounded-full flex items-center justify-center text-accent">
+                            <span className="text-[8px] font-bold">T</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+                {!isOwner && !isUserLoading && (
+                  <Button 
+                    size="sm" 
+                    variant={isFollowing ? "outline" : "default"} 
+                    className={cn(
+                      "h-6 px-3 text-[9px] font-bold rounded-full transition-all gap-1.5",
+                      isFollowing ? "border-primary/20 text-primary hover:bg-primary/5" : "bg-primary text-white hover:bg-primary/90"
+                    )}
+                    onClick={handleFollow}
+                  >
+                    {isFollowing ? (
+                      <>
+                        <UserCheck size={10} />
+                        متابع
+                      </>
+                    ) : isFollowingMe ? (
+                      <>
+                        <UserRoundPlus size={10} />
+                        رد المتابعة
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus size={10} />
+                        متابعة
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
 
             <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
