@@ -19,6 +19,43 @@ import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonB
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 
+// دالة لضغط الصور
+const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+};
+
 export default function ProfilePage() {
   const params = useParams();
   const id = params?.id as string;
@@ -89,18 +126,24 @@ export default function ProfilePage() {
     ? 'blue' 
     : (profile?.verificationType || 'none');
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        if (type === 'profile') setEditProfilePic(reader.result);
-        else setEditBanner(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsSaving(true);
+      // ضغط الصورة بناءً على نوعها
+      const maxWidth = type === 'banner' ? 1200 : 400;
+      const maxHeight = type === 'banner' ? 600 : 400;
+      const compressedData = await compressImage(file, maxWidth, maxHeight, 0.7);
+      
+      if (type === 'profile') setEditProfilePic(compressedData);
+      else setEditBanner(compressedData);
+    } catch (error) {
+      toast({ variant: "destructive", description: "فشل في معالجة الصورة." });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleUpdateProfile = async () => {

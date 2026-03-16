@@ -14,6 +14,43 @@ interface CreatePostProps {
   onSuccess?: () => void;
 }
 
+// دالة لضغط الصور قبل الرفع
+const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+};
+
 export default function CreatePost({ onSuccess }: CreatePostProps) {
   const [content, setContent] = useState('');
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
@@ -31,28 +68,25 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
   const { data: profile } = useDoc(userRef);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
     const newMediaUrls: string[] = [...mediaUrls];
-    let loadedCount = 0;
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          newMediaUrls.push(reader.result);
-        }
-        loadedCount++;
-        if (loadedCount === files.length) {
-          setMediaUrls(newMediaUrls);
-          setIsUploading(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    try {
+      for (let i = 0; i < files.length; i++) {
+        // ضغط كل صورة إلى حد أقصى 1200 بكسل وبجودة 70%
+        const compressedData = await compressImage(files[i], 1200, 1200, 0.7);
+        newMediaUrls.push(compressedData);
+      }
+      setMediaUrls(newMediaUrls);
+    } catch (error) {
+      toast({ variant: "destructive", description: "فشل في معالجة بعض الصور." });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handlePost = () => {
