@@ -12,13 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Hourglass, Lock } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Hourglass, Lock, Heart } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
-import { Badge } from '@/components/ui/badge';
 
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -115,6 +114,16 @@ export default function ProfilePage() {
 
   const { data: reposts, isLoading: isRepostsLoading } = useCollection(repostsQuery);
 
+  const likesQuery = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return query(
+      collection(firestore, 'users', id, 'likedPosts'),
+      orderBy('likedAt', 'desc')
+    );
+  }, [firestore, id]);
+
+  const { data: likedPosts, isLoading: isLikesLoading } = useCollection(likesQuery);
+
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
   const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === ADMIN_EMAIL;
@@ -172,7 +181,6 @@ export default function ProfilePage() {
       updateDoc(curUserRef, { followingIds: arrayUnion(id) });
       updateDoc(targetUserRef, { followerIds: arrayUnion(currentUser.uid) });
       
-      // إرسال تنبيه متابعة
       addDocumentNonBlocking(collection(firestore, 'users', id, 'notifications'), {
         type: 'follow',
         fromUserId: currentUser.uid,
@@ -293,7 +301,7 @@ export default function ProfilePage() {
             <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0 mb-0.5 sticky top-7 z-40 bg-background/80 backdrop-blur-md overflow-x-auto no-scrollbar">
               <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المنشورات <span className="text-[9px] opacity-50">({posts?.length || 0})</span></TabsTrigger>
               <TabsTrigger value="reposts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المعاد نشرها <span className="text-[9px] opacity-50">({reposts?.length || 0})</span></TabsTrigger>
-              <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full shrink-0">الإعجابات</TabsTrigger>
+              <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">الإعجابات <span className="text-[9px] opacity-50">({likedPosts?.length || 0})</span></TabsTrigger>
             </TabsList>
             <TabsContent value="posts" className="mt-0 space-y-[1px]">
               {isPostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : posts && posts.length > 0 ? posts.map((post: any) => <PostCard key={post.id} post={post} />) : <div className="text-center py-24 bg-card px-8 border-b"><p className="text-muted-foreground text-[10px]">لا توجد منشورات.</p></div>}
@@ -301,7 +309,18 @@ export default function ProfilePage() {
             <TabsContent value="reposts" className="mt-0 space-y-[1px]">
               {isRepostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : reposts && reposts.length > 0 ? reposts.map((repost: any) => (<div key={repost.id} className="relative"><div className="bg-muted/30 px-4 py-1 flex items-center gap-2 text-[9px] text-muted-foreground font-bold border-b"><Repeat size={10} className="text-green-500" /> أعاد نشر هذا</div><PostCard post={repost.postData} /></div>)) : <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center"><Repeat size={30} className="text-muted-foreground/20 mb-3" /><p className="text-muted-foreground text-[10px]">لا توجد منشورات معاد نشرها.</p></div>}
             </TabsContent>
-            <TabsContent value="likes" className="mt-0"><div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center gap-3"><Hourglass size={32} className="text-primary/20 animate-pulse" /><div className="space-y-1"><p className="text-primary font-bold text-xs uppercase tracking-widest">قيد التطوير</p><p className="text-muted-foreground text-[10px]">سيتم عرض الإعجابات قريباً.</p></div></div></TabsContent>
+            <TabsContent value="likes" className="mt-0 space-y-[1px]">
+              {isLikesLoading ? (
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div>
+              ) : likedPosts && likedPosts.length > 0 ? (
+                likedPosts.map((post: any) => <PostCard key={post.id} post={post} />)
+              ) : (
+                <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center gap-3">
+                  <Heart size={30} className="text-muted-foreground/20 mb-3" />
+                  <p className="text-muted-foreground text-[10px]">لا توجد منشورات معجب بها بعد.</p>
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
         )}
       </main>

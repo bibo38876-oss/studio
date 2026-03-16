@@ -56,16 +56,13 @@ export default function PostCard({ post }: { post: PostData }) {
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
-  // تسجيل مشاهدة حقيقية عند عرض المنشور
   useEffect(() => {
     if (!firestore || !post.id || isOwner || isAnonymous) return;
 
     const postRef = doc(firestore, 'posts', post.id);
     updateDoc(postRef, {
       viewsCount: increment(1)
-    }).catch(() => {
-      // تجاهل الأخطاء الصامتة لعداد المشاهدات لضمان سلاسة التصفح
-    });
+    }).catch(() => {});
   }, [firestore, post.id, isOwner, isAnonymous]);
 
   const authorRef = useMemoFirebase(() => {
@@ -107,12 +104,20 @@ export default function PostCard({ post }: { post: PostData }) {
     if (!user || !firestore) return;
     const postRef = doc(firestore, 'posts', post.id);
     const userLikeRef = doc(firestore, 'posts', post.id, 'likes', user.uid);
+    const personalLikeRef = doc(firestore, 'users', user.uid, 'likedPosts', post.id);
 
     if (isLiked) {
       deleteDocumentNonBlocking(userLikeRef);
+      deleteDocumentNonBlocking(personalLikeRef);
       updateDoc(postRef, { likesCount: increment(-1) });
     } else {
-      setDocumentNonBlocking(userLikeRef, { userId: user.uid, likedAt: new Date().toISOString() }, { merge: true });
+      const timestamp = new Date().toISOString();
+      setDocumentNonBlocking(userLikeRef, { userId: user.uid, likedAt: timestamp }, { merge: true });
+      setDocumentNonBlocking(personalLikeRef, { 
+        ...post, 
+        likedAt: timestamp,
+        createdAt: post.createdAt?.toDate ? post.createdAt.toDate().toISOString() : post.createdAt
+      }, { merge: true });
       updateDoc(postRef, { likesCount: increment(1) });
       
       if (post.authorId !== user.uid) {
@@ -121,6 +126,7 @@ export default function PostCard({ post }: { post: PostData }) {
           type: 'like',
           fromUserId: user.uid,
           fromUsername: user.displayName || 'مستخدم تواصل',
+          fromAvatar: user.photoURL || '',
           postId: post.id,
           createdAt: serverTimestamp(),
           read: false
@@ -149,7 +155,7 @@ export default function PostCard({ post }: { post: PostData }) {
         postId: post.id, 
         repostedAt: serverTimestamp(),
         originalAuthorId: post.authorId,
-        postData: { ...post, createdAt: post.createdAt?.toDate()?.toISOString() || new Date().toISOString() }
+        postData: { ...post, createdAt: post.createdAt?.toDate ? post.createdAt.toDate().toISOString() : post.createdAt }
       }, { merge: true });
       updateDoc(postRef, { repostsCount: increment(1) });
       toast({ description: "تم إعادة النشر" });

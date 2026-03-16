@@ -12,7 +12,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.email == 'adelbenmaza8@gmail.com';
     }
 
-    // Force Deploy ID: index_fix_hashtags_v1
+    // Force Deploy ID: production_ready_v1
 
     match /posts/{postId} {
       allow read, list: if isSignedIn();
@@ -57,6 +57,11 @@ service cloud.firestore {
 
       match /bookmarks/{postId} {
         allow read, write: if isOwner(userId);
+      }
+
+      match /likedPosts/{postId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId);
       }
 
       match /groupInvites/{inviteId} {
