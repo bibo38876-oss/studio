@@ -11,8 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
 
@@ -20,9 +22,11 @@ export default function ProfilePage() {
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
+  const { toast } = useToast();
   
   const { firestore, user: currentUser, isUserLoading } = useFirebase();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
 
@@ -32,7 +36,6 @@ export default function ProfilePage() {
     }
   }, [currentUser, isUserLoading, router]);
 
-  // جلب بيانات ملف المستخدم المعروض
   const profileRef = useMemoFirebase(() => {
     if (!firestore || !id || !currentUser?.uid) return null;
     return doc(firestore, 'users', id);
@@ -40,7 +43,6 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // استعلام منشورات المستخدم
   const postsQuery = useMemoFirebase(() => {
     if (!firestore || !id || !currentUser?.uid) return null;
     return query(
@@ -52,7 +54,6 @@ export default function ProfilePage() {
 
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
 
-  // استعلام المعاد نشرها
   const repostsQuery = useMemoFirebase(() => {
     if (!firestore || !id || !currentUser?.uid) return null;
     return query(
@@ -90,6 +91,14 @@ export default function ProfilePage() {
     }
   };
 
+  const copyShareLink = () => {
+    navigator.clipboard.writeText(window.location.origin);
+    toast({
+      title: "تم النسخ!",
+      description: "تم نسخ رابط التطبيق لمشاركته مع أصدقائك.",
+    });
+  };
+
   if (isUserLoading || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -123,11 +132,49 @@ export default function ProfilePage() {
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
-            {isOwnProfile && (
-              <Button variant="ghost" size="icon" className="absolute top-2 left-2 h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm">
-                <Settings size={14} />
-              </Button>
-            )}
+            <div className="absolute top-2 left-2 flex gap-2">
+              <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20">
+                    <Share size={14} />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden border-none bg-background">
+                  <div className="bg-primary p-6 text-center text-white space-y-4">
+                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-md">
+                      <span className="text-2xl font-bold font-headline tracking-tighter">ت</span>
+                    </div>
+                    <div className="space-y-1">
+                      <h2 className="text-xl font-bold font-headline tracking-tighter">تواصل | Tawasul</h2>
+                      <p className="text-[10px] opacity-80">منصة تواصل اجتماعي عربية متطورة ومبسطة</p>
+                    </div>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <Card className="border-none bg-secondary/30 rounded-none p-4">
+                      <p className="text-xs leading-relaxed text-center font-medium text-primary">
+                        انضم إلينا في تواصل، حيث المجتمع العربي يلتقي في بيئة تقنية متطورة، فائقة السرعة، ومصممة خصيصاً لتناسب احتياجاتك.
+                      </p>
+                    </Card>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button variant="outline" className="rounded-none text-[10px] font-bold gap-2" onClick={copyShareLink}>
+                        <Copy size={12} />
+                        نسخ الرابط
+                      </Button>
+                      <Button className="rounded-none text-[10px] font-bold gap-2" onClick={() => window.open(`https://wa.me/?text=انضم%20إلي%20في%20تواصل!%20${window.location.origin}`)}>
+                        <ExternalLink size={12} />
+                        واتساب
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {isOwnProfile && (
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20" onClick={() => router.push('/settings')}>
+                  <Settings size={14} />
+                </Button>
+              )}
+            </div>
           </div>
           <div className="px-4 pb-6 relative">
             <div className="flex justify-between items-end -mt-10 mb-4">
@@ -257,3 +304,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
