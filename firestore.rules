@@ -9,7 +9,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Force Deploy ID: security_v15_reposts_support
+    // Force Deploy ID: security_v16_groups_delete_support
 
     match /posts/{postId} {
       allow read, list: if isSignedIn();
@@ -55,6 +55,7 @@ service cloud.firestore {
 
     match /groups/{groupId} {
       allow read, create, update: if isSignedIn();
+      allow delete: if isSignedIn() && resource.data.creatorId == request.auth.uid;
       
       match /messages/{messageId} {
         allow read, create: if isSignedIn();
