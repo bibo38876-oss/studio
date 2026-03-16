@@ -27,6 +27,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
+import { cn } from '@/lib/utils';
 
 interface PostData {
   id: string;
@@ -52,24 +53,19 @@ export default function PostCard({ post }: { post: PostData }) {
   const { toast } = useToast();
   const router = useRouter();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [isLikeAnimating, setIsLikeAnimating] = useState(false);
+  const [isRepostAnimating, setIsRepostAnimating] = useState(false);
   const viewedRef = useRef(false);
   
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
-  // عداد المشاهدات الحقيقي
   useEffect(() => {
     if (!firestore || !post.id || viewedRef.current) return;
-
-    // نقوم بزيادة المشاهدات لمرة واحدة في كل دورة حياة للمكون
-    // ملاحظة: تم إزالة شرط isOwner لكي يتمكن المطور من رؤية العداد يعمل على منشوراته
     const postRef = doc(firestore, 'posts', post.id);
-    
-    // تحديث المشاهدات باستخدام النظام غير الحاضر
     updateDocumentNonBlocking(postRef, {
       viewsCount: increment(1)
     });
-    
     viewedRef.current = true;
   }, [firestore, post.id]);
 
@@ -110,6 +106,10 @@ export default function PostCard({ post }: { post: PostData }) {
       return;
     }
     if (!user || !firestore) return;
+
+    setIsLikeAnimating(true);
+    setTimeout(() => setIsLikeAnimating(false), 500);
+
     const postRef = doc(firestore, 'posts', post.id);
     const userLikeRef = doc(firestore, 'posts', post.id, 'likes', user.uid);
     const personalLikeRef = doc(firestore, 'users', user.uid, 'likedPosts', post.id);
@@ -151,13 +151,15 @@ export default function PostCard({ post }: { post: PostData }) {
     }
     if (!user || !firestore) return;
 
+    setIsRepostAnimating(true);
+    setTimeout(() => setIsRepostAnimating(false), 500);
+
     const postRef = doc(firestore, 'posts', post.id);
     const userRepostRef = doc(firestore, 'users', user.uid, 'reposts', post.id);
 
     if (isReposted) {
       deleteDocumentNonBlocking(userRepostRef);
       updateDocumentNonBlocking(postRef, { repostsCount: increment(-1) });
-      toast({ description: "تم إزالة إعادة النشر" });
     } else {
       setDocumentNonBlocking(userRepostRef, { 
         postId: post.id, 
@@ -166,7 +168,6 @@ export default function PostCard({ post }: { post: PostData }) {
         postData: { ...post, createdAt: post.createdAt?.toDate ? post.createdAt.toDate().toISOString() : post.createdAt }
       }, { merge: true });
       updateDocumentNonBlocking(postRef, { repostsCount: increment(1) });
-      toast({ description: "تم إعادة النشر" });
       
       if (post.authorId !== user.uid) {
         const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
@@ -225,7 +226,7 @@ export default function PostCard({ post }: { post: PostData }) {
   return (
     <>
       <Card 
-        className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b border-muted/30"
+        className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b border-muted/30 hover:bg-muted/5 transition-colors"
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-3 pb-2 flex-row items-start justify-between space-y-0">
@@ -304,17 +305,27 @@ export default function PostCard({ post }: { post: PostData }) {
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`h-8 flex items-center gap-1.5 rounded-full px-2 transition-colors border-none bg-transparent hover:bg-red-500/10 ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
+            className={cn(
+              "h-8 flex items-center gap-1.5 rounded-full px-2 transition-all duration-200 active:scale-90 border-none bg-transparent group",
+              isLiked ? "text-red-500 hover:bg-red-500/10" : "text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+            )}
             onClick={handleLike}
           >
-            <Heart size={18} className={isLiked ? "fill-current" : ""} />
+            <Heart 
+              size={18} 
+              className={cn(
+                "transition-all duration-300", 
+                isLiked ? "fill-current scale-110" : "",
+                isLikeAnimating ? "animate-icon-pop" : ""
+              )} 
+            />
             <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
           </Button>
           
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-primary/10"
+            className="h-8 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
             onClick={(e) => {
               e.stopPropagation();
               setIsCommentsOpen(true);
@@ -327,17 +338,27 @@ export default function PostCard({ post }: { post: PostData }) {
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`h-8 flex items-center gap-1.5 rounded-full px-2 transition-colors border-none bg-transparent hover:bg-green-500/10 ${isReposted ? 'text-green-500' : 'text-muted-foreground'}`}
+            className={cn(
+              "h-8 flex items-center gap-1.5 rounded-full px-2 transition-all duration-200 active:scale-90 border-none bg-transparent",
+              isReposted ? "text-green-500 hover:bg-green-500/10" : "text-muted-foreground hover:bg-green-500/10 hover:text-green-500"
+            )}
             onClick={handleRepost}
           >
-            <Repeat size={18} className={isReposted ? "stroke-[2.5px]" : ""} />
+            <Repeat 
+              size={18} 
+              className={cn(
+                "transition-all duration-300", 
+                isReposted ? "stroke-[2.5px] scale-110" : "",
+                isRepostAnimating ? "animate-icon-pop" : ""
+              )} 
+            />
             <span className="text-[11px] font-bold">{post.repostsCount || 0}</span>
           </Button>
 
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-secondary"
+            className="h-8 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-secondary hover:text-foreground transition-all active:scale-95"
             onClick={(e) => e.stopPropagation()}
           >
             <BarChart3 size={18} />

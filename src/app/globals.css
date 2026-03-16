@@ -24,7 +24,7 @@
     --border: 220 31% 90%;
     --input: 220 31% 90%;
     --ring: 220 31% 46%;
-    --radius: 0rem; /* حواف حادة تماماً بناءً على طلب المستخدم لنمط Edge-to-Edge */
+    --radius: 0rem;
   }
   .dark {
     --background: 221 31% 10%;
@@ -63,16 +63,24 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* تحسين تجربة ملء الشاشة للبطاقات */
 .card-full-width {
   @apply rounded-none border-x-0 border-t-0;
 }
 
-/* تنسيق فائق النحافة للقوائم */
 .slim-nav {
-  @apply h-7; /* ارتفاع صغير جداً للقائمة العلوية */
+  @apply h-7;
 }
 
 .slim-bottom-nav {
-  @apply h-8; /* ارتفاع صغير جداً للقائمة السفلية */
+  @apply h-8;
+}
+
+@keyframes icon-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1.1); }
+}
+
+.animate-icon-pop {
+  animation: icon-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
