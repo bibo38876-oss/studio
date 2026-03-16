@@ -235,23 +235,8 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="px-4 pb-6 relative">
-            <div className="flex justify-between items-start -mt-10 mb-4">
-              {/* معلومات المستخدم على اليمين لتطابق البطاقة (في نظام RTL) */}
-              <div className="flex flex-col items-start text-right">
-                <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
-                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
-                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
-                </Avatar>
-                <div className="text-right">
-                  <div className="flex items-center gap-1.5 justify-start">
-                    <span className="text-md font-bold text-primary">{profile.username}</span>
-                    <VerifiedBadge type={verificationType} size={16} />
-                  </div>
-                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
-                </div>
-              </div>
-
-              {/* أزرار التحكم على اليسار لتطابق البطاقة */}
+            <div className="flex flex-row justify-between items-start -mt-10 mb-4">
+              {/* أزرار التحكم في الجهة اليمنى لتماثل البطاقة */}
               <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -297,6 +282,21 @@ export default function ProfilePage() {
                     {isFollowing ? 'متابع' : isFollowingMe ? 'رد المتابعة' : 'متابعة'}
                   </Button>
                 )}
+              </div>
+
+              {/* معلومات المستخدم في الجهة اليسرى لتماثل البطاقة */}
+              <div className="flex flex-col items-start text-right">
+                <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
+                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
+                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
+                </Avatar>
+                <div className="text-right">
+                  <div className="flex items-center gap-1.5 justify-start">
+                    <span className="text-md font-bold text-primary">{profile.username}</span>
+                    <VerifiedBadge type={verificationType} size={16} />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
+                </div>
               </div>
             </div>
 

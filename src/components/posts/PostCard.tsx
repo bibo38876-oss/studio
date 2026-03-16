@@ -103,6 +103,7 @@ export default function PostCard({ post }: { post: PostData }) {
       (entries) => {
         if (entries[0].isIntersecting && !viewedRef.current) {
           viewedRef.current = true;
+          // Increment views via non-blocking update
           updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { viewsCount: increment(1) });
         }
       },
