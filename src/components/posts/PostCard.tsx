@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2 } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, increment, serverTimestamp, runTransaction, arrayUnion, collection } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, runTransaction, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -55,7 +55,7 @@ interface PostData {
 }
 
 export default function PostCard({ post }: { post: PostData }) {
-  const { user, firestore } = useFirebase();
+  const { user, firestore, isUserLoading } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
@@ -79,6 +79,12 @@ export default function PostCard({ post }: { post: PostData }) {
     return doc(firestore, 'users', displayPost.authorId);
   }, [firestore, displayPost.authorId]);
   const { data: authorData } = useDoc(authorRef);
+
+  const currentUserProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  const { data: currentUserProfile } = useDoc(currentUserProfileRef);
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user || !displayPost.id) return null;
@@ -112,6 +118,33 @@ export default function PostCard({ post }: { post: PostData }) {
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
   }, [firestore, displayPost.id]);
+
+  const handleFollow = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !user || !displayPost.authorId || isOwner) return;
+
+    const curUserRef = doc(firestore, 'users', user.uid);
+    const targetUserRef = doc(firestore, 'users', displayPost.authorId);
+    const isFollowing = currentUserProfile?.followingIds?.includes(displayPost.authorId);
+
+    if (isFollowing) {
+      updateDoc(curUserRef, { followingIds: arrayRemove(displayPost.authorId) });
+      updateDoc(targetUserRef, { followerIds: arrayRemove(user.uid) });
+    } else {
+      updateDoc(curUserRef, { followingIds: arrayUnion(displayPost.authorId) });
+      updateDoc(targetUserRef, { followerIds: arrayUnion(user.uid) });
+      
+      setDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_follow`), {
+        type: 'follow',
+        fromUserId: user.uid,
+        fromUsername: currentUserProfile?.username || user.displayName || 'مستكشف تيمقاد',
+        fromAvatar: currentUserProfile?.profilePictureUrl || '',
+        createdAt: serverTimestamp(),
+        read: false
+      }, { merge: true });
+    }
+  };
 
   const handleVote = async (optionIndex: number) => {
     if (isAnonymous) { router.push('/login'); return; }
@@ -150,12 +183,11 @@ export default function PostCard({ post }: { post: PostData }) {
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { interactedAuthorIds: arrayUnion(displayPost.authorId) });
 
       if (user.uid !== displayPost.authorId) {
-        // استخدام setDocumentNonBlocking مع merge لتجنب أخطاء الصلاحيات والتحقق من الوجود
         setDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_like_${displayPost.id}`), {
           type: 'like',
           fromUserId: user.uid,
-          fromUsername: user.displayName || 'مستكشف تيمقاد',
-          fromAvatar: user.photoURL || '',
+          fromUsername: currentUserProfile?.username || user.displayName || 'مستكشف تيمقاد',
+          fromAvatar: currentUserProfile?.profilePictureUrl || '',
           postId: displayPost.id,
           createdAt: serverTimestamp(),
           read: false
@@ -180,8 +212,8 @@ export default function PostCard({ post }: { post: PostData }) {
         setDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_repost_${displayPost.id}`), {
           type: 'repost',
           fromUserId: user.uid,
-          fromUsername: user.displayName || 'مستكشف تيمقاد',
-          fromAvatar: user.photoURL || '',
+          fromUsername: currentUserProfile?.username || user.displayName || 'مستكشف تيمقاد',
+          fromAvatar: currentUserProfile?.profilePictureUrl || '',
           postId: displayPost.id,
           createdAt: serverTimestamp(),
           read: false
@@ -228,18 +260,51 @@ export default function PostCard({ post }: { post: PostData }) {
   };
 
   const verificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
+  const isFollowing = currentUserProfile?.followingIds?.includes(displayPost.authorId);
+  const isFollowingMe = currentUserProfile?.followerIds?.includes(displayPost.authorId);
 
   return (
     <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
       <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="text-xs">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
-            {!isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleReport(); }} className="gap-2 text-red-500 cursor-pointer"><AlertTriangle size={12} /> إبلاغ عن محتوى مخالف</DropdownMenuItem>}
-            {isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteDocumentNonBlocking(doc(firestore!, 'posts', displayPost.id)); toast({ description: "تم الحذف" }); }} className="gap-2 text-destructive cursor-pointer"><Trash2 size={12} /> حذف المنشور</DropdownMenuItem>}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="text-xs">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
+              {!isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleReport(); }} className="gap-2 text-red-500 cursor-pointer"><AlertTriangle size={12} /> إبلاغ عن محتوى مخالف</DropdownMenuItem>}
+              {isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteDocumentNonBlocking(doc(firestore!, 'posts', displayPost.id)); toast({ description: "تم الحذف" }); }} className="gap-2 text-destructive cursor-pointer"><Trash2 size={12} /> حذف المنشور</DropdownMenuItem>}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {!isOwner && !isUserLoading && (
+            <Button 
+              size="sm" 
+              variant={isFollowing ? "outline" : "default"} 
+              className={cn(
+                "h-6 px-3 text-[9px] font-bold rounded-full transition-all gap-1.5",
+                isFollowing ? "border-primary/20 text-primary hover:bg-primary/5" : "bg-primary text-white hover:bg-primary/90"
+              )}
+              onClick={handleFollow}
+            >
+              {isFollowing ? (
+                <>
+                  <UserCheck size={10} />
+                  متابع
+                </>
+              ) : isFollowingMe ? (
+                <>
+                  <UserRoundPlus size={10} />
+                  رد المتابعة
+                </>
+              ) : (
+                <>
+                  <UserPlus size={10} />
+                  متابعة
+                </>
+              )}
+            </Button>
+          )}
+        </div>
 
         <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
           <div className="flex flex-col text-right">
