@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Heart, MessageCircle, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, increment, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -52,18 +52,26 @@ export default function PostCard({ post }: { post: PostData }) {
   const { toast } = useToast();
   const router = useRouter();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const viewedRef = useRef(false);
   
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
+  // عداد المشاهدات الحقيقي
   useEffect(() => {
-    if (!firestore || !post.id || isOwner || isAnonymous) return;
+    if (!firestore || !post.id || viewedRef.current) return;
 
+    // نقوم بزيادة المشاهدات لمرة واحدة في كل دورة حياة للمكون
+    // ملاحظة: تم إزالة شرط isOwner لكي يتمكن المطور من رؤية العداد يعمل على منشوراته
     const postRef = doc(firestore, 'posts', post.id);
-    updateDoc(postRef, {
+    
+    // تحديث المشاهدات باستخدام النظام غير الحاضر
+    updateDocumentNonBlocking(postRef, {
       viewsCount: increment(1)
-    }).catch(() => {});
-  }, [firestore, post.id, isOwner, isAnonymous]);
+    });
+    
+    viewedRef.current = true;
+  }, [firestore, post.id]);
 
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !post.authorId) return null;
@@ -109,7 +117,7 @@ export default function PostCard({ post }: { post: PostData }) {
     if (isLiked) {
       deleteDocumentNonBlocking(userLikeRef);
       deleteDocumentNonBlocking(personalLikeRef);
-      updateDoc(postRef, { likesCount: increment(-1) });
+      updateDocumentNonBlocking(postRef, { likesCount: increment(-1) });
     } else {
       const timestamp = new Date().toISOString();
       setDocumentNonBlocking(userLikeRef, { userId: user.uid, likedAt: timestamp }, { merge: true });
@@ -118,7 +126,7 @@ export default function PostCard({ post }: { post: PostData }) {
         likedAt: timestamp,
         createdAt: post.createdAt?.toDate ? post.createdAt.toDate().toISOString() : post.createdAt
       }, { merge: true });
-      updateDoc(postRef, { likesCount: increment(1) });
+      updateDocumentNonBlocking(postRef, { likesCount: increment(1) });
       
       if (post.authorId !== user.uid) {
         const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
@@ -148,7 +156,7 @@ export default function PostCard({ post }: { post: PostData }) {
 
     if (isReposted) {
       deleteDocumentNonBlocking(userRepostRef);
-      updateDoc(postRef, { repostsCount: increment(-1) });
+      updateDocumentNonBlocking(postRef, { repostsCount: increment(-1) });
       toast({ description: "تم إزالة إعادة النشر" });
     } else {
       setDocumentNonBlocking(userRepostRef, { 
@@ -157,7 +165,7 @@ export default function PostCard({ post }: { post: PostData }) {
         originalAuthorId: post.authorId,
         postData: { ...post, createdAt: post.createdAt?.toDate ? post.createdAt.toDate().toISOString() : post.createdAt }
       }, { merge: true });
-      updateDoc(postRef, { repostsCount: increment(1) });
+      updateDocumentNonBlocking(postRef, { repostsCount: increment(1) });
       toast({ description: "تم إعادة النشر" });
       
       if (post.authorId !== user.uid) {
