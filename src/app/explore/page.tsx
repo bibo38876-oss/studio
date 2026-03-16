@@ -5,9 +5,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Input } from '@/components/ui/input';
-import { Search, TrendingUp, Users, Loader2, ArrowUpRight, Hash, ArrowRight, MessageSquare } from 'lucide-react';
-import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, limit, orderBy, where } from 'firebase/firestore';
+import { Search, TrendingUp, Users, Loader2, ArrowUpRight, MessageSquare, ArrowRight } from 'lucide-react';
+import { useFirebase, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useDoc } from '@/firebase';
+import { collection, query, limit, orderBy, where, doc, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import PostCard from '@/components/posts/PostCard';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ExplorePage() {
   const searchParams = useSearchParams();
@@ -22,6 +23,7 @@ export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const { firestore, user: currentUser, isUserLoading } = useFirebase();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
@@ -35,7 +37,7 @@ export default function ExplorePage() {
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !currentUser) return null;
-    return query(collection(firestore, 'users'), limit(50));
+    return query(collection(firestore, 'users'), limit(100));
   }, [firestore, currentUser]);
 
   const postsQuery = useMemoFirebase(() => {
@@ -45,7 +47,6 @@ export default function ExplorePage() {
 
   const hashtagResultsQuery = useMemoFirebase(() => {
     if (!firestore || !searchQuery) return null;
-    
     if (searchQuery.startsWith('#')) {
       return query(
         collection(firestore, 'posts'),
@@ -54,7 +55,6 @@ export default function ExplorePage() {
         limit(50)
       );
     }
-    
     return null;
   }, [firestore, searchQuery]);
 
@@ -62,9 +62,14 @@ export default function ExplorePage() {
   const { data: recentPosts, isLoading: isPostsLoading } = useCollection(postsQuery);
   const { data: searchPosts, isLoading: isSearching } = useCollection(hashtagResultsQuery);
 
+  const currentUserProfileRef = useMemoFirebase(() => {
+    if (!firestore || !currentUser?.uid) return null;
+    return doc(firestore, 'users', currentUser.uid);
+  }, [firestore, currentUser?.uid]);
+  const { data: currentUserProfile } = useDoc(currentUserProfileRef);
+
   const trendingTags = useMemo(() => {
     if (!recentPosts) return [];
-    
     const tagCounts: Record<string, number> = {};
     recentPosts.forEach(post => {
       if (post.hashtags && Array.isArray(post.hashtags)) {
@@ -73,7 +78,6 @@ export default function ExplorePage() {
         });
       }
     });
-
     return Object.entries(tagCounts)
       .map(([name, count]) => ({ 
         name, 
@@ -86,7 +90,9 @@ export default function ExplorePage() {
   }, [recentPosts]);
 
   const filteredUsers = useMemo(() => {
-    if (!allUsers || !searchQuery) return [];
+    if (!allUsers) return [];
+    if (!searchQuery) return allUsers.filter(u => u.id !== currentUser?.uid).slice(0, 20);
+    
     return allUsers.filter(u => 
       (u.username?.toLowerCase().includes(searchQuery.toLowerCase()) || 
        u.email?.toLowerCase().includes(searchQuery.toLowerCase())) &&
@@ -94,13 +100,34 @@ export default function ExplorePage() {
     );
   }, [allUsers, searchQuery, currentUser?.uid]);
 
-  // تصفية المنشورات نصياً إذا لم تكن بحث هاشتاج
   const textFilteredPosts = useMemo(() => {
     if (!recentPosts || !searchQuery || searchQuery.startsWith('#')) return [];
     return recentPosts.filter(p => 
       p.content?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [recentPosts, searchQuery]);
+
+  const handleFollow = (targetUserId: string, isFollowing: boolean) => {
+    if (!firestore || !currentUser) return;
+    const curUserRef = doc(firestore, 'users', currentUser.uid);
+    const targetUserRef = doc(firestore, 'users', targetUserId);
+
+    if (isFollowing) {
+      updateDoc(curUserRef, { followingIds: arrayRemove(targetUserId) });
+      updateDoc(targetUserRef, { followerIds: arrayRemove(currentUser.uid) });
+    } else {
+      updateDoc(curUserRef, { followingIds: arrayUnion(targetUserId) });
+      updateDoc(targetUserRef, { followerIds: arrayUnion(currentUser.uid) });
+      addDocumentNonBlocking(collection(firestore, 'users', targetUserId, 'notifications'), {
+        type: 'follow',
+        fromUserId: currentUser.uid,
+        fromUsername: currentUserProfile?.username || currentUser.displayName || 'مستكشف تيمقاد',
+        fromAvatar: currentUserProfile?.profilePictureUrl || '',
+        createdAt: serverTimestamp(),
+        read: false
+      });
+    }
+  };
 
   const isHashtagSearch = searchQuery.startsWith('#');
 
@@ -150,23 +177,35 @@ export default function ExplorePage() {
               <TabsContent value="users" className="mt-0">
                 {filteredUsers.length > 0 ? (
                   <div className="divide-y divide-muted">
-                    {filteredUsers.map((user) => (
-                      <div key={user.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
-                        <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12 border border-muted/20">
-                            <AvatarImage src={user.profilePictureUrl} alt={user.username} />
-                            <AvatarFallback>{user.username?.[0]}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col text-right">
-                            <div className="flex items-center gap-1.5 justify-end">
-                              <VerifiedBadge type={user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none')} size={14} />
-                              <span className="text-sm font-bold text-primary">{user.username}</span>
+                    {filteredUsers.map((u) => {
+                      const isFollowing = currentUserProfile?.followingIds?.includes(u.id);
+                      const verificationType = u.email === 'adelbenmaza8@gmail.com' ? 'blue' : (u.verificationType || 'none');
+                      return (
+                        <div key={u.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
+                          <Link href={`/profile/${u.id}`} className="flex items-center gap-3">
+                            <Avatar className="h-12 w-12 border border-muted/20">
+                              <AvatarImage src={u.profilePictureUrl} alt={u.username} />
+                              <AvatarFallback>{u.username?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col text-right">
+                              <div className="flex items-center gap-1.5 justify-end">
+                                <VerifiedBadge type={verificationType} size={14} />
+                                <span className="text-sm font-bold text-primary">{u.username}</span>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">{u.email}</span>
                             </div>
-                            <span className="text-[10px] text-muted-foreground">{user.email}</span>
-                          </div>
-                        </Link>
-                      </div>
-                    ))}
+                          </Link>
+                          <Button 
+                            size="sm" 
+                            variant={isFollowing ? "outline" : "default"} 
+                            className="h-8 rounded-full px-5 text-[10px] font-bold"
+                            onClick={() => handleFollow(u.id, !!isFollowing)}
+                          >
+                            {isFollowing ? 'متابع' : 'متابعة'}
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-20">
@@ -207,7 +246,7 @@ export default function ExplorePage() {
               </TabsTrigger>
               <TabsTrigger value="users" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold gap-2">
                 <Users size={14} />
-                أشخاص
+                أشخاص مقترحين
               </TabsTrigger>
             </TabsList>
 
@@ -248,28 +287,35 @@ export default function ExplorePage() {
 
             <TabsContent value="users" className="mt-0">
               {isUsersLoading ? (
-                <div className="flex justify-center py-20">
-                  <Loader2 className="animate-spin text-primary" />
-                </div>
-              ) : allUsers && allUsers.length > 0 ? (
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
+              ) : filteredUsers.length > 0 ? (
                 <div className="divide-y divide-muted">
-                  {allUsers.filter(u => u.id !== currentUser?.uid).slice(0, 20).map((user) => {
-                    const verificationType = user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none');
+                  {filteredUsers.map((u) => {
+                    const isFollowing = currentUserProfile?.followingIds?.includes(u.id);
+                    const verificationType = u.email === 'adelbenmaza8@gmail.com' ? 'blue' : (u.verificationType || 'none');
                     return (
-                      <div key={user.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
-                        <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
+                      <div key={u.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
+                        <Link href={`/profile/${u.id}`} className="flex items-center gap-3">
                           <Avatar className="h-12 w-12 border border-muted/20">
-                            <AvatarImage src={user.profilePictureUrl} alt={user.username} />
-                            <AvatarFallback>{user.username?.[0]}</AvatarFallback>
+                            <AvatarImage src={u.profilePictureUrl} alt={u.username} />
+                            <AvatarFallback>{u.username?.[0]}</AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col text-right">
                             <div className="flex items-center gap-1.5 leading-tight justify-end">
                               <VerifiedBadge type={verificationType} size={14} />
-                              <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
+                              <span className="text-sm font-bold text-primary">{u.username}</span>
                             </div>
-                            <span className="text-[10px] text-muted-foreground">{user.email}</span>
+                            <span className="text-[10px] text-muted-foreground">{u.email}</span>
                           </div>
                         </Link>
+                        <Button 
+                          size="sm" 
+                          variant={isFollowing ? "outline" : "default"} 
+                          className="h-8 rounded-full px-5 text-[10px] font-bold"
+                          onClick={() => handleFollow(u.id, !!isFollowing)}
+                        >
+                          {isFollowing ? 'متابع' : 'متابعة'}
+                        </Button>
                       </div>
                     );
                   })}

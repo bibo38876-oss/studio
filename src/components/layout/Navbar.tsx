@@ -54,7 +54,7 @@ export default function Navbar() {
               />
             </button>
             <input 
-              placeholder="بحث في تيمقاد..." 
+              placeholder="بحث عن أشخاص أو وسم..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={`h-6 w-full pe-8 ps-4 bg-secondary/50 border-none rounded-full text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/20 focus:bg-secondary transition-all ${isSearchFocused ? 'shadow-sm' : ''}`}
