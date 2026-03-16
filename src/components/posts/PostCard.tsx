@@ -150,7 +150,8 @@ export default function PostCard({ post }: { post: PostData }) {
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { interactedAuthorIds: arrayUnion(displayPost.authorId) });
 
       if (user.uid !== displayPost.authorId) {
-        updateDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_like_${displayPost.id}`), {
+        // استخدام setDocumentNonBlocking مع merge لتجنب أخطاء الصلاحيات والتحقق من الوجود
+        setDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_like_${displayPost.id}`), {
           type: 'like',
           fromUserId: user.uid,
           fromUsername: user.displayName || 'مستكشف تيمقاد',
@@ -158,7 +159,7 @@ export default function PostCard({ post }: { post: PostData }) {
           postId: displayPost.id,
           createdAt: serverTimestamp(),
           read: false
-        });
+        }, { merge: true });
       }
     }
   };
@@ -176,7 +177,7 @@ export default function PostCard({ post }: { post: PostData }) {
       toast({ description: "تمت إعادة النشر بنجاح." });
       
       if (user.uid !== displayPost.authorId) {
-        updateDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_repost_${displayPost.id}`), {
+        setDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_repost_${displayPost.id}`), {
           type: 'repost',
           fromUserId: user.uid,
           fromUsername: user.displayName || 'مستكشف تيمقاد',
@@ -184,7 +185,7 @@ export default function PostCard({ post }: { post: PostData }) {
           postId: displayPost.id,
           createdAt: serverTimestamp(),
           read: false
-        });
+        }, { merge: true });
       }
     }
   };
@@ -226,7 +227,6 @@ export default function PostCard({ post }: { post: PostData }) {
     );
   };
 
-  // الأولوية لبيانات المؤلف في الوقت الفعلي، ثم ما تم تخزينه في المنشور
   const verificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
 
   return (

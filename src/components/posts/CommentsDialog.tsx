@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -84,7 +84,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     });
 
     if (user.uid !== postAuthorId) {
-      addDocumentNonBlocking(collection(firestore, 'users', postAuthorId, 'notifications'), {
+      // استخدام setDocumentNonBlocking مع معرف فريد لضمان عدم تكرار إشعارات التعليق من نفس المستخدم على نفس المنشور بسرعة
+      setDocumentNonBlocking(doc(firestore, 'users', postAuthorId, 'notifications', `${user.uid}_comment_${Date.now()}`), {
         type: 'comment',
         fromUserId: user.uid,
         fromUsername: profile?.username || user.displayName || 'مستخدم تواصل',
@@ -92,7 +93,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
         postId: postId,
         createdAt: serverTimestamp(),
         read: false
-      });
+      }, { merge: true });
     }
   };
 
