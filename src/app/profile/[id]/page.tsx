@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Repeat, UserRoundPlus, ShieldCheck } from 'lucide-react';
+import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Repeat, UserRoundPlus, ShieldCheck, Coffee } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -130,7 +130,6 @@ export default function ProfilePage() {
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
   const isFollowingMe = (profile?.followingIds || []).includes(currentUser?.uid);
   
-  // الاعتماد على نوع التوثيق المخزن في قاعدة البيانات حصراً
   const verificationType: VerificationType = profile?.verificationType || 'none';
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
@@ -262,7 +261,16 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="pt-12">
+              <div className="pt-12 flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full h-8 w-8 border border-muted hover:bg-secondary transition-all"
+                  onClick={() => toast({ title: "ميزة قيد التطوير", description: "قريبا" })}
+                >
+                  <Coffee size={16} className="text-primary" />
+                </Button>
+
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogTrigger asChild><Button variant="outline" className="rounded-full gap-2 font-bold h-8 text-[11px] px-6">تعديل الملف</Button></DialogTrigger>
