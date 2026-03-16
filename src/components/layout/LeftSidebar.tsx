@@ -2,7 +2,7 @@
 "use client"
 
 import Link from 'next/link';
-import { Compass, Bookmark, Settings, MessageSquare, Loader2 } from 'lucide-react';
+import { Compass, Settings, MessageSquare, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
@@ -58,8 +58,7 @@ export default function LeftSidebar() {
       <div className="bg-card rounded-none p-1 space-y-0.5">
         {[
           { icon: <Compass size={18} />, label: 'استكشف', path: '/explore' },
-          { icon: <MessageSquare size={18} />, label: 'الرسائل', path: '/messages' },
-          { icon: <Bookmark size={18} />, label: 'العلامات المرجعية', path: '/bookmarks' },
+          { icon: <MessageSquare size={18} />, label: 'المجموعات', path: '/groups' },
           { icon: <Settings size={18} />, label: 'الإعدادات', path: '/settings' },
         ].map((item, i) => (
           <Link 

@@ -9,20 +9,14 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // FORCE_DEPLOY_FINAL_SYNC_108 - تحديث شامل للصلاحيات
-
     match /posts/{postId} {
-      // السماح بالقراءة الفردية والاستعلام للجميع (الزوار والمسجلين)
       allow get, list: if true;
-      
-      // السماح بإنشاء المنشورات فقط للمسجلين
       allow create: if isSignedIn();
-      
-      // السماح بالتعديل والحذف لصاحب المنشور، أو تعديل عدادات التفاعل للجميع المسجلين
-      allow update, delete: if isSignedIn() && (
+      allow update: if isSignedIn() && (
         resource.data.authorId == request.auth.uid || 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount', 'commentsCount'])
       );
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
 
       match /likes/{userId} {
         allow get, list: if true;
@@ -32,24 +26,16 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow get, list: if true;
         allow create: if isSignedIn();
+        allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
       }
     }
 
     match /users/{userId} {
-      // الملفات الشخصية عامة للقراءة
       allow get, list: if true;
-      
-      // التعديل فقط لصاحب الحساب
       allow write: if isOwner(userId);
-      
-      // السماح بالتحديث لجميع المسجلين لدعم نظام المتابعة
       allow update: if isSignedIn();
       
       match /notifications/{notifId} {
-        allow get, list, write: if isOwner(userId);
-      }
-      
-      match /bookmarks/{postId} {
         allow get, list, write: if isOwner(userId);
       }
 

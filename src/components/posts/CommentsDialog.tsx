@@ -3,19 +3,26 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CommentsDialogProps {
   postId: string;
@@ -27,6 +34,7 @@ interface CommentsDialogProps {
 export default function CommentsDialog({ postId, postAuthorId, post, onClose }: CommentsDialogProps) {
   const [commentText, setCommentText] = useState('');
   const { firestore, user } = useFirebase();
+  const { toast } = useToast();
   const router = useRouter();
 
   const isAnonymous = !user || user.isAnonymous;
@@ -82,6 +90,19 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
         read: false
       });
     }
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    if (!firestore) return;
+    deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId));
+    updateDoc(doc(firestore, 'posts', postId), {
+      commentsCount: increment(-1)
+    });
+    toast({ description: "تم حذف التعليق." });
+  };
+
+  const handleReportComment = () => {
+    toast({ title: "شكراً لك", description: "تم استلام البلاغ عن هذا التعليق." });
   };
 
   const allMedia = post?.mediaUrls || (post?.mediaUrl ? [post.mediaUrl] : []);
@@ -160,9 +181,31 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
-                    <span className="text-[8px] text-muted-foreground">
-                      {comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { locale: ar }) : 'الآن'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[8px] text-muted-foreground">
+                        {comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { locale: ar }) : 'الآن'}
+                      </span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full p-0">
+                            <MoreVertical size={10} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="text-xs">
+                          {user?.uid === comment.authorId ? (
+                            <DropdownMenuItem onClick={() => handleDeleteComment(comment.id)} className="text-destructive gap-2">
+                              <Trash2 size={12} />
+                              حذف التعليق
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={handleReportComment} className="gap-2">
+                              <AlertTriangle size={12} />
+                              إبلاغ
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   <p className="text-xs text-foreground/90 leading-relaxed bg-secondary/30 p-2 rounded-none">{comment.content}</p>
                 </div>

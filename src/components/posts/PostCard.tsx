@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Bookmark } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Trash2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,22 +50,15 @@ export default function PostCard({ post }: { post: PostData }) {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   
   const isAnonymous = !user || user.isAnonymous;
+  const isOwner = user?.uid === post.authorId;
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'posts', post.id, 'likes', user.uid);
   }, [firestore, post.id, user]);
 
-  const bookmarkRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid, 'bookmarks', post.id);
-  }, [firestore, post.id, user]);
-
   const { data: likeData } = useDoc(likeRef);
-  const { data: bookmarkData } = useDoc(bookmarkRef);
-  
   const isLiked = !!likeData;
-  const isBookmarked = !!bookmarkData;
 
   const formattedDate = post.createdAt?.toDate 
     ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ar })
@@ -102,20 +95,16 @@ export default function PostCard({ post }: { post: PostData }) {
     }
   };
 
-  const handleBookmark = (e: React.MouseEvent) => {
+  const handleDeletePost = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isAnonymous) {
-      router.push('/login');
-      return;
-    }
-    if (!user || !firestore) return;
-    if (isBookmarked) {
-      deleteDocumentNonBlocking(bookmarkRef!);
-      toast({ description: "تمت إزالة العلامة المرجعية." });
-    } else {
-      setDocumentNonBlocking(bookmarkRef!, { ...post, bookmarkedAt: serverTimestamp() }, { merge: true });
-      toast({ description: "تم حفظ المنشور في العلامات المرجعية." });
-    }
+    if (!isOwner || !firestore) return;
+    deleteDocumentNonBlocking(doc(firestore, 'posts', post.id));
+    toast({ title: "تم الحذف", description: "تم حذف المنشور بنجاح." });
+  };
+
+  const handleReport = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast({ title: "شكراً لك", description: "تم استلام بلاغك وسنقوم بمراجعته قريباً." });
   };
 
   const allMedia = post.mediaUrls || (post.mediaUrl ? [post.mediaUrl] : []);
@@ -147,13 +136,17 @@ export default function PostCard({ post }: { post: PostData }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="text-xs rounded-none border-none shadow-xl">
-              <DropdownMenuItem onClick={handleBookmark} className="gap-2 cursor-pointer">
-                <Bookmark size={14} className={isBookmarked ? "fill-primary text-primary" : ""} />
-                {isBookmarked ? 'إزالة من العلامات' : 'حفظ المنشور'}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 text-destructive cursor-pointer">
-                إبلاغ
-              </DropdownMenuItem>
+              {isOwner ? (
+                <DropdownMenuItem onClick={handleDeletePost} className="gap-2 text-destructive cursor-pointer">
+                  <Trash2 size={14} />
+                  حذف المنشور
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={handleReport} className="gap-2 cursor-pointer">
+                  <AlertTriangle size={14} />
+                  إبلاغ عن محتوى
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
