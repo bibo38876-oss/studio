@@ -9,7 +9,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == 'adelbenmaza8@gmail.com');
+      return isSignedIn() && (
+        request.auth.token.email == 'adelbenmaza8@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
     }
 
     match /posts/{postId} {
@@ -42,12 +46,10 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, get: if isSignedIn();
       allow write: if isOwner(userId) || isAdmin();
-      allow update: if isSignedIn();
+      allow update: if isSignedIn() && (isOwner(userId) || isAdmin());
       
       match /notifications/{notifId} {
-        // السماح بالإنشاء لأي مستخدم مسجل (لإرسال إشعار)
         allow create: if isSignedIn();
-        // السماح بالقراءة والتحديث والحذف فقط لصاحب الحساب أو المسؤول
         allow read, update, delete: if isOwner(userId) || isAdmin();
       }
 
