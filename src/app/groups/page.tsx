@@ -1,11 +1,11 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, where, doc, arrayUnion } from 'firebase/firestore';
-import { Loader2, Plus, MessageSquare, Users, ChevronLeft, Check, X, Bell } from 'lucide-react';
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp, where, doc, arrayUnion, arrayRemove, limit, updateDoc } from 'firebase/firestore';
+import { Loader2, Plus, MessageSquare, Users, ChevronLeft, Check, X, Bell, UserPlus, UserCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
@@ -13,6 +13,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import VerifiedBadge from '@/components/ui/VerifiedBadge';
 
 export default function GroupsPage() {
   const { firestore, user } = useFirebase();
@@ -21,6 +23,8 @@ export default function GroupsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupDesc, setGroupDesc] = useState('');
+
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
   // جلب المجموعات التي يملكها المستخدم
   const myGroupsQuery = useMemoFirebase(() => {
@@ -40,11 +44,40 @@ export default function GroupsPage() {
     return query(collection(firestore, 'users', user.uid, 'groupInvites'), where('status', '==', 'pending'));
   }, [firestore, user]);
 
+  // جلب مستخدمين للاقتراحات (خوارزمية العدالة)
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'users'), limit(30));
+  }, [firestore]);
+
   const { data: myGroups, isLoading: isMyGroupsLoading } = useCollection(myGroupsQuery);
   const { data: joinedGroups, isLoading: isJoinedLoading } = useCollection(joinedGroupsQuery);
   const { data: invites, isLoading: isInvitesLoading } = useCollection(invitesQuery);
+  const { data: allUsers, isLoading: isUsersLoading } = useCollection(usersQuery);
+
+  const currentUserProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  const { data: currentUserProfile } = useDoc(currentUserProfileRef);
 
   const hasGroup = myGroups && myGroups.length > 0;
+
+  // خوارزمية الاقتراحات الذكية والعادلة
+  const suggestedUsers = useMemo(() => {
+    if (!allUsers || !user) return [];
+    
+    const others = allUsers.filter(u => u.id !== user.uid);
+    const adminAccount = others.find(u => u.email === ADMIN_EMAIL);
+    const restOfUsers = others.filter(u => u.email !== ADMIN_EMAIL);
+    
+    // خلط بقية المستخدمين لضمان العدالة في الظهور
+    const shuffledRest = [...restOfUsers].sort(() => Math.random() - 0.5);
+    
+    // الإدارة أولاً ثم البقية بشكل عشوائي
+    const result = adminAccount ? [adminAccount, ...shuffledRest] : shuffledRest;
+    return result.slice(0, 10);
+  }, [allUsers, user?.uid]);
 
   const handleCreateGroup = () => {
     if (!user || user.isAnonymous) {
@@ -75,13 +108,11 @@ export default function GroupsPage() {
   const handleAcceptInvite = (invite: any) => {
     if (!firestore || !user) return;
 
-    // إضافة العضو للمجموعة
     updateDocumentNonBlocking(doc(firestore, 'groups', invite.groupId), {
       members: arrayUnion(user.uid),
       membersCount: (invite.currentMembersCount || 0) + 1
     });
 
-    // تحديث حالة الدعوة
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid, 'groupInvites', invite.id), {
       status: 'accepted'
     });
@@ -93,6 +124,29 @@ export default function GroupsPage() {
     if (!firestore || !user) return;
     deleteDocumentNonBlocking(doc(firestore, 'users', user.uid, 'groupInvites', inviteId));
     toast({ description: "تم رفض الدعوة." });
+  };
+
+  const handleFollow = (targetId: string, isFollowing: boolean) => {
+    if (!firestore || !user) return;
+    const curUserRef = doc(firestore, 'users', user.uid);
+    const targetUserRef = doc(firestore, 'users', targetId);
+
+    if (isFollowing) {
+      updateDoc(curUserRef, { followingIds: arrayRemove(targetId) });
+      updateDoc(targetUserRef, { followerIds: arrayRemove(user.uid) });
+    } else {
+      updateDoc(curUserRef, { followingIds: arrayUnion(targetId) });
+      updateDoc(targetUserRef, { followerIds: arrayUnion(user.uid) });
+      
+      addDocumentNonBlocking(collection(firestore, 'users', targetId, 'notifications'), {
+        type: 'follow',
+        fromUserId: user.uid,
+        fromUsername: currentUserProfile?.username || user.displayName || 'مستكشف تيمقاد',
+        fromAvatar: currentUserProfile?.profilePictureUrl || '',
+        createdAt: serverTimestamp(),
+        read: false
+      });
+    }
   };
 
   return (
@@ -167,6 +221,53 @@ export default function GroupsPage() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* قسم الاقتراحات العادلة والذكية */}
+        {!isUsersLoading && suggestedUsers.length > 0 && (
+          <div className="bg-card border-b py-6 px-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles size={14} className="text-accent" />
+                <h2 className="text-xs font-bold text-primary uppercase tracking-tight">اكتشف أشخاصاً جدد</h2>
+              </div>
+              <span className="text-[8px] text-muted-foreground font-medium">خوارزمية العدالة الذكية</span>
+            </div>
+            
+            <div className="flex overflow-x-auto gap-3 pb-2 no-scrollbar scroll-smooth">
+              {suggestedUsers.map((u) => {
+                const isFollowing = currentUserProfile?.followingIds?.includes(u.id);
+                const isManagement = u.email === ADMIN_EMAIL;
+                
+                return (
+                  <div key={u.id} className="flex flex-col items-center gap-2 min-w-[110px] p-3 bg-secondary/20 rounded-none border border-transparent hover:border-primary/10 transition-all group">
+                    <Link href={`/profile/${u.id}`} className="relative">
+                      <Avatar className="h-14 w-14 border-2 border-background shadow-sm group-hover:scale-105 transition-transform">
+                        <AvatarImage src={u.profilePictureUrl} />
+                        <AvatarFallback>{u.username?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1 -right-1">
+                        <VerifiedBadge type={isManagement ? 'blue' : (u.verificationType || 'none')} size={14} />
+                      </div>
+                    </Link>
+                    <div className="flex flex-col items-center text-center gap-0.5">
+                      <span className="text-[10px] font-bold text-primary truncate max-w-[90px]">{u.username}</span>
+                      <span className="text-[7px] text-muted-foreground truncate max-w-[90px]">@{u.email?.split('@')[0]}</span>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant={isFollowing ? "outline" : "default"} 
+                      className="h-6 w-full text-[8px] font-bold rounded-full px-0"
+                      onClick={() => handleFollow(u.id, !!isFollowing)}
+                    >
+                      {isFollowing ? <UserCheck size={10} className="ml-1" /> : <UserPlus size={10} className="ml-1" />}
+                      {isFollowing ? 'متابع' : 'متابعة'}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
