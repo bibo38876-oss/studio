@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from 'react';
@@ -174,6 +175,25 @@ export default function PostCard({ post }: { post: PostData }) {
     toast({ title: "تم النسخ", description: "تم نسخ رابط المنشور إلى الحافظة." });
   };
 
+  const renderContent = (content: string) => {
+    if (!content) return null;
+    return content.split(/(\s+)/).map((part, i) => {
+      if (part.startsWith('#')) {
+        return (
+          <Link 
+            key={i} 
+            href={`/explore?q=${encodeURIComponent(part)}`}
+            className="text-accent font-bold hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </Link>
+        );
+      }
+      return part;
+    });
+  };
+
   const allMedia = post.mediaUrls || (post.mediaUrl ? [post.mediaUrl] : []);
 
   return (
@@ -228,7 +248,7 @@ export default function PostCard({ post }: { post: PostData }) {
         <CardContent className="px-0 py-0">
           {post.content && (
             <p className="px-3 py-2 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight">
-              {post.content}
+              {renderContent(post.content)}
             </p>
           )}
           
