@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import PostCard from '@/components/posts/PostCard';
@@ -11,14 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, MapPin, Edit3, Settings, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
-import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, orderBy } from 'firebase/firestore';
+import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
 
 export default function ProfilePage() {
   const params = useParams();
   const id = params?.id as string;
+  const router = useRouter();
   
   const { firestore, user: currentUser } = useFirebase();
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -46,6 +47,7 @@ export default function ProfilePage() {
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
 
   const isOwnProfile = currentUser?.uid === id;
+  const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
 
   const handleUpdateProfile = () => {
     if (!firestore || !currentUser) return;
@@ -54,6 +56,25 @@ export default function ProfilePage() {
       bio: editBio || profile?.bio
     });
     setIsEditOpen(false);
+  };
+
+  const handleFollow = () => {
+    if (!currentUser || currentUser.isAnonymous) {
+      router.push('/login');
+      return;
+    }
+    if (!firestore || !profile || isOwnProfile) return;
+
+    const currentUserRef = doc(firestore, 'users', currentUser.uid);
+    const targetUserRef = doc(firestore, 'users', id);
+
+    if (isFollowing) {
+      updateDoc(currentUserRef, { followingIds: arrayRemove(id) });
+      updateDoc(targetUserRef, { followerIds: arrayRemove(currentUser.uid) });
+    } else {
+      updateDoc(currentUserRef, { followingIds: arrayUnion(id) });
+      updateDoc(targetUserRef, { followerIds: arrayUnion(currentUser.uid) });
+    }
   };
 
   if (isProfileLoading) {
@@ -76,7 +97,6 @@ export default function ProfilePage() {
       <Navbar />
       
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
-        {/* Header Profile Section */}
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
             {isOwnProfile && (
@@ -87,7 +107,7 @@ export default function ProfilePage() {
           </div>
           <div className="px-4 pb-6 relative">
             <div className="flex justify-between items-end -mt-10 mb-4">
-              <Avatar className="h-20 w-20 border-4 border-card bg-background">
+              <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-none">
                 <AvatarImage src={profile.profilePictureUrl} alt={profile.username} />
                 <AvatarFallback>{profile.username?.[0]}</AvatarFallback>
               </Avatar>
@@ -123,7 +143,14 @@ export default function ProfilePage() {
                     </DialogContent>
                   </Dialog>
                 ) : (
-                  <Button className="rounded-full px-6 bg-primary text-white font-bold h-8 text-[11px]">متابعة</Button>
+                  <Button 
+                    onClick={handleFollow}
+                    variant={isFollowing ? "outline" : "default"}
+                    className={`rounded-full px-6 font-bold h-8 text-[11px] gap-2 ${isFollowing ? 'border-primary text-primary' : 'bg-primary text-white'}`}
+                  >
+                    {isFollowing ? <UserCheck size={12} /> : <UserPlus size={12} />}
+                    {isFollowing ? 'متابع' : 'متابعة'}
+                  </Button>
                 )}
               </div>
             </div>
@@ -149,7 +176,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Tabs for content */}
         <Tabs defaultValue="posts" className="w-full">
           <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0 mb-0.5 sticky top-7 z-40 bg-background/80 backdrop-blur-md">
             <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold h-full">المنشورات</TabsTrigger>

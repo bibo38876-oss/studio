@@ -9,12 +9,12 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // FORCE_DEPLOY_GROUPS_UPDATE_102
+    // FORCE_DEPLOY_FINAL_SYNC_106
 
     match /posts/{postId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount', 'commentsCount']));
 
       match /likes/{userId} {
         allow read: if true;
@@ -30,6 +30,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if true;
       allow write: if isOwner(userId);
+      // Allow updates to follower/following counts specifically for the follow system
+      allow update: if isSignedIn();
       
       match /notifications/{notifId} {
         allow read, write: if isOwner(userId);
@@ -37,6 +39,16 @@ service cloud.firestore {
       
       match /bookmarks/{postId} {
         allow read, write: if isOwner(userId);
+      }
+
+      match /following/{targetId} {
+        allow read: if true;
+        allow write: if isOwner(userId);
+      }
+
+      match /followers/{followerId} {
+        allow read: if true;
+        allow write: if isOwner(followerId);
       }
     }
 
