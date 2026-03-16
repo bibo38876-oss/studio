@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, Image as ImageIcon, Lock, Heart, Repeat, UserRoundPlus, ShieldCheck } from 'lucide-react';
+import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Repeat, UserRoundPlus, ShieldCheck } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -207,6 +207,19 @@ export default function ProfilePage() {
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-32 bg-primary/10 relative">
             {profile.bannerUrl && <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover" />}
+            
+            {/* أيقونة الإدارة للمسؤول */}
+            {currentUser?.email === ADMIN_EMAIL && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2 h-7 w-7 rounded-full bg-accent/20 text-accent backdrop-blur-sm hover:bg-accent/40 border border-accent/30 z-10" 
+                onClick={() => router.push('/admin')}
+              >
+                <ShieldCheck size={14} />
+              </Button>
+            )}
+
             <div className="absolute top-2 left-2 flex gap-2">
               <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
                 <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20"><Share size={14} /></Button></DialogTrigger>
@@ -232,18 +245,6 @@ export default function ProfilePage() {
                 </DialogContent>
               </Dialog>
               {isOwnProfile && <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20" onClick={() => router.push('/settings')}><Settings size={14} /></Button>}
-              
-              {/* Admin Management Icon in Corner */}
-              {currentUser?.email === ADMIN_EMAIL && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7 rounded-full bg-accent/20 text-accent backdrop-blur-sm hover:bg-accent/40 border border-accent/30" 
-                  onClick={() => router.push('/admin')}
-                >
-                  <ShieldCheck size={14} />
-                </Button>
-              )}
             </div>
           </div>
 

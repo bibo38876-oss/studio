@@ -13,9 +13,10 @@
         "profilePictureUrl": { "type": "string", "format": "uri" },
         "bannerUrl": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "lastPollCreatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last poll created by the user." },
+        "lastPollCreatedAt": { "type": "string", "format": "date-time" },
         "followingIds": { "type": "array", "items": { "type": "string" } },
         "followerIds": { "type": "array", "items": { "type": "string" } },
+        "interactedAuthorIds": { "type": "array", "items": { "type": "string" }, "description": "List of author UIDs this user has interacted with for recommendation scoring." },
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["user", "admin"] },
         "verificationType": { "type": "string", "enum": ["none", "blue", "gold"] },
@@ -56,12 +57,25 @@
         },
         "createdAt": { "type": "string", "format": "date-time" },
         "hashtags": { "type": "array", "items": { "type": "string" } },
-        "likesCount": { "type": "number" },
-        "commentsCount": { "type": "number" },
-        "repostsCount": { "type": "number" },
-        "viewsCount": { "type": "number" }
+        "likesCount": { "type": "number", "default": 0 },
+        "commentsCount": { "type": "number", "default": 0 },
+        "repostsCount": { "type": "number", "default": 0 },
+        "viewsCount": { "type": "number", "default": 0 }
       },
       "required": ["id", "authorId", "content", "createdAt"]
+    },
+    "Report": {
+      "title": "Report",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "reporterId": { "type": "string" },
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["post", "user"] },
+        "reason": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "resolved"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -71,7 +85,10 @@
     "structure": [
       { "path": "users/{userId}", "definition": { "entityName": "User" } },
       { "path": "posts/{postId}", "definition": { "entityName": "Post" } },
-      { "path": "posts/{postId}/pollVotes/{userId}", "description": "Stores individual user votes for a poll." }
+      { "path": "posts/{postId}/likes/{userId}", "description": "Users who liked this post." },
+      { "path": "posts/{postId}/comments/{commentId}", "description": "Comments on this post." },
+      { "path": "posts/{postId}/pollVotes/{userId}", "description": "Individual votes for polls." },
+      { "path": "reports/{reportId}", "definition": { "entityName": "Report" } }
     ]
   }
 }

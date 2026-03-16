@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, increment, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { doc, increment, serverTimestamp, runTransaction, arrayUnion, collection, addDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -134,6 +134,62 @@ export default function PostCard({ post }: { post: PostData }) {
     }
   };
 
+  const handleLike = () => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !user || !displayPost.id) return;
+
+    if (likeData) {
+      deleteDocumentNonBlocking(likeRef!);
+      updateDocumentNonBlocking(postRef!, { likesCount: increment(-1) });
+      deleteDocumentNonBlocking(doc(firestore, 'users', user.uid, 'likedPosts', displayPost.id));
+    } else {
+      setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
+      updateDocumentNonBlocking(postRef!, { likesCount: increment(1) });
+      setDocumentNonBlocking(doc(firestore, 'users', user.uid, 'likedPosts', displayPost.id), { ...displayPost, likedAt: serverTimestamp() }, { merge: true });
+      
+      // تحديث اهتمامات المستخدم للخوارزمية
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { interactedAuthorIds: arrayUnion(displayPost.authorId) });
+
+      if (user.uid !== displayPost.authorId) {
+        updateDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_like_${displayPost.id}`), {
+          type: 'like',
+          fromUserId: user.uid,
+          fromUsername: user.displayName || 'مستكشف تيمقاد',
+          fromAvatar: user.photoURL || '',
+          postId: displayPost.id,
+          createdAt: serverTimestamp(),
+          read: false
+        });
+      }
+    }
+  };
+
+  const handleRepost = () => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !user || !displayPost.id) return;
+
+    if (repostData) {
+      deleteDocumentNonBlocking(repostRef!);
+      updateDocumentNonBlocking(postRef!, { repostsCount: increment(-1) });
+    } else {
+      setDocumentNonBlocking(repostRef!, { postData: displayPost, repostedAt: serverTimestamp() }, { merge: true });
+      updateDocumentNonBlocking(postRef!, { repostsCount: increment(1) });
+      toast({ description: "تمت إعادة النشر بنجاح." });
+      
+      if (user.uid !== displayPost.authorId) {
+        updateDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId, 'notifications', `${user.uid}_repost_${displayPost.id}`), {
+          type: 'repost',
+          fromUserId: user.uid,
+          fromUsername: user.displayName || 'مستكشف تيمقاد',
+          fromAvatar: user.photoURL || '',
+          postId: displayPost.id,
+          createdAt: serverTimestamp(),
+          read: false
+        });
+      }
+    }
+  };
+
   const renderContent = (content: string) => {
     if (!content) return null;
     const isLong = content.length > 250;
@@ -158,7 +214,6 @@ export default function PostCard({ post }: { post: PostData }) {
   return (
     <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
       <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
-        {/* Actions Button (More) on the LEFT (Twitter RTL style) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="text-xs">
@@ -167,7 +222,6 @@ export default function PostCard({ post }: { post: PostData }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* User Info on the RIGHT (Badge then Name) */}
         <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
           <div className="flex flex-col text-right">
             <div className="flex items-center gap-1.5 leading-tight justify-end">
@@ -176,7 +230,10 @@ export default function PostCard({ post }: { post: PostData }) {
             </div>
             <span className="text-[9px] text-muted-foreground">{displayPost.createdAt?.toDate ? formatDistanceToNow(displayPost.createdAt.toDate(), { addSuffix: true, locale: ar }) : 'الآن'}</span>
           </div>
-          <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5"><AvatarImage src={displayPost.authorAvatar} /><AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0]}</AvatarFallback></Avatar>
+          <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5">
+            <AvatarImage src={displayPost.authorAvatar} />
+            <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0]}</AvatarFallback>
+          </Avatar>
         </Link>
       </CardHeader>
       
@@ -231,13 +288,13 @@ export default function PostCard({ post }: { post: PostData }) {
       </CardContent>
 
       <CardFooter className="px-4 py-1 flex flex-row justify-between items-center h-9">
-        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); }}>
+        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }}>
           <Heart size={16} className={cn(likeData ? "fill-current" : "")} /><span className="text-[10px] font-bold">{displayPost.likesCount || 0}</span>
         </Button>
         <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
           <MessageCircle size={16} /><span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
         </Button>
-        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", repostData ? "text-green-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); }}>
+        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", repostData ? "text-green-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleRepost(); }}>
           <Repeat size={16} /><span className="text-[10px] font-bold">{displayPost.repostsCount || 0}</span>
         </Button>
         <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => e.stopPropagation()}>

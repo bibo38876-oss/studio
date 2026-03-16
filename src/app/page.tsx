@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import LeftSidebar from '@/components/layout/LeftSidebar';
@@ -9,13 +9,13 @@ import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, where } from 'firebase/firestore';
-import { Loader2, LayoutGrid, Users } from 'lucide-react';
+import { collection, query, orderBy, doc, where, limit } from 'firebase/firestore';
+import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('for-you');
   const router = useRouter();
 
   useEffect(() => {
@@ -31,22 +31,64 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  const allPostsQuery = useMemoFirebase(() => {
+  // جلب مجموعة كبيرة من المنشورات لفرزها بالخوارزمية
+  const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
+    return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
   }, [firestore, user?.uid]);
+
+  const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 10)),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(50)
     );
   }, [firestore, user?.uid, profile?.followingIds]);
 
-  const { data: allPosts, isLoading: isAllLoading } = useCollection(allPostsQuery);
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
+
+  // تطبيق خوارزمية التوصيات
+  const recommendedPosts = useMemo(() => {
+    if (!postsPool || !profile) return [];
+
+    return [...postsPool].map(post => {
+      let score = 0;
+      
+      // 1. التفاعل العضوي
+      score += (post.likesCount || 0) * 3;
+      score += (post.commentsCount || 0) * 5;
+
+      // 2. المتابعة (Boost)
+      if (profile.followingIds?.includes(post.authorId)) {
+        score += 20;
+      }
+
+      // 3. الحداثة (Recency Score)
+      const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
+      const postAgeMs = Date.now() - postDate.getTime();
+      const oneHour = 3600000;
+      const oneDay = 86400000;
+
+      if (postAgeMs < oneHour) {
+        score += 30;
+      } else if (postAgeMs < oneDay) {
+        score += 15;
+      } else {
+        score += 5;
+      }
+
+      // 4. الاهتمام الشخصي (تفاعل سابق مع الكاتب)
+      if (profile.interactedAuthorIds?.includes(post.authorId)) {
+        score += 25;
+      }
+
+      return { ...post, recommendationScore: score };
+    }).sort((a, b) => b.recommendationScore - a.recommendationScore);
+  }, [postsPool, profile]);
 
   if (isUserLoading || !user) {
     return (
@@ -66,36 +108,37 @@ export default function Home() {
         </div>
 
         <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto">
-          <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="w-full bg-background border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-8 z-40">
+          <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
+            <TabsList className="w-full bg-background/80 backdrop-blur-md border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-8 z-40">
               <TabsTrigger 
-                value="all" 
+                value="for-you" 
                 className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2"
               >
-                <LayoutGrid size={16} />
-                عام
+                <Sparkles size={14} className={activeTab === 'for-you' ? 'text-primary' : ''} />
+                لك (خوارزمية)
               </TabsTrigger>
               <TabsTrigger 
                 value="following" 
                 className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2"
               >
-                <Users size={16} />
+                <Users size={14} className={activeTab === 'following' ? 'text-primary' : ''} />
                 أتابعهم
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all" className="mt-0">
-              {isAllLoading ? (
+            <TabsContent value="for-you" className="mt-0">
+              {isPoolLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <p className="text-[10px] text-muted-foreground animate-pulse">جاري تحضير التوصيات المخصصة لك...</p>
                 </div>
-              ) : allPosts && allPosts.length > 0 ? (
+              ) : recommendedPosts.length > 0 ? (
                 <div className="flex flex-col">
-                  {allPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
+                  {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
                 </div>
               ) : (
                 <div className="text-center py-20 bg-card border-b">
-                  <p className="text-muted-foreground text-xs font-medium">لا توجد منشورات بعد.</p>
+                  <p className="text-muted-foreground text-xs font-medium">لا توجد منشورات كافية للتوصية بها حالياً.</p>
                 </div>
               )}
             </TabsContent>
