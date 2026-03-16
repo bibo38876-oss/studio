@@ -17,6 +17,7 @@ export default function OnboardingPage() {
   const { firestore, user: currentUser, isUserLoading } = useFirebase();
   const router = useRouter();
   const [followedCount, setFollowedCount] = useState(0);
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
@@ -24,7 +25,7 @@ export default function OnboardingPage() {
     }
   }, [currentUser, isUserLoading, router]);
 
-  // جلب أفضل الحسابات (المسؤولين والموثقين)
+  // جلب مجموعة من الحسابات المقترحة
   const suggestionsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'users'), limit(50));
@@ -39,7 +40,25 @@ export default function OnboardingPage() {
   
   const { data: profile } = useDoc(currentUserRef);
 
-  // تحديث عدد المتابعات محلياً عند تغير البروفايل
+  // خوارزمية عرض الحسابات: الإدارة أولاً ثم البقية بشكل عشوائي (عدالة التوزيع)
+  const displayUsers = useMemo(() => {
+    if (!allUsers || !currentUser) return [];
+    
+    // 1. استثناء المستخدم الحالي
+    const others = allUsers.filter(u => u.id !== currentUser.uid);
+    
+    // 2. فصل حساب الإدارة
+    const adminAccount = others.find(u => u.email === ADMIN_EMAIL);
+    const restOfUsers = others.filter(u => u.email !== ADMIN_EMAIL);
+    
+    // 3. خلط (Shuffle) باقي المستخدمين لضمان العدالة
+    const shuffledRest = [...restOfUsers].sort(() => Math.random() - 0.5);
+    
+    // 4. وضع الإدارة في القمة ثم البقية
+    return adminAccount ? [adminAccount, ...shuffledRest] : shuffledRest;
+  }, [allUsers, currentUser?.uid]);
+
+  // تحديث عدد المتابعات محلياً
   useEffect(() => {
     if (profile?.followingIds) {
       setFollowedCount(profile.followingIds.length);
@@ -83,7 +102,7 @@ export default function OnboardingPage() {
           <TimgadLogo size={40} className="text-primary" />
           <div className="space-y-1">
             <h1 className="text-xl font-bold text-primary">مرحباً بك في تيمقاد</h1>
-            <p className="text-xs text-muted-foreground">تابع 5 حسابات على الأقل لتبدأ في استكشاف المحتوى.</p>
+            <p className="text-xs text-muted-foreground">تابع 5 حسابات على الأقل لتبدأ رحلتك في المجتمع.</p>
           </div>
           <div className="w-full max-w-xs space-y-2 mt-2">
             <div className="flex justify-between text-[10px] font-bold text-primary uppercase">
@@ -97,44 +116,50 @@ export default function OnboardingPage() {
 
       <main className="container max-w-xl mx-auto py-6 px-4 flex-1">
         <div className="bg-primary/5 p-4 mb-6 flex items-center gap-3 border border-primary/10">
-          <Sparkles className="text-accent" size={20} />
-          <p className="text-xs font-medium text-primary text-right">لقد اخترنا لك مجموعة من المبدعين والتقنيين لتبدأ رحلتك معهم.</p>
+          <Sparkles className="text-accent shrink-0" size={20} />
+          <p className="text-xs font-medium text-primary text-right">لقد اخترنا لك مجموعة من الحسابات المميزة؛ تابع من يثير اهتمامك لبناء صفحتك الرئيسية.</p>
         </div>
 
         <div className="space-y-1 divide-y divide-muted">
           {isLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
-          ) : allUsers?.filter(u => u.id !== currentUser.uid).map((user) => {
-            const isFollowing = profile?.followingIds?.includes(user.id);
-            const verificationType = user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none');
-            
-            return (
-              <div key={user.id} className="p-4 flex items-center justify-between bg-card hover:bg-muted/5 transition-colors">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12 border border-muted/20">
-                    <AvatarImage src={user.profilePictureUrl} />
-                    <AvatarFallback>{user.username?.[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col text-right">
-                    <div className="flex items-center gap-1.5 justify-end">
-                      <VerifiedBadge type={verificationType} size={14} />
-                      <span className="text-sm font-bold text-primary">{user.username}</span>
+          ) : displayUsers.length > 0 ? (
+            displayUsers.map((user) => {
+              const isFollowing = profile?.followingIds?.includes(user.id);
+              const verificationType = user.email === ADMIN_EMAIL ? 'blue' : (user.verificationType || 'none');
+              
+              return (
+                <div key={user.id} className={`p-4 flex items-center justify-between bg-card hover:bg-muted/5 transition-colors ${user.email === ADMIN_EMAIL ? 'border-r-4 border-primary bg-primary/5' : ''}`}>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border border-muted/20">
+                      <AvatarImage src={user.profilePictureUrl} />
+                      <AvatarFallback>{user.username?.[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col text-right">
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <VerifiedBadge type={verificationType} size={14} />
+                        <span className="text-sm font-bold text-primary">{user.username}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground line-clamp-1 max-w-[150px]">{user.bio || (user.email === ADMIN_EMAIL ? 'الحساب الرسمي لإدارة تيمقاد' : 'عضو في مجتمع تيمقاد')}</p>
                     </div>
-                    <p className="text-[10px] text-muted-foreground line-clamp-1 max-w-[150px]">{user.bio || 'مبدع في تيمقاد'}</p>
                   </div>
+                  <Button 
+                    size="sm" 
+                    variant={isFollowing ? "outline" : "default"} 
+                    className={`h-8 rounded-full px-5 text-[10px] font-bold gap-2 ${isFollowing ? 'border-primary text-primary' : ''}`}
+                    onClick={() => handleFollow(user.id, !!isFollowing)}
+                  >
+                    {isFollowing ? <UserCheck size={12} /> : <UserPlus size={12} />}
+                    {isFollowing ? 'متابع' : 'متابعة'}
+                  </Button>
                 </div>
-                <Button 
-                  size="sm" 
-                  variant={isFollowing ? "outline" : "default"} 
-                  className={`h-8 rounded-full px-5 text-[10px] font-bold gap-2 ${isFollowing ? 'border-primary text-primary' : ''}`}
-                  onClick={() => handleFollow(user.id, !!isFollowing)}
-                >
-                  {isFollowing ? <UserCheck size={12} /> : <UserPlus size={12} />}
-                  {isFollowing ? 'متابع' : 'متابعة'}
-                </Button>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="text-center py-20">
+              <p className="text-xs text-muted-foreground">جاري تحميل الاقتراحات...</p>
+            </div>
+          )}
         </div>
       </main>
 
