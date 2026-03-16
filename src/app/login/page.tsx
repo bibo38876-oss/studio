@@ -31,27 +31,31 @@ export default function LoginPage() {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: "مرحباً بعودتك!", description: "تم تسجيل الدخول بنجاح." });
+        router.push('/');
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
+        // تحديث الاسم في ملف التعريف الخاص بـ Auth
         await updateProfile(user, { displayName: username });
         
-        // Create Firestore profile - No external image URL used
+        // إنشاء ملف مستخدم كامل في Firestore
         await setDoc(doc(firestore, 'users', user.uid), {
           id: user.uid,
           username: username,
           email: email,
-          profilePictureUrl: "", // Empty URL to trigger fallback initials
+          profilePictureUrl: "", // سيعتمد التطبيق تلقائياً على أول حرف من الاسم
           createdAt: new Date().toISOString(),
-          bio: 'مرحباً، أنا مستخدم جديد في تواصل',
+          bio: 'مرحباً، أنا مستخدم جديد في تواصل. فخور بانضمامي لهذا المجتمع!',
           followingIds: [],
           followerIds: []
         });
 
-        toast({ title: "تم إنشاء الحساب!", description: "مرحباً بك في مجتمع تواصل." });
+        toast({ title: "تم إنشاء الحساب!", description: "مرحباً بك في مجتمع تواصل. دعنا نبدأ بضبط ملفك الشخصي." });
+        
+        // التوجيه إلى الصفحة الشخصية للمستخدم الجديد بدلاً من الرئيسية
+        router.push(`/profile/${user.uid}`);
       }
-      router.push('/');
     } catch (error: any) {
       toast({ 
         variant: "destructive", 
