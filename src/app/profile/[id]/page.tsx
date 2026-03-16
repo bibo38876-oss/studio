@@ -208,12 +208,12 @@ export default function ProfilePage() {
           <div className="h-32 bg-primary/10 relative">
             {profile.bannerUrl && <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover" />}
             
-            {/* أيقونة الإدارة للمسؤول */}
+            {/* أيقونة الإدارة للمسؤول في زاوية البنر */}
             {currentUser?.email === ADMIN_EMAIL && (
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="absolute top-2 right-2 h-7 w-7 rounded-full bg-accent/20 text-accent backdrop-blur-sm hover:bg-accent/40 border border-accent/30 z-10" 
+                className="absolute top-2 right-2 h-7 w-7 rounded-full bg-accent text-white shadow-lg hover:bg-accent/90 z-20" 
                 onClick={() => router.push('/admin')}
               >
                 <ShieldCheck size={14} />
@@ -222,7 +222,7 @@ export default function ProfilePage() {
 
             <div className="absolute top-2 left-2 flex gap-2">
               <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
-                <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20"><Share size={14} /></Button></DialogTrigger>
+                <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/20 text-white backdrop-blur-sm hover:bg-black/40"><Share size={14} /></Button></DialogTrigger>
                 <DialogContent className="p-0 overflow-hidden border-none bg-background">
                   <DialogTitle className="sr-only">مشاركة الملف الشخصي</DialogTitle>
                   <div className="bg-primary p-6 text-center text-white space-y-4">
@@ -244,7 +244,7 @@ export default function ProfilePage() {
                   </div>
                 </DialogContent>
               </Dialog>
-              {isOwnProfile && <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20" onClick={() => router.push('/settings')}><Settings size={14} /></Button>}
+              {isOwnProfile && <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/20 text-white backdrop-blur-sm hover:bg-black/40" onClick={() => router.push('/settings')}><Settings size={14} /></Button>}
             </div>
           </div>
 
@@ -257,8 +257,8 @@ export default function ProfilePage() {
                 </Avatar>
                 <div className="text-right">
                   <div className="flex items-center gap-1.5 justify-start">
-                    <span className="text-md font-bold text-primary">{profile.username}</span>
                     <VerifiedBadge type={verificationType} size={16} />
+                    <span className="text-md font-bold text-primary">{profile.username}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground">{profile.email}</p>
                 </div>

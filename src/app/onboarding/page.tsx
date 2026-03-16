@@ -7,10 +7,9 @@ import { useFirebase, useCollection, useMemoFirebase, useDoc, addDocumentNonBloc
 import { collection, query, limit, doc, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, UserPlus, UserCheck, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowLeft, UserPlus, UserCheck, Sparkles } from 'lucide-react';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import TimgadLogo from '@/components/ui/Logo';
-import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
 export default function OnboardingPage() {
@@ -40,21 +39,15 @@ export default function OnboardingPage() {
   
   const { data: profile } = useDoc(currentUserRef);
 
-  // خوارزمية عرض الحسابات: الإدارة أولاً ثم البقية بشكل عشوائي (عدالة التوزيع)
+  // خوارزمية عرض الحسابات: الإدارة أولاً ثم البقية بشكل عشوائي
   const displayUsers = useMemo(() => {
     if (!allUsers || !currentUser) return [];
     
-    // 1. استثناء المستخدم الحالي
     const others = allUsers.filter(u => u.id !== currentUser.uid);
-    
-    // 2. فصل حساب الإدارة
     const adminAccount = others.find(u => u.email === ADMIN_EMAIL);
     const restOfUsers = others.filter(u => u.email !== ADMIN_EMAIL);
-    
-    // 3. خلط (Shuffle) باقي المستخدمين لضمان العدالة
     const shuffledRest = [...restOfUsers].sort(() => Math.random() - 0.5);
     
-    // 4. وضع الإدارة في القمة ثم البقية
     return adminAccount ? [adminAccount, ...shuffledRest] : shuffledRest;
   }, [allUsers, currentUser?.uid]);
 
@@ -88,8 +81,11 @@ export default function OnboardingPage() {
     }
   };
 
-  const progress = Math.min((followedCount / 5) * 100, 100);
-  const canContinue = followedCount >= 5;
+  // حل مشكلة "قلة المستخدمين": الهدف هو 5 أو "كل المتاح" إذا كان أقل من 5
+  const totalAvailable = displayUsers.length;
+  const targetRequired = Math.min(5, totalAvailable);
+  const progress = targetRequired > 0 ? Math.min((followedCount / targetRequired) * 100, 100) : 100;
+  const canContinue = followedCount >= targetRequired || totalAvailable === 0;
 
   if (isUserLoading || !currentUser) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
@@ -102,11 +98,15 @@ export default function OnboardingPage() {
           <TimgadLogo size={40} className="text-primary" />
           <div className="space-y-1">
             <h1 className="text-xl font-bold text-primary">مرحباً بك في تيمقاد</h1>
-            <p className="text-xs text-muted-foreground">تابع 5 حسابات على الأقل لتبدأ رحلتك في المجتمع.</p>
+            <p className="text-xs text-muted-foreground">
+              {totalAvailable < 5 
+                ? "تابع جميع الحسابات المتاحة لتبدأ رحلتك."
+                : `تابع ${targetRequired} حسابات على الأقل لتبدأ رحلتك في المجتمع.`}
+            </p>
           </div>
           <div className="w-full max-w-xs space-y-2 mt-2">
             <div className="flex justify-between text-[10px] font-bold text-primary uppercase">
-              <span>{followedCount} / 5</span>
+              <span>{followedCount} / {targetRequired}</span>
               <span>متابعة</span>
             </div>
             <Progress value={progress} className="h-2 rounded-full bg-secondary" />

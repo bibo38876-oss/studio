@@ -51,23 +51,20 @@ export default function Home() {
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
-  // تطبيق خوارزمية التوصيات المستوحاة من تيك توك وتويتر
+  // تطبيق خوارزمية التوصيات الذكية (بدون كلمة "خوارزمية" في الواجهة)
   const recommendedPosts = useMemo(() => {
     if (!postsPool || !profile) return [];
 
     return [...postsPool].map(post => {
       let score = 0;
       
-      // 1. التفاعل العضوي (الإعجابات والتعليقات)
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
 
-      // 2. المتابعة (Boost)
       if (profile.followingIds?.includes(post.authorId)) {
         score += 20;
       }
 
-      // 3. الحداثة (Recency Score)
       const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
       const postAgeMs = Date.now() - postDate.getTime();
       const oneHour = 3600000;
@@ -81,7 +78,6 @@ export default function Home() {
         score += 5;
       }
 
-      // 4. الاهتمام الشخصي (تفاعل سابق مع الكاتب)
       if (profile.interactedAuthorIds?.includes(post.authorId)) {
         score += 25;
       }
