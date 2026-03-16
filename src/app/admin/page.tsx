@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useMemo } from 'react';
@@ -190,7 +189,8 @@ export default function AdminPage() {
                 <CardContent className="p-4 pt-0">
                   <p className="text-2xl font-bold text-foreground">{stats.trendingTags}</p>
                 </CardContent>
-              </div>
+              </Card>
+            </div>
 
             <Card className="border-none shadow-sm rounded-none text-right">
               <CardHeader>
