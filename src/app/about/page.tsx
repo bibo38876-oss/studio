@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Target, Rocket, ShieldCheck, Heart, Sparkles, Globe, Scale, History } from 'lucide-react';
+import { ChevronRight, Target, Rocket, ShieldCheck, Heart, Sparkles, Globe, Scale, History, Ban, ShieldAlert } from 'lucide-react';
 import TimgadLogo from '@/components/ui/Logo';
 
 export default function AboutPage() {
@@ -56,6 +56,27 @@ export default function AboutPage() {
               </div>
             </section>
 
+            {/* Content Integrity Section (Prohibited Content) */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-3 text-destructive">
+                <div className="w-8 h-8 bg-destructive/10 rounded-full flex items-center justify-center"><ShieldAlert size={16} /></div>
+                <h3 className="font-bold text-sm uppercase tracking-tighter">سلامة المجتمع والمحتوى المحظور</h3>
+              </div>
+              <div className="p-5 border border-destructive/20 bg-destructive/5 space-y-3">
+                <p className="text-xs text-foreground/80 leading-relaxed">
+                  تلتزم تيمقاد بمعايير السلامة العالمية الرقمية؛ حيث **يُحظر تماماً** نشر أو الترويج لأي محتوى يتعلق بـ:
+                </p>
+                <ul className="text-[11px] text-muted-foreground space-y-2 list-disc pr-5">
+                  <li>الترويج للمواد المخدرة والسموم العقلية بكافة أشكالها.</li>
+                  <li>نشر الفكر المتطرف، التحريض على الإرهاب، أو دعم المنظمات التخريبية.</li>
+                  <li>خطاب الكراهية، التحريض على العنف، أو المساس بالثوابت الوطنية والدينية.</li>
+                </ul>
+                <p className="text-[10px] text-destructive font-medium italic">
+                  * إن مخالفة هذه البنود تضع صاحبها تحت طائلة القانون الجزائري والعربي وتؤدي للحظر الفوري والنهائي.
+                </p>
+              </div>
+            </section>
+
             {/* Expansion and Origin */}
             <section className="space-y-4">
               <div className="flex items-center gap-3 text-primary">
@@ -63,7 +84,7 @@ export default function AboutPage() {
                 <h3 className="font-bold text-sm uppercase tracking-tighter">منشأ التطبيق ومسيرة التوسع</h3>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed pr-11">
-                انطلق مشروع تيمقاد من رؤية تقنية تسعى لسد الفجوة في المنصات الاجتماعية العربية المتخصصة. وبفضل التطور المتسارع، شهد منشأ التطبيق **توسعاً مؤسسياً وتقنياً** كبيراً، حيث تم الانتقال من مرحلة التأسيس البرمجي إلى مرحلة الريادة في تقديم الخدمات الرقمية المتطورة، مع التزامنا بتوسيع آفاق المنصة لتشمل ميزات تفاعلية ذكية تخدم قاعدة جماهيرية واسعة.
+                انطلق مشروع تيمقاد من رؤية تقنية فردية تسعى لسد الفجوة في المنصات الاجتماعية العربية. وبفضل التطور المتسارع، شهد منشأ التطبيق **توسعاً مؤسسياً وتقنياً استراتيجياً**، حيث تحول من مجرد واجهة تواصل إلى منظومة رقمية متكاملة تهدف للريادة الإقليمية، مع الالتزام بتطوير خوارزميات ذكية تخدم الهوية العربية وتكفل جودة المحتوى.
               </p>
             </section>
 
