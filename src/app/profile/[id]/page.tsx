@@ -30,6 +30,8 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
 
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
+
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
       router.push('/login');
@@ -75,8 +77,10 @@ export default function ProfilePage() {
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
   
-  // التحقق من أن المستخدم هو المسؤول (بناءً على الدور في Firestore أو البريد الإلكتروني المخصص)
-  const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === 'admin@tawasul.com';
+  // التحقق من أن المستخدم هو المسؤول
+  const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === ADMIN_EMAIL;
+  // عرض شارة التحقق للمسؤول
+  const isProfileAdmin = profile?.role === 'admin' || profile?.email === ADMIN_EMAIL;
 
   const handleUpdateProfile = () => {
     if (!firestore || !currentUser?.uid) return;
@@ -144,8 +148,8 @@ export default function ProfilePage() {
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
-            {/* زر الإدارة فوق البنر - يظهر فقط لصاحب التطبيق المسجل كمسؤول */}
-            {isAdmin && (
+            {/* زر الإدارة فوق البنر - يظهر فقط لصاحب التطبيق adelbenmaza8@gmail.com */}
+            {isAdmin && isOwnProfile && (
               <div className="absolute top-2 right-2 z-10">
                 <Button 
                   variant="ghost" 
@@ -262,7 +266,7 @@ export default function ProfilePage() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-md font-bold text-primary">{profile.username}</h1>
-                  {profile.role === 'admin' && <ShieldCheck size={14} className="text-accent" />}
+                  {isProfileAdmin && <ShieldCheck size={14} className="text-accent" />}
                 </div>
                 <p className="text-[9px] text-muted-foreground">{profile.email}</p>
               </div>
