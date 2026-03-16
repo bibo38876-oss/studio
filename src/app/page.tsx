@@ -24,7 +24,7 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Query for profile
+  // Query for profile - only run if user is loaded
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
@@ -32,21 +32,21 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // Query for all posts
+  // Query for all posts - only run if user is loaded to avoid permission errors
   const allPostsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+  }, [firestore, user]);
 
   // Query for posts from followed users
   const followingPostsQuery = useMemoFirebase(() => {
-    if (!firestore || !profile?.followingIds || profile.followingIds.length === 0) return null;
+    if (!firestore || !user || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 10)),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, profile?.followingIds]);
+  }, [firestore, user, profile?.followingIds]);
 
   const { data: allPosts, isLoading: isAllLoading } = useCollection(allPostsQuery);
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);

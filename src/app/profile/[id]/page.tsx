@@ -2,7 +2,7 @@
 "use client"
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import PostCard from '@/components/posts/PostCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
-import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
 
 export default function ProfilePage() {
@@ -21,28 +21,34 @@ export default function ProfilePage() {
   const id = params?.id as string;
   const router = useRouter();
   
-  const { firestore, user: currentUser } = useFirebase();
+  const { firestore, user: currentUser, isUserLoading } = useFirebase();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
 
-  // استرجاع بيانات الملف الشخصي
+  useEffect(() => {
+    if (!isUserLoading && !currentUser) {
+      router.push('/login');
+    }
+  }, [currentUser, isUserLoading, router]);
+
+  // استرجاع بيانات الملف الشخصي - ننتظر حتى يتوفر المستخدم والـ ID
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !id || id === 'undefined') return null;
+    if (!firestore || !id || id === 'undefined' || !currentUser) return null;
     return doc(firestore, 'users', id);
-  }, [firestore, id]);
+  }, [firestore, id, currentUser]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // استرجاع منشورات المستخدم
+  // استرجاع منشورات المستخدم - ننتظر حتى يتوفر المستخدم والـ ID
   const postsQuery = useMemoFirebase(() => {
-    if (!firestore || !id || id === 'undefined') return null;
+    if (!firestore || !id || id === 'undefined' || !currentUser) return null;
     return query(
       collection(firestore, 'posts'),
       where('authorId', '==', id),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, id]);
+  }, [firestore, id, currentUser]);
 
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
 
@@ -59,7 +65,7 @@ export default function ProfilePage() {
   };
 
   const handleFollow = () => {
-    if (!currentUser || currentUser.isAnonymous) {
+    if (!currentUser) {
       router.push('/login');
       return;
     }
@@ -77,7 +83,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (isProfileLoading) {
+  if (isUserLoading || isProfileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="animate-spin text-primary h-8 w-8" />
@@ -88,7 +94,7 @@ export default function ProfilePage() {
   if (!profile) return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <Navbar />
-      <p className="text-muted-foreground text-sm font-bold">المستخدم غير موجود.</p>
+      <p className="text-muted-foreground text-sm font-bold mt-20">المستخدم غير موجود.</p>
     </div>
   );
 
