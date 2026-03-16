@@ -9,6 +9,7 @@ import { collection, query, limit, doc, arrayUnion, arrayRemove, updateDoc } fro
 import { Loader2, BadgeCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import VerifiedBadge from '@/components/ui/VerifiedBadge';
 
 export default function RightSidebar() {
   const { firestore, user: currentUser } = useFirebase();
@@ -65,7 +66,7 @@ export default function RightSidebar() {
           ) : suggestions.length > 0 ? (
             suggestions.map((user) => {
               const isFollowing = (user.followerIds || []).includes(currentUser?.uid);
-              const isVerified = user.email === 'adelbenmaza8@gmail.com' || user.role === 'admin' || user.verificationType === 'blue' || user.verificationType === 'gold';
+              const verificationType = user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none');
               return (
                 <div key={user.id} className="flex items-center justify-between">
                   <Link href={`/profile/${user.id}`} className="flex items-center gap-3 group">
@@ -74,9 +75,8 @@ export default function RightSidebar() {
                       <AvatarFallback>{user.username?.[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col text-right">
-                      <div className="flex items-center gap-1 leading-tight justify-end">
-                        {/* الشارة ثم الاسم لتطابق البطاقة */}
-                        {isVerified && <BadgeCheck size={12} className="text-accent fill-current" />}
+                      <div className="flex items-center gap-1.5 leading-tight justify-end">
+                        <VerifiedBadge type={verificationType} size={12} />
                         <span className="text-xs font-bold text-primary group-hover:underline">{user.username}</span>
                       </div>
                       <span className="text-[8px] text-muted-foreground">{user.email || 'مستخدم تواصل'}</span>

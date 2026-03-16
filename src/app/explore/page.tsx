@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import PostCard from '@/components/posts/PostCard';
+import VerifiedBadge from '@/components/ui/VerifiedBadge';
 
 export default function ExplorePage() {
   const searchParams = useSearchParams();
@@ -199,7 +200,7 @@ export default function ExplorePage() {
               ) : filteredUsers.length > 0 ? (
                 <div className="divide-y divide-muted">
                   {filteredUsers.map((user) => {
-                    const isVerified = user.email === 'adelbenmaza8@gmail.com' || user.role === 'admin' || user.verificationType === 'blue' || user.verificationType === 'gold';
+                    const verificationType = user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none');
                     return (
                       <div key={user.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
                         <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
@@ -208,9 +209,8 @@ export default function ExplorePage() {
                             <AvatarFallback>{user.username?.[0]}</AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col text-right">
-                            <div className="flex items-center gap-1 leading-tight justify-end">
-                              {/* الشارة ثم الاسم لتطابق البطاقة */}
-                              {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
+                            <div className="flex items-center gap-1.5 leading-tight justify-end">
+                              <VerifiedBadge type={verificationType} size={14} />
                               <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
                             </div>
                             <span className="text-[10px] text-muted-foreground">{user.email}</span>

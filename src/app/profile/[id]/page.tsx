@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Lock, Heart } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Lock, Heart, Repeat } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';

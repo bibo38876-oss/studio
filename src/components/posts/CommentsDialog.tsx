@@ -151,8 +151,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col justify-center">
-                <div className="flex items-center gap-1 leading-tight justify-end">
-                  {/* الشارة ثم الاسم لتطابق البطاقة */}
+                <div className="flex items-center gap-1.5 leading-tight justify-end">
                   <VerifiedBadge type={post.email === 'adelbenmaza8@gmail.com' ? 'blue' : (post.authorVerificationType || 'none')} />
                   <span className="text-xs font-bold text-primary">{post.authorName}</span>
                 </div>
@@ -207,8 +206,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 </Avatar>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 justify-end">
-                      {/* الشارة ثم الاسم لتطابق البطاقة */}
+                    <div className="flex items-center gap-1.5 justify-end">
                       <VerifiedBadge type={comment.authorVerificationType || (comment.authorEmail === 'adelbenmaza8@gmail.com' ? 'blue' : 'none')} size={12} />
                       <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
                     </div>
