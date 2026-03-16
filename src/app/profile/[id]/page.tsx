@@ -40,7 +40,7 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // استعلام منشورات المستخدم المعروض - يتطلب فهرس مركب (authorId ==, createdAt DESC)
+  // استعلام منشورات المستخدم المعروض - يتطلب الفهرس الذي قمت بإنشائه في الصورة
   const postsQuery = useMemoFirebase(() => {
     if (!firestore || !id || !currentUser?.uid) return null;
     return query(
@@ -202,7 +202,7 @@ export default function ProfilePage() {
               posts.map((post: any) => <PostCard key={post.id} post={post} />)
             ) : (
               <div className="text-center py-24 bg-card px-8 border-b">
-                <p className="text-muted-foreground text-[10px]">لا توجد منشورات لهذا المستخدم بعد (تأكد من إنشاء الفهرس المركب في Firebase Console).</p>
+                <p className="text-muted-foreground text-[10px]">لا توجد منشورات لهذا المستخدم بعد.</p>
               </div>
             )}
           </TabsContent>

@@ -32,16 +32,15 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // استعلام المنشورات العامة - لا يتطلب فهرس مركب حالياً إلا إذا أردنا فلترة إضافية
+  // استعلام المنشورات العامة
   const allPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
   }, [firestore, user?.uid]);
 
-  // استعلام المتابعة - يتطلب فهرس مركب (authorId IN, createdAt DESC)
+  // استعلام المتابعة - قد يتطلب فهرساً مشابهاً (authorId IN, createdAt DESC)
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
-    // نأخذ أول 10 متابعين فقط لضمان عمل الاستعلام ضمن حدود Firebase IN operator
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 10)),
@@ -117,7 +116,7 @@ export default function Home() {
                 followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)
               ) : (
                 <div className="text-center py-20 bg-card border-b">
-                  <p className="text-muted-foreground text-[10px]">لا توجد منشورات جديدة ممن تتابعهم (تأكد من إنشاء الفهارس المطلوبة).</p>
+                  <p className="text-muted-foreground text-[10px]">لا توجد منشورات جديدة ممن تتابعهم.</p>
                 </div>
               )}
             </TabsContent>
