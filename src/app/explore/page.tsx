@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Input } from '@/components/ui/input';
-import { Search, TrendingUp, Users, Loader2, ArrowUpRight, Hash, ArrowRight } from 'lucide-react';
+import { Search, TrendingUp, Users, Loader2, ArrowUpRight, Hash, ArrowRight, MessageSquare } from 'lucide-react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit, orderBy, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,7 +35,7 @@ export default function ExplorePage() {
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !currentUser) return null;
-    return query(collection(firestore, 'users'), limit(20));
+    return query(collection(firestore, 'users'), limit(50));
   }, [firestore, currentUser]);
 
   const postsQuery = useMemoFirebase(() => {
@@ -44,20 +44,24 @@ export default function ExplorePage() {
   }, [firestore]);
 
   const hashtagResultsQuery = useMemoFirebase(() => {
-    if (!firestore || !searchQuery || !searchQuery.startsWith('#')) return null;
-    return query(
-      collection(firestore, 'posts'),
-      where('hashtags', 'array-contains', searchQuery),
-      orderBy('createdAt', 'desc'),
-      limit(50)
-    );
+    if (!firestore || !searchQuery) return null;
+    
+    if (searchQuery.startsWith('#')) {
+      return query(
+        collection(firestore, 'posts'),
+        where('hashtags', 'array-contains', searchQuery),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      );
+    }
+    
+    return null;
   }, [firestore, searchQuery]);
 
-  const { data: users, isLoading: isUsersLoading } = useCollection(usersQuery);
+  const { data: allUsers, isLoading: isUsersLoading } = useCollection(usersQuery);
   const { data: recentPosts, isLoading: isPostsLoading } = useCollection(postsQuery);
   const { data: searchPosts, isLoading: isSearching } = useCollection(hashtagResultsQuery);
 
-  // حساب الهاشتاجات الحقيقية من المنشورات الحالية
   const trendingTags = useMemo(() => {
     if (!recentPosts) return [];
     
@@ -81,10 +85,22 @@ export default function ExplorePage() {
       .slice(0, 10);
   }, [recentPosts]);
 
-  const filteredUsers = users?.filter(u => 
-    u.username?.toLowerCase().includes(searchQuery.toLowerCase()) && 
-    u.id !== currentUser?.uid
-  ) || [];
+  const filteredUsers = useMemo(() => {
+    if (!allUsers || !searchQuery) return [];
+    return allUsers.filter(u => 
+      (u.username?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+       u.email?.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      u.id !== currentUser?.uid
+    );
+  }, [allUsers, searchQuery, currentUser?.uid]);
+
+  // تصفية المنشورات نصياً إذا لم تكن بحث هاشتاج
+  const textFilteredPosts = useMemo(() => {
+    if (!recentPosts || !searchQuery || searchQuery.startsWith('#')) return [];
+    return recentPosts.filter(p => 
+      p.content?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [recentPosts, searchQuery]);
 
   const isHashtagSearch = searchQuery.startsWith('#');
 
@@ -123,25 +139,64 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {searchQuery && isHashtagSearch ? (
+        {searchQuery ? (
           <div className="mt-2">
-            <div className="p-4 border-b flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                  <Hash size={16} />
-                </div>
-                <h2 className="text-sm font-bold text-primary">نتائج الوسم: {searchQuery}</h2>
-              </div>
-            </div>
-            {isSearching ? (
-              <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
-            ) : searchPosts && searchPosts.length > 0 ? (
-              searchPosts.map((post: any) => <PostCard key={post.id} post={post} />)
-            ) : (
-              <div className="text-center py-32 px-10">
-                <p className="text-muted-foreground text-xs italic">لا توجد منشورات بهذا الوسم حالياً.</p>
-              </div>
-            )}
+            <Tabs defaultValue={isHashtagSearch ? "posts" : "users"} className="w-full">
+              <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0">
+                <TabsTrigger value="users" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold">أشخاص ({filteredUsers.length})</TabsTrigger>
+                <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold">منشورات ({isHashtagSearch ? (searchPosts?.length || 0) : textFilteredPosts.length})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="users" className="mt-0">
+                {filteredUsers.length > 0 ? (
+                  <div className="divide-y divide-muted">
+                    {filteredUsers.map((user) => (
+                      <div key={user.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
+                        <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12 border border-muted/20">
+                            <AvatarImage src={user.profilePictureUrl} alt={user.username} />
+                            <AvatarFallback>{user.username?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col text-right">
+                            <div className="flex items-center gap-1.5 justify-end">
+                              <VerifiedBadge type={user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none')} size={14} />
+                              <span className="text-sm font-bold text-primary">{user.username}</span>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">{user.email}</span>
+                          </div>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-20">
+                    <Users size={30} className="mx-auto text-muted-foreground/20 mb-2" />
+                    <p className="text-muted-foreground text-[10px]">لا توجد نتائج للأشخاص.</p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="posts" className="mt-0">
+                {isHashtagSearch ? (
+                  isSearching ? (
+                    <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
+                  ) : searchPosts && searchPosts.length > 0 ? (
+                    searchPosts.map((post: any) => <PostCard key={post.id} post={post} />)
+                  ) : (
+                    <div className="text-center py-20"><p className="text-muted-foreground text-[10px]">لا توجد منشورات بهذا الوسم.</p></div>
+                  )
+                ) : (
+                  textFilteredPosts.length > 0 ? (
+                    textFilteredPosts.map((post: any) => <PostCard key={post.id} post={post} />)
+                  ) : (
+                    <div className="text-center py-20">
+                      <MessageSquare size={30} className="mx-auto text-muted-foreground/20 mb-2" />
+                      <p className="text-muted-foreground text-[10px]">لا توجد منشورات مطابقة للبحث.</p>
+                    </div>
+                  )
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         ) : (
           <Tabs defaultValue="trending" className="w-full">
@@ -196,9 +251,9 @@ export default function ExplorePage() {
                 <div className="flex justify-center py-20">
                   <Loader2 className="animate-spin text-primary" />
                 </div>
-              ) : filteredUsers.length > 0 ? (
+              ) : allUsers && allUsers.length > 0 ? (
                 <div className="divide-y divide-muted">
-                  {filteredUsers.map((user) => {
+                  {allUsers.filter(u => u.id !== currentUser?.uid).slice(0, 20).map((user) => {
                     const verificationType = user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none');
                     return (
                       <div key={user.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
@@ -215,9 +270,6 @@ export default function ExplorePage() {
                             <span className="text-[10px] text-muted-foreground">{user.email}</span>
                           </div>
                         </Link>
-                        <Button variant="outline" size="sm" className="rounded-full px-4 h-8 text-[11px] font-bold">
-                          متابعة
-                        </Button>
                       </div>
                     );
                   })}
@@ -225,7 +277,7 @@ export default function ExplorePage() {
               ) : (
                 <div className="text-center py-20">
                   <Users size={40} className="mx-auto text-muted-foreground/20 mb-4" />
-                  <p className="text-muted-foreground text-xs">لم يتم العثور على نتائج.</p>
+                  <p className="text-muted-foreground text-xs">لا يوجد مستخدمين لعرضهم.</p>
                 </div>
               )}
             </TabsContent>
