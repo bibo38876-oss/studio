@@ -74,7 +74,7 @@ export default function ExplorePage() {
       .map(([name, count]) => ({ 
         name, 
         count,
-        displayCount: (count * 15).toString() + 'K', 
+        displayCount: (count * 1.5).toFixed(1) + 'K', 
         growth: `+${Math.floor(Math.random() * 50)}%` 
       }))
       .sort((a, b) => b.count - a.count)
@@ -149,7 +149,7 @@ export default function ExplorePage() {
               <TabsTrigger value="trending" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold gap-2">
                 <TrendingUp size={14} />
                 متداول
-              </TrendingUp>
+              </TabsTrigger>
               <TabsTrigger value="users" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 text-xs font-bold gap-2">
                 <Users size={14} />
                 أشخاص
