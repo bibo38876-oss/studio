@@ -266,10 +266,10 @@ export default function ProfilePage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-full h-10 w-10 border border-muted hover:bg-secondary transition-all p-1"
-                  onClick={() => toast({ title: "عملة تيمقاد", description: "قريبا" })}
+                  className="rounded-full h-12 w-12 border border-muted hover:bg-secondary transition-all p-1"
+                  onClick={() => router.push('/wallet')}
                 >
-                  <svg viewBox="0 0 200 200" className="w-7 h-7">
+                  <svg viewBox="0 0 200 200" className="w-10 h-10">
                     <defs>
                       <radialGradient id="gold" cx="45%" cy="35%" r="65%">
                         <stop offset="0%" stopColor="#fff7b5"/>
@@ -307,10 +307,10 @@ export default function ProfilePage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-full h-10 w-10 border border-muted hover:bg-secondary transition-all"
-                  onClick={() => toast({ title: "ميزة قيد التطوير", description: "قريبا" })}
+                  className="rounded-full h-12 w-12 border border-muted hover:bg-secondary transition-all"
+                  onClick={() => router.push('/wallet')}
                 >
-                  <Coffee size={20} className="text-primary" />
+                  <Coffee size={24} className="text-primary" />
                 </Button>
 
                 {isOwnProfile ? (
