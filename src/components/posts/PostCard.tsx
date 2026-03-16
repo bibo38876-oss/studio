@@ -84,19 +84,19 @@ export default function PostCard({ post }: { post: PostData }) {
     if (!firestore || !user || !displayPost.id) return null;
     return doc(firestore, 'posts', displayPost.id, 'likes', user.uid);
   }, [firestore, displayPost.id, user]);
-  const { data: likeData } = useDoc(likeRef);
+  const { data: likeData, isLoading: isLikeLoading } = useDoc(likeRef);
 
   const repostRef = useMemoFirebase(() => {
     if (!firestore || !user || !displayPost.id) return null;
     return doc(firestore, 'users', user.uid, 'reposts', displayPost.id);
   }, [firestore, displayPost.id, user]);
-  const { data: repostData } = useDoc(repostRef);
+  const { data: repostData, isLoading: isRepostLoading } = useDoc(repostRef);
 
   const userVoteRef = useMemoFirebase(() => {
     if (!firestore || !user || !displayPost.id) return null;
     return doc(firestore, 'posts', displayPost.id, 'pollVotes', user.uid);
   }, [firestore, displayPost.id, user]);
-  const { data: userVote } = useDoc(userVoteRef);
+  const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
 
   useEffect(() => {
     if (!firestore || !displayPost.id || viewedRef.current) return;
@@ -115,7 +115,7 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const handleVote = async (optionIndex: number) => {
     if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user || !displayPost.poll || userVote) return;
+    if (!firestore || !user || !displayPost.poll || userVote || isVoteLoading) return;
 
     try {
       await runTransaction(firestore, async (transaction) => {
@@ -137,7 +137,7 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const handleLike = () => {
     if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user || !displayPost.id) return;
+    if (!firestore || !user || !displayPost.id || isLikeLoading) return;
 
     if (likeData) {
       deleteDocumentNonBlocking(likeRef!);
@@ -165,7 +165,7 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const handleRepost = () => {
     if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user || !displayPost.id) return;
+    if (!firestore || !user || !displayPost.id || isRepostLoading) return;
 
     if (repostData) {
       deleteDocumentNonBlocking(repostRef!);
@@ -193,7 +193,6 @@ export default function PostCard({ post }: { post: PostData }) {
     if (isAnonymous) { router.push('/login'); return; }
     if (!firestore || !user || !displayPost.id) return;
 
-    // 1. إنشاء مستند بلاغ
     addDocumentNonBlocking(collection(firestore, 'reports'), {
       reporterId: user.uid,
       targetId: displayPost.id,
@@ -202,7 +201,6 @@ export default function PostCard({ post }: { post: PostData }) {
       status: 'pending'
     });
 
-    // 2. زيادة عداد البلاغات في المنشور
     updateDocumentNonBlocking(postRef!, {
       reportsCount: increment(1)
     });
@@ -309,13 +307,13 @@ export default function PostCard({ post }: { post: PostData }) {
       </CardContent>
 
       <CardFooter className="px-4 py-1 flex flex-row justify-between items-center h-9">
-        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }}>
+        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }} disabled={isLikeLoading}>
           <Heart size={16} className={cn(likeData ? "fill-current" : "")} /><span className="text-[10px] font-bold">{displayPost.likesCount || 0}</span>
         </Button>
         <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
           <MessageCircle size={16} /><span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
         </Button>
-        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", repostData ? "text-green-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleRepost(); }}>
+        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", repostData ? "text-green-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleRepost(); }} disabled={isRepostLoading}>
           <Repeat size={16} /><span className="text-[10px] font-bold">{displayPost.repostsCount || 0}</span>
         </Button>
         <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => e.stopPropagation()}>
