@@ -33,7 +33,7 @@ export default function ExplorePage() {
     if (initialQuery) setSearchQuery(initialQuery);
   }, [initialQuery]);
 
-  // استعلام البحث عن الوسوم: يتطلب الفهرس (hashtags: Array Contains + createdAt: Descending)
+  // استعلام البحث عن الوسوم: يتطلب فهرس (hashtags: Array Contains + createdAt: Descending) - متوفر في صورتك
   const hashtagResultsQuery = useMemoFirebase(() => {
     if (!firestore || !currentUser?.uid || !searchQuery || !searchQuery.startsWith('#')) return null;
     return query(

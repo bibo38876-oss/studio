@@ -37,8 +37,7 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // الخوارزمية: جلب أحدث المنشورات لفرزها برمجياً (Pool)
-  // هذا الاستعلام بسيط ولا يحتاج فهرس مركب
+  // استعلام التغذية العامة: يعتمد على الترتيب الزمني البسيط
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(limitForYou));
@@ -46,7 +45,7 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // نظام الإعلانات: يتطلب الفهرس الذي أنشأته للتو (promoted: Asc + impressions_left: Asc)
+  // نظام الإعلانات: يتطلب فهرس (promoted: Asc + impressions_left: Asc) - متوفر في صورتك
   const promotedQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -59,7 +58,7 @@ export default function Home() {
 
   const { data: promotedPosts } = useCollection(promotedQuery);
 
-  // استعلام المتابعين: يتطلب الفهرس (authorId: Asc + createdAt: Desc)
+  // استعلام المتابعين: يتطلب فهرس (authorId: Asc + createdAt: Desc) - متوفر في صورتك
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -72,7 +71,7 @@ export default function Home() {
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
-  // خوارزمية التوصيات الذكية + دمج الإعلانات
+  // خوارزمية دمج الإعلانات مع المحتوى الموصى به
   const recommendedPosts = useMemo(() => {
     if (!postsPool || !profile) return [];
 
@@ -97,7 +96,6 @@ export default function Home() {
 
     basePosts.forEach((post, i) => {
       finalFeed.push(post);
-      // إدخال إعلان كل 5 منشورات
       if ((i + 1) % 5 === 0 && ads[adIdx]) {
         finalFeed.push(ads[adIdx]);
         adIdx++;
