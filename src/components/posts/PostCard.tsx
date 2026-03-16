@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -55,6 +55,18 @@ export default function PostCard({ post }: { post: PostData }) {
   
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
+
+  // تسجيل مشاهدة حقيقية عند عرض المنشور
+  useEffect(() => {
+    if (!firestore || !post.id || isOwner || isAnonymous) return;
+
+    const postRef = doc(firestore, 'posts', post.id);
+    updateDoc(postRef, {
+      viewsCount: increment(1)
+    }).catch(() => {
+      // تجاهل الأخطاء الصامتة لعداد المشاهدات لضمان سلاسة التصفح
+    });
+  }, [firestore, post.id, isOwner, isAnonymous]);
 
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !post.authorId) return null;
