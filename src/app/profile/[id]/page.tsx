@@ -262,6 +262,48 @@ export default function ProfilePage() {
               </div>
 
               <div className="pt-12 flex gap-2">
+                {/* عملة تيمقاد */}
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full h-8 w-8 border border-muted hover:bg-secondary transition-all p-1"
+                  onClick={() => toast({ title: "عملة تيمقاد", description: "قريبا" })}
+                >
+                  <svg viewBox="0 0 200 200" className="w-5 h-5">
+                    <defs>
+                      <radialGradient id="gold" cx="45%" cy="35%" r="65%">
+                        <stop offset="0%" stopColor="#fff7b5"/>
+                        <stop offset="30%" stopColor="#f3d34a"/>
+                        <stop offset="55%" stopColor="#d4a017"/>
+                        <stop offset="80%" stopColor="#a87900"/>
+                        <stop offset="100%" stopColor="#6b4f00"/>
+                      </radialGradient>
+                      <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#fff2a8"/>
+                        <stop offset="50%" stopColor="#c99700"/>
+                        <stop offset="100%" stopColor="#6b4f00"/>
+                      </linearGradient>
+                      <filter id="shadow">
+                        <feDropShadow dx="0" dy="6" stdDeviation="5" floodOpacity="0.35"/>
+                      </filter>
+                      <path id="circleTextPath" d="M100,100 m-60,0 a60,60 0 1,1 120,0 a60,60 0 1,1 -120,0"/>
+                    </defs>
+                    <ellipse cx="100" cy="178" rx="52" ry="9" fill="black" opacity="0.15"/>
+                    <circle cx="100" cy="100" r="88" fill="url(#rim)" filter="url(#shadow)"/>
+                    <circle cx="100" cy="100" r="84" fill="none" stroke="#8a6500" strokeWidth="6" strokeDasharray="2 4"/>
+                    <circle cx="100" cy="100" r="75" fill="url(#gold)"/>
+                    <circle cx="100" cy="100" r="60" fill="none" stroke="#a87900" strokeWidth="3"/>
+                    <text fontSize="10" fill="#6b4f00" fontFamily="Arial" letterSpacing="2">
+                      <textPath href="#circleTextPath" startOffset="50%" textAnchor="middle">
+                        TIMGAD • COIN •
+                      </textPath>
+                    </text>
+                    <text x="100" y="120" textAnchor="middle" fontFamily="serif" fontSize="65" fontWeight="bold" fill="#6b4f00" stroke="#4a3500" strokeWidth="1.5">
+                      T
+                    </text>
+                  </svg>
+                </Button>
+
                 <Button 
                   variant="ghost" 
                   size="icon" 
