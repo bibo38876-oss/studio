@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Progress } from "@/components/ui/progress";
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface PostData {
   id: string;
@@ -52,8 +52,6 @@ interface PostData {
   hashtags?: string[];
   email?: string;
   authorVerificationType?: VerificationType;
-  isRepost?: boolean;
-  repostedBy?: string;
 }
 
 export default function PostCard({ post }: { post: PostData }) {
@@ -256,7 +254,8 @@ export default function PostCard({ post }: { post: PostData }) {
     <>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
         transition={{ duration: 0.3 }}
       >
         <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
@@ -367,7 +366,7 @@ export default function PostCard({ post }: { post: PostData }) {
           </CardContent>
 
           <CardFooter className="px-4 py-1 flex flex-row justify-between items-center h-9">
-            <motion.div whileTap={{ scale: 0.8 }}>
+            <motion.div whileTap={{ scale: 0.9 }}>
               <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }} disabled={isLikeLoading}>
                 <motion.div
                   animate={likeData ? { scale: [1, 1.4, 1.1], rotate: [0, 15, -15, 0] } : { scale: 1 }}
@@ -383,7 +382,7 @@ export default function PostCard({ post }: { post: PostData }) {
               <MessageCircle size={16} /><span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
             </Button>
 
-            <motion.div whileTap={{ scale: 0.8 }}>
+            <motion.div whileTap={{ scale: 0.9 }}>
               <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", bookmarkData ? "text-accent" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleBookmark(); }} disabled={isBookmarkLoading}>
                 <motion.div
                   animate={bookmarkData ? { scale: [1, 1.2, 1] } : { scale: 1 }}

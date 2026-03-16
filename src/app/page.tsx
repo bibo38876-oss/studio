@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -12,6 +11,7 @@ import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase'
 import { collection, query, orderBy, doc, where, limit } from 'firebase/firestore';
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
@@ -31,7 +31,7 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // جلب المنشورات العامة لتبويب "لك" (Pool للمرشحين)
+  // جلب المنشورات العامة لتبويب "لك"
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
@@ -52,25 +52,18 @@ export default function Home() {
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
-  // خوارزمية التوصيات المتقدمة لتبويب "لك"
+  // خوارزمية التوصيات المتقدمة
   const recommendedPosts = useMemo(() => {
     if (!postsPool || !profile) return [];
 
     return [...postsPool].map(post => {
       let score = 0;
-
-      // 1. التفاعل العام (Engagement)
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
       score += (post.viewsCount || 0) * 0.1;
-
-      // 2. العلاقة الاجتماعية (Social Graph)
       if (profile.followingIds?.includes(post.authorId)) score += 50;
-      
-      // 3. سجل الاهتمامات (Interaction History)
       if (profile.interactedAuthorIds?.includes(post.authorId)) score += 30;
 
-      // 4. الحداثة الزمنية (Recency Decay)
       const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
       const postAgeMs = Date.now() - postDate.getTime();
       const oneHour = 3600000;
@@ -78,8 +71,7 @@ export default function Home() {
 
       if (postAgeMs < oneHour) score += 40;
       else if (postAgeMs < oneDay) score += 20;
-      else if (postAgeMs < oneDay * 7) score += 5;
-      else score -= 10; // تقليل أولوية المنشورات القديمة جداً
+      else score -= 10;
 
       return { ...post, recommendationScore: score };
     }).sort((a, b) => b.recommendationScore - a.recommendationScore);
@@ -98,12 +90,10 @@ export default function Home() {
       <Navbar />
       
       <main className="container mx-auto px-0 md:px-4 pt-8 flex gap-6">
-        {/* Sidebar الأيسر - سطح المكتب */}
         <div className="hidden md:block w-64 pt-4 h-fit sticky top-8">
           <LeftSidebar />
         </div>
 
-        {/* الخلاصة المركزية */}
         <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto">
           <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="w-full bg-background/80 backdrop-blur-md border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-8 z-40">
@@ -123,48 +113,51 @@ export default function Home() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="for-you" className="mt-0">
-              {isPoolLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <p className="text-[10px] text-muted-foreground animate-pulse">جاري تحضير التوصيات المخصصة لك...</p>
-                </div>
-              ) : recommendedPosts.length > 0 ? (
-                <div className="flex flex-col">
-                  {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
-                </div>
-              ) : (
-                <div className="text-center py-20 bg-card border-b">
-                  <p className="text-muted-foreground text-xs font-medium">لا توجد منشورات كافية للتوصية بها حالياً.</p>
-                </div>
-              )}
-            </TabsContent>
+            <AnimatePresence mode="wait">
+              <TabsContent value="for-you" key="for-you" className="mt-0">
+                {isPoolLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <p className="text-[10px] text-muted-foreground animate-pulse">جاري تحضير التوصيات...</p>
+                  </div>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col"
+                  >
+                    {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
+                  </motion.div>
+                )}
+              </TabsContent>
 
-            <TabsContent value="following" className="mt-0">
-              {!profile?.followingIds || profile.followingIds.length === 0 ? (
-                <div className="text-center py-24 bg-card px-8 border-b">
-                  <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-primary font-bold text-xs mb-1">ابدأ بمتابعة الآخرين</p>
-                  <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
-                </div>
-              ) : isFollowingLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : followingPosts && followingPosts.length > 0 ? (
-                <div className="flex flex-col">
-                  {followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
-                </div>
-              ) : (
-                <div className="text-center py-20 bg-card border-b">
-                  <p className="text-muted-foreground text-xs">لا توجد منشورات جديدة ممن تتابعهم.</p>
-                </div>
-              )}
-            </TabsContent>
+              <TabsContent value="following" key="following" className="mt-0">
+                {!profile?.followingIds || profile.followingIds.length === 0 ? (
+                  <div className="text-center py-24 bg-card px-8 border-b">
+                    <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
+                    <p className="text-primary font-bold text-xs mb-1">ابدأ بمتابعة الآخرين</p>
+                    <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
+                  </div>
+                ) : isFollowingLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col"
+                  >
+                    {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
+                  </motion.div>
+                )}
+              </TabsContent>
+            </AnimatePresence>
           </Tabs>
         </div>
 
-        {/* Sidebar الأيمن - سطح المكتب */}
         <div className="hidden lg:block w-80 pt-4 h-fit sticky top-8">
           <RightSidebar />
         </div>

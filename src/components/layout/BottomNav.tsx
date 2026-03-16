@@ -17,6 +17,7 @@ export default function BottomNav() {
 
   const isAnonymous = !user || user.isAnonymous;
 
+  // إظهار شريط التنقل فقط في الصفحة الرئيسية لتحسين تجربة المستخدم على الجوال
   if (pathname !== '/') {
     return null;
   }
@@ -74,7 +75,7 @@ export default function BottomNav() {
             );
           }
 
-          const isActive = pathname === item.path || (item.path === '/groups' && pathname === '/groups');
+          const isActive = pathname === item.path;
           return (
             <Link 
               key={index} 
