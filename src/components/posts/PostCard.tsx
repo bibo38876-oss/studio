@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
@@ -29,6 +28,7 @@ import {
 } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Progress } from "@/components/ui/progress";
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PostData {
   id: string;
@@ -254,128 +254,152 @@ export default function PostCard({ post }: { post: PostData }) {
 
   return (
     <>
-      <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
-        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="text-xs">
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
-                {!isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleReport(); }} className="gap-2 text-red-500 cursor-pointer"><AlertTriangle size={12} /> إبلاغ عن محتوى مخالف</DropdownMenuItem>}
-                {isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteDocumentNonBlocking(doc(firestore!, 'posts', displayPost.id)); toast({ description: "تم الحذف" }); }} className="gap-2 text-destructive cursor-pointer"><Trash2 size={12} /> حذف المنشور</DropdownMenuItem>}
-              </DropdownMenuContent>
-            </DropdownMenu>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
+          <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="text-xs">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
+                  {!isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleReport(); }} className="gap-2 text-red-500 cursor-pointer"><AlertTriangle size={12} /> إبلاغ عن محتوى مخالف</DropdownMenuItem>}
+                  {isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteDocumentNonBlocking(doc(firestore!, 'posts', displayPost.id)); toast({ description: "تم الحذف" }); }} className="gap-2 text-destructive cursor-pointer"><Trash2 size={12} /> حذف المنشور</DropdownMenuItem>}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            {!isOwner && !isUserLoading && (
-              <Button 
-                size="sm" 
-                variant={isFollowing ? "outline" : "default"} 
-                className={cn(
-                  "h-6 px-3 text-[9px] font-bold rounded-full transition-all gap-1.5",
-                  isFollowing ? "border-primary/20 text-primary hover:bg-primary/5" : "bg-primary text-white hover:bg-primary/90"
-                )}
-                onClick={handleFollow}
-              >
-                {isFollowing ? (
-                  <>
-                    <UserCheck size={10} />
-                    متابع
-                  </>
-                ) : isFollowingMe ? (
-                  <>
-                    <UserRoundPlus size={10} />
-                    رد المتابعة
-                  </>
-                ) : (
-                  <>
-                    <UserPlus size={10} />
-                    متابعة
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-
-          <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col text-right">
-              <div className="flex items-center gap-1.5 leading-tight justify-end">
-                <VerifiedBadge type={verificationType} size={13} />
-                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
-              </div>
-              <span className="text-[9px] text-muted-foreground">{displayPost.createdAt?.toDate ? formatDistanceToNow(displayPost.createdAt.toDate(), { addSuffix: true, locale: ar }) : 'الآن'}</span>
+              {!isOwner && !isUserLoading && (
+                <Button 
+                  size="sm" 
+                  variant={isFollowing ? "outline" : "default"} 
+                  className={cn(
+                    "h-6 px-3 text-[9px] font-bold rounded-full transition-all gap-1.5",
+                    isFollowing ? "border-primary/20 text-primary hover:bg-primary/5" : "bg-primary text-white hover:bg-primary/90"
+                  )}
+                  onClick={handleFollow}
+                >
+                  {isFollowing ? (
+                    <>
+                      <UserCheck size={10} />
+                      متابع
+                    </>
+                  ) : isFollowingMe ? (
+                    <>
+                      <UserRoundPlus size={10} />
+                      رد المتابعة
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus size={10} />
+                      متابعة
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
-            <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5">
-              <AvatarImage src={displayPost.authorAvatar} />
-              <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0]}</AvatarFallback>
-            </Avatar>
-          </Link>
-        </CardHeader>
-        
-        <CardContent className="px-4 py-1 text-right space-y-3">
-          {displayPost.content && renderContent(displayPost.content)}
 
-          {displayPost.poll && (
-            <div className="bg-secondary/10 p-4 border border-primary/5 space-y-4 rounded-sm" onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-primary">{displayPost.poll.question}</span>
-                {userVote && <CheckCircle2 size={14} className="text-accent" />}
+            <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
+              <div className="flex flex-col text-right">
+                <div className="flex items-center gap-1.5 leading-tight justify-end">
+                  <VerifiedBadge type={verificationType} size={13} />
+                  <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
+                </div>
+                <span className="text-[9px] text-muted-foreground">{displayPost.createdAt?.toDate ? formatDistanceToNow(displayPost.createdAt.toDate(), { addSuffix: true, locale: ar }) : 'الآن'}</span>
               </div>
-              <div className="space-y-3">
-                {displayPost.poll.options.map((option, i) => {
-                  const percentage = displayPost.poll!.totalVotes > 0 ? Math.round((option.votes / displayPost.poll!.totalVotes) * 100) : 0;
-                  const isSelected = userVote?.optionIndex === i;
-                  return (
-                    <div key={i} className="relative group">
-                      {userVote ? (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[10px] mb-1 px-1">
-                            <span className={cn("font-bold", isSelected ? "text-primary" : "text-muted-foreground")}>{option.text}</span>
-                            <span className="font-bold">{percentage}%</span>
-                          </div>
-                          <Progress value={percentage} className={cn("h-6 rounded-none bg-secondary", isSelected ? "bg-primary/20" : "")} />
-                        </div>
-                      ) : (
-                        <Button variant="outline" className="w-full h-9 justify-start text-[11px] rounded-none hover:bg-primary/5 hover:border-primary/30 font-medium" onClick={() => handleVote(i)}>
-                          {option.text}
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+              <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5">
+                <AvatarImage src={displayPost.authorAvatar} />
+                <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0]}</AvatarFallback>
+              </Avatar>
+            </Link>
+          </CardHeader>
           
-          {displayPost.mediaUrls && displayPost.mediaUrls.length > 0 && (
-            <div className="w-full mt-2 rounded-lg overflow-hidden border border-muted/10">
-              <Carousel className="w-full" opts={{ direction: 'rtl' }}>
-                <CarouselContent className="-ml-0">
-                  {displayPost.mediaUrls.map((url: string, index: number) => (
-                    <CarouselItem key={index} className="pl-0">
-                      <img src={url} alt={`Post media ${index + 1}`} className="w-full h-auto block" loading="lazy" />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-              </Carousel>
-            </div>
-          )}
-        </CardContent>
+          <CardContent className="px-4 py-1 text-right space-y-3">
+            {displayPost.content && renderContent(displayPost.content)}
 
-        <CardFooter className="px-4 py-1 flex flex-row justify-between items-center h-9">
-          <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }} disabled={isLikeLoading}>
-            <Heart size={16} className={cn(likeData ? "fill-current" : "")} /><span className="text-[10px] font-bold">{displayPost.likesCount || 0}</span>
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
-            <MessageCircle size={16} /><span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
-          </Button>
-          <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", bookmarkData ? "text-accent" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleBookmark(); }} disabled={isBookmarkLoading}>
-            <Bookmark size={16} className={cn(bookmarkData ? "fill-current" : "")} />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => e.stopPropagation()}>
-            <BarChart3 size={16} /><span className="text-[10px] font-bold">{displayPost.viewsCount || 0}</span>
-          </Button>
-        </CardFooter>
-      </Card>
+            {displayPost.poll && (
+              <div className="bg-secondary/10 p-4 border border-primary/5 space-y-4 rounded-sm" onClick={(e) => e.stopPropagation()}>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-primary">{displayPost.poll.question}</span>
+                  {userVote && <CheckCircle2 size={14} className="text-accent" />}
+                </div>
+                <div className="space-y-3">
+                  {displayPost.poll.options.map((option, i) => {
+                    const percentage = displayPost.poll!.totalVotes > 0 ? Math.round((option.votes / displayPost.poll!.totalVotes) * 100) : 0;
+                    const isSelected = userVote?.optionIndex === i;
+                    return (
+                      <div key={i} className="relative group">
+                        {userVote ? (
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[10px] mb-1 px-1">
+                              <span className={cn("font-bold", isSelected ? "text-primary" : "text-muted-foreground")}>{option.text}</span>
+                              <span className="font-bold">{percentage}%</span>
+                            </div>
+                            <Progress value={percentage} className={cn("h-6 rounded-none bg-secondary", isSelected ? "bg-primary/20" : "")} />
+                          </div>
+                        ) : (
+                          <Button variant="outline" className="w-full h-9 justify-start text-[11px] rounded-none hover:bg-primary/5 hover:border-primary/30 font-medium" onClick={() => handleVote(i)}>
+                            {option.text}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {displayPost.mediaUrls && displayPost.mediaUrls.length > 0 && (
+              <div className="w-full mt-2 rounded-lg overflow-hidden border border-muted/10">
+                <Carousel className="w-full" opts={{ direction: 'rtl' }}>
+                  <CarouselContent className="-ml-0">
+                    {displayPost.mediaUrls.map((url: string, index: number) => (
+                      <CarouselItem key={index} className="pl-0">
+                        <img src={url} alt={`Post media ${index + 1}`} className="w-full h-auto block" loading="lazy" />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </Carousel>
+              </div>
+            )}
+          </CardContent>
+
+          <CardFooter className="px-4 py-1 flex flex-row justify-between items-center h-9">
+            <motion.div whileTap={{ scale: 0.8 }}>
+              <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }} disabled={isLikeLoading}>
+                <motion.div
+                  animate={likeData ? { scale: [1, 1.4, 1.1], rotate: [0, 15, -15, 0] } : { scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Heart size={16} className={cn(likeData ? "fill-current" : "")} />
+                </motion.div>
+                <span className="text-[10px] font-bold">{displayPost.likesCount || 0}</span>
+              </Button>
+            </motion.div>
+
+            <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
+              <MessageCircle size={16} /><span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
+            </Button>
+
+            <motion.div whileTap={{ scale: 0.8 }}>
+              <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", bookmarkData ? "text-accent" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleBookmark(); }} disabled={isBookmarkLoading}>
+                <motion.div
+                  animate={bookmarkData ? { scale: [1, 1.2, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Bookmark size={16} className={cn(bookmarkData ? "fill-current" : "")} />
+                </motion.div>
+              </Button>
+            </motion.div>
+
+            <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => e.stopPropagation()}>
+              <BarChart3 size={16} /><span className="text-[10px] font-bold">{displayPost.viewsCount || 0}</span>
+            </Button>
+          </CardFooter>
+        </Card>
+      </motion.div>
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
         <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[95vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col [&>button]:hidden">

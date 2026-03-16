@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -8,6 +7,7 @@ import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/
 import CreatePost from '@/components/posts/CreatePost';
 import { useState } from 'react';
 import { useUser } from '@/firebase';
+import { motion } from 'framer-motion';
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -17,7 +17,6 @@ export default function BottomNav() {
 
   const isAnonymous = !user || user.isAnonymous;
 
-  // القائمة السفلية تظهر فقط في الصفحة الرئيسية بناءً على طلب المستخدم
   if (pathname !== '/') {
     return null;
   }
@@ -56,13 +55,16 @@ export default function BottomNav() {
                 setIsPostOpen(open);
               }}>
                 <DialogTrigger asChild>
-                  <button className="relative w-8 h-7 transition-transform hover:scale-110 active:scale-95 mx-1 group">
+                  <motion.button 
+                    whileTap={{ scale: 0.9 }}
+                    className="relative w-8 h-7 transition-transform mx-1 group"
+                  >
                     <div className="absolute inset-0 bg-accent rounded-sm -translate-x-0.5 opacity-60"></div>
                     <div className="absolute inset-0 bg-primary rounded-sm translate-x-0.5 opacity-60"></div>
                     <div className="absolute inset-0 bg-foreground dark:bg-foreground rounded-sm flex items-center justify-center">
                       <Plus size={16} className="text-background dark:text-background" strokeWidth={3} />
                     </div>
-                  </button>
+                  </motion.button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-auto p-0 border-none bg-background gap-0 overflow-hidden flex flex-col">
                   <DialogTitle className="sr-only">إنشاء منشور جديد</DialogTitle>
@@ -78,10 +80,15 @@ export default function BottomNav() {
               key={index} 
               href={item.path} 
               onClick={item.onClick}
-              className={`flex flex-col items-center justify-center gap-0.5 transition-colors w-full h-full ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`w-full h-full`}
             >
-              {item.icon}
-              <span className={`text-[7.5px] font-bold tracking-tighter ${isActive ? 'opacity-100' : 'opacity-60'}`}>{item.label}</span>
+              <motion.div 
+                whileTap={{ scale: 0.85 }}
+                className={`flex flex-col items-center justify-center gap-0.5 transition-colors w-full h-full ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+              >
+                {item.icon}
+                <span className={`text-[7.5px] font-bold tracking-tighter ${isActive ? 'opacity-100' : 'opacity-60'}`}>{item.label}</span>
+              </motion.div>
             </Link>
           );
         })}
