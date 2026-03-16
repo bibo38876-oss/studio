@@ -257,8 +257,8 @@ export default function PostCard({ post }: { post: PostData }) {
     });
 
     return (
-      <div className="flex flex-col text-start">
-        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap tracking-tight">
+      <div className="flex flex-col text-right">
+        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap tracking-tight text-right">
           {parts}
         </p>
         {isLong && (
@@ -267,7 +267,7 @@ export default function PostCard({ post }: { post: PostData }) {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
             }}
-            className="text-accent text-[10px] font-bold mt-1 text-start hover:underline"
+            className="text-accent text-[10px] font-bold mt-1 text-right hover:underline"
           >
             {isExpanded ? 'عرض أقل' : 'اقرأ المزيد'}
           </button>
@@ -285,18 +285,18 @@ export default function PostCard({ post }: { post: PostData }) {
         className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/20 hover:bg-muted/5 transition-colors"
         onClick={() => setIsCommentsOpen(true)}
       >
-        <CardHeader className="p-4 pb-2 flex-row items-center justify-between space-y-0">
-          <Link href={`/profile/${displayPost.authorId}`} className="flex gap-3 group text-start items-center" onClick={(e) => e.stopPropagation()}>
+        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
+          <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
             <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 shrink-0">
               {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
               <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col">
+            <div className="flex flex-col text-right">
               <div className="flex items-center gap-1.5 leading-tight">
                 <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
                 <VerifiedBadge type={verificationType} size={13} />
               </div>
-              <span className="text-[9px] text-muted-foreground">
+              <span className="text-[9px] text-muted-foreground text-right">
                 {formattedDate}
               </span>
             </div>
@@ -308,7 +308,7 @@ export default function PostCard({ post }: { post: PostData }) {
                 <MoreHorizontal size={14} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-xs">
+            <DropdownMenuContent align="start" className="text-xs">
               <DropdownMenuItem onClick={handleCopyLink} className="gap-2 cursor-pointer">
                 <LinkIcon size={12} />
                 نسخ الرابط
@@ -328,12 +328,12 @@ export default function PostCard({ post }: { post: PostData }) {
           </DropdownMenu>
         </CardHeader>
         
-        <CardContent className="px-4 py-1 text-start">
+        <CardContent className="px-4 py-1 text-right">
           {displayPost.content && renderContent(displayPost.content)}
           
           {allMedia.length > 0 && (
             <div className="w-full mt-2 mb-2 rounded-lg overflow-hidden border border-muted/10">
-              <Carousel className="w-full">
+              <Carousel className="w-full" opts={{ direction: 'rtl' }}>
                 <CarouselContent className="-ml-0">
                   {allMedia.map((url: string, index: number) => (
                     <CarouselItem key={index} className="pl-0">
@@ -353,7 +353,7 @@ export default function PostCard({ post }: { post: PostData }) {
           )}
         </CardContent>
 
-        <CardFooter className="px-4 py-1 border-t-0 flex justify-between items-center h-9">
+        <CardFooter className="px-4 py-1 border-t-0 flex flex-row-reverse justify-between items-center h-9">
           <Button 
             variant="ghost" 
             size="sm" 

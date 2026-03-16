@@ -55,8 +55,8 @@
   }
   body {
     @apply bg-background text-foreground font-body;
-    direction: rtl;
-    text-align: right;
+    direction: rtl !important;
+    text-align: right !important;
   }
 }
 
