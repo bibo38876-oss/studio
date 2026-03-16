@@ -235,8 +235,9 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="px-4 pb-6 relative">
+            {/* Header Content Swapped: Info Right, Buttons Left */}
             <div className="flex justify-between items-start -mt-10 mb-4">
-              {/* القسم الأيمن: الصورة الشخصية والاسم */}
+              {/* القسم الأيمن: الصورة الشخصية والاسم (تحتها) */}
               <div className="flex flex-col items-center">
                 <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
                   {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
@@ -251,7 +252,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* القسم الأيسر: الأزرار */}
+              {/* القسم الأيسر: أزرار التحكم */}
               <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

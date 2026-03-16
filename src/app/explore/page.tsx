@@ -57,6 +57,7 @@ export default function ExplorePage() {
   const { data: recentPosts, isLoading: isPostsLoading } = useCollection(postsQuery);
   const { data: searchPosts, isLoading: isSearching } = useCollection(hashtagResultsQuery);
 
+  // حساب الهاشتاجات الحقيقية من المنشورات الحالية
   const trendingTags = useMemo(() => {
     if (!recentPosts) return [];
     
