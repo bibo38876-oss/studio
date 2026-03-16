@@ -21,6 +21,8 @@ import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import TimgadLogo from '@/components/ui/Logo';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import Link from 'next/link';
+import { ar } from 'date-fns/locale';
+import { formatDistanceToNow } from 'date-fns';
 
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -107,6 +109,26 @@ export default function ProfilePage() {
   }, [firestore, id]);
 
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
+
+  const bookmarksQuery = useMemoFirebase(() => {
+    if (!firestore || !id || currentUser?.uid !== id) return null;
+    return query(
+      collection(firestore, 'users', id, 'bookmarks'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, id, currentUser?.uid]);
+
+  const { data: bookmarks, isLoading: isBookmarksLoading } = useCollection(bookmarksQuery);
+
+  const likedPostsQuery = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return query(
+      collection(firestore, 'users', id, 'likedPosts'),
+      orderBy('likedAt', 'desc')
+    );
+  }, [firestore, id]);
+
+  const { data: likedPosts, isLoading: isLikesLoading } = useCollection(likedPostsQuery);
 
   const supportedPeopleQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -254,7 +276,6 @@ export default function ProfilePage() {
               </div>
 
               <div className="pt-12 flex gap-2 items-center">
-                {/* زر الكوب لعرض قائمة المساهمات */}
                 <Dialog open={isSupportersOpen} onOpenChange={setIsSupportersOpen}>
                   <DialogTrigger asChild>
                     <Button 
@@ -391,26 +412,28 @@ export default function ProfilePage() {
           <Tabs defaultValue="posts" className="w-full">
             <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0 mb-0.5 sticky top-7 z-40 bg-background/80 backdrop-blur-md overflow-x-auto no-scrollbar">
               <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المنشورات <span className="text-[9px] opacity-50">({posts?.length || 0})</span></TabsTrigger>
-              <TabsTrigger value="bookmarks" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المحفوظات <span className="text-[9px] opacity-50">({bookmarks?.length || 0})</span></TabsTrigger>
+              {isOwnProfile && <TabsTrigger value="bookmarks" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المحفوظات <span className="text-[9px] opacity-50">({bookmarks?.length || 0})</span></TabsTrigger>}
               <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">الإعجابات <span className="text-[9px] opacity-50">({likedPosts?.length || 0})</span></TabsTrigger>
             </TabsList>
             <TabsContent value="posts" className="mt-0 space-y-[1px]">
               {isPostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : posts && posts.length > 0 ? posts.map((post: any) => <PostCard key={post.id} post={post} />) : <div className="text-center py-24 bg-card px-8 border-b"><p className="text-muted-foreground text-[10px]">لا توجد منشورات في تيمقاد بعد.</p></div>}
             </TabsContent>
-            <TabsContent value="bookmarks" className="mt-0 space-y-[1px]">
-              {isBookmarksLoading ? (
-                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div>
-              ) : bookmarks && bookmarks.length > 0 ? (
-                bookmarks.map((bookmark: any) => (
-                  <PostCard key={bookmark.id} post={bookmark} />
-                ))
-              ) : (
-                <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center">
-                  <Bookmark size={30} className="text-muted-foreground/20 mb-3" />
-                  <p className="text-muted-foreground text-[10px]">لا توجد منشورات محفوظة.</p>
-                </div>
-              )}
-            </TabsContent>
+            {isOwnProfile && (
+              <TabsContent value="bookmarks" className="mt-0 space-y-[1px]">
+                {isBookmarksLoading ? (
+                  <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div>
+                ) : bookmarks && bookmarks.length > 0 ? (
+                  bookmarks.map((bookmark: any) => (
+                    <PostCard key={bookmark.id} post={bookmark} />
+                  ))
+                ) : (
+                  <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center">
+                    <Bookmark size={30} className="text-muted-foreground/20 mb-3" />
+                    <p className="text-muted-foreground text-[10px]">لا توجد منشورات محفوظة.</p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
             <TabsContent value="likes" className="mt-0 space-y-[1px]">
               {isLikesLoading ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div>
