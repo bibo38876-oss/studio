@@ -62,7 +62,15 @@ export default function PostCard({ post }: { post: PostData }) {
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
-  // نظام احتساب المشاهدات الاحترافي (عند الرؤية الفعلية فقط)
+  // المصدر الوحيد للحقيقة: نتحقق دائماً من وجود المنشور في المجموعة الرئيسية
+  const centralPostRef = useMemoFirebase(() => {
+    if (!firestore || !post.id) return null;
+    return doc(firestore, 'posts', post.id);
+  }, [firestore, post.id]);
+
+  const { data: centralPost, isLoading: isCentralLoading } = useDoc(centralPostRef);
+
+  // نظام احتساب المشاهدات الاحترافي
   useEffect(() => {
     if (!firestore || !post.id || viewedRef.current) return;
 
@@ -77,7 +85,7 @@ export default function PostCard({ post }: { post: PostData }) {
           observer.disconnect();
         }
       },
-      { threshold: 0.5 } // يجب أن يظهر 50% من المنشور ليتم احتسابه
+      { threshold: 0.5 }
     );
 
     if (cardRef.current) {
@@ -87,34 +95,42 @@ export default function PostCard({ post }: { post: PostData }) {
     return () => observer.disconnect();
   }, [firestore, post.id]);
 
+  // إذا تم تحميل البيانات واكتشفنا أن المنشور الأصلي غير موجود، لا نعرض شيئاً (إخفاء الأشباح)
+  if (!isCentralLoading && centralPost === null) {
+    return null;
+  }
+
+  // نستخدم البيانات الحية من المنشور المركزي إذا كانت متوفرة، لضمان تحديث العدادات والمحتوى في كل مكان
+  const displayPost = centralPost || post;
+
   const authorRef = useMemoFirebase(() => {
-    if (!firestore || !post.authorId) return null;
-    return doc(firestore, 'users', post.authorId);
-  }, [firestore, post.authorId]);
+    if (!firestore || !displayPost.authorId) return null;
+    return doc(firestore, 'users', displayPost.authorId);
+  }, [firestore, displayPost.authorId]);
   const { data: authorData } = useDoc(authorRef);
 
-  const verificationType: VerificationType = post.email === 'adelbenmaza8@gmail.com' 
+  const verificationType: VerificationType = displayPost.email === 'adelbenmaza8@gmail.com' 
     ? 'blue' 
-    : (authorData?.verificationType || post.authorVerificationType || 'none');
+    : (authorData?.verificationType || displayPost.authorVerificationType || 'none');
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'posts', post.id, 'likes', user.uid);
-  }, [firestore, post.id, user]);
+    return doc(firestore, 'posts', displayPost.id, 'likes', user.uid);
+  }, [firestore, displayPost.id, user]);
 
   const { data: likeData } = useDoc(likeRef);
   const isLiked = !!likeData;
 
   const repostRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid, 'reposts', post.id);
-  }, [firestore, post.id, user]);
+    return doc(firestore, 'users', user.uid, 'reposts', displayPost.id);
+  }, [firestore, displayPost.id, user]);
 
   const { data: repostData } = useDoc(repostRef);
   const isReposted = !!repostData;
 
-  const formattedDate = post.createdAt?.toDate 
-    ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ar })
+  const formattedDate = displayPost.createdAt?.toDate 
+    ? formatDistanceToNow(displayPost.createdAt.toDate(), { addSuffix: true, locale: ar })
     : 'منذ قليل';
 
   const handleLike = (e: React.MouseEvent) => {
@@ -128,9 +144,9 @@ export default function PostCard({ post }: { post: PostData }) {
     setIsLikeAnimating(true);
     setTimeout(() => setIsLikeAnimating(false), 500);
 
-    const postRef = doc(firestore, 'posts', post.id);
-    const userLikeRef = doc(firestore, 'posts', post.id, 'likes', user.uid);
-    const personalLikeRef = doc(firestore, 'users', user.uid, 'likedPosts', post.id);
+    const postRef = doc(firestore, 'posts', displayPost.id);
+    const userLikeRef = doc(firestore, 'posts', displayPost.id, 'likes', user.uid);
+    const personalLikeRef = doc(firestore, 'users', user.uid, 'likedPosts', displayPost.id);
 
     if (isLiked) {
       deleteDocumentNonBlocking(userLikeRef);
@@ -140,20 +156,20 @@ export default function PostCard({ post }: { post: PostData }) {
       const timestamp = new Date().toISOString();
       setDocumentNonBlocking(userLikeRef, { userId: user.uid, likedAt: timestamp }, { merge: true });
       setDocumentNonBlocking(personalLikeRef, { 
-        ...post, 
+        ...displayPost, 
         likedAt: timestamp,
-        createdAt: post.createdAt?.toDate ? post.createdAt.toDate().toISOString() : post.createdAt
+        createdAt: displayPost.createdAt?.toDate ? displayPost.createdAt.toDate().toISOString() : displayPost.createdAt
       }, { merge: true });
       updateDocumentNonBlocking(postRef, { likesCount: increment(1) });
       
-      if (post.authorId !== user.uid) {
-        const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+      if (displayPost.authorId !== user.uid) {
+        const notifRef = doc(collection(firestore, 'users', displayPost.authorId, 'notifications'));
         setDocumentNonBlocking(notifRef, {
           type: 'like',
           fromUserId: user.uid,
           fromUsername: user.displayName || 'مستخدم تواصل',
           fromAvatar: user.photoURL || '',
-          postId: post.id,
+          postId: displayPost.id,
           createdAt: serverTimestamp(),
           read: false
         }, { merge: true });
@@ -172,28 +188,28 @@ export default function PostCard({ post }: { post: PostData }) {
     setIsRepostAnimating(true);
     setTimeout(() => setIsRepostAnimating(false), 500);
 
-    const postRef = doc(firestore, 'posts', post.id);
-    const userRepostRef = doc(firestore, 'users', user.uid, 'reposts', post.id);
+    const postRef = doc(firestore, 'posts', displayPost.id);
+    const userRepostRef = doc(firestore, 'users', user.uid, 'reposts', displayPost.id);
 
     if (isReposted) {
       deleteDocumentNonBlocking(userRepostRef);
       updateDocumentNonBlocking(postRef, { repostsCount: increment(-1) });
     } else {
       setDocumentNonBlocking(userRepostRef, { 
-        postId: post.id, 
+        postId: displayPost.id, 
         repostedAt: serverTimestamp(),
-        originalAuthorId: post.authorId,
-        postData: { ...post, createdAt: post.createdAt?.toDate ? post.createdAt.toDate().toISOString() : post.createdAt }
+        originalAuthorId: displayPost.authorId,
+        postData: { ...displayPost, createdAt: displayPost.createdAt?.toDate ? displayPost.createdAt.toDate().toISOString() : displayPost.createdAt }
       }, { merge: true });
       updateDocumentNonBlocking(postRef, { repostsCount: increment(1) });
       
-      if (post.authorId !== user.uid) {
-        const notifRef = doc(collection(firestore, 'users', post.authorId, 'notifications'));
+      if (displayPost.authorId !== user.uid) {
+        const notifRef = doc(collection(firestore, 'users', displayPost.authorId, 'notifications'));
         setDocumentNonBlocking(notifRef, {
           type: 'repost', 
           fromUserId: user.uid,
           fromUsername: user.displayName || 'مستخدم تواصل',
-          postId: post.id,
+          postId: displayPost.id,
           createdAt: serverTimestamp(),
           read: false
         }, { merge: true });
@@ -204,7 +220,7 @@ export default function PostCard({ post }: { post: PostData }) {
   const handleDeletePost = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isOwner || !firestore) return;
-    deleteDocumentNonBlocking(doc(firestore, 'posts', post.id));
+    deleteDocumentNonBlocking(doc(firestore, 'posts', displayPost.id));
     toast({ title: "تم الحذف", description: "تم حذف المنشور بنجاح." });
   };
 
@@ -215,7 +231,7 @@ export default function PostCard({ post }: { post: PostData }) {
 
   const handleCopyLink = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/post/${post.id}`;
+    const url = `${window.location.origin}/post/${displayPost.id}`;
     navigator.clipboard.writeText(url);
     toast({ title: "تم النسخ", description: "تم نسخ رابط المنشور إلى الحافظة." });
   };
@@ -239,7 +255,7 @@ export default function PostCard({ post }: { post: PostData }) {
     });
   };
 
-  const allMedia = post.mediaUrls || (post.mediaUrl ? [post.mediaUrl] : []);
+  const allMedia = displayPost.mediaUrls || (displayPost.mediaUrl ? [displayPost.mediaUrl] : []);
 
   return (
     <>
@@ -249,14 +265,14 @@ export default function PostCard({ post }: { post: PostData }) {
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-3 pb-2 flex-row items-start justify-between space-y-0">
-          <Link href={`/profile/${post.authorId}`} className="flex gap-3 group" onClick={(e) => e.stopPropagation()}>
+          <Link href={`/profile/${displayPost.authorId}`} className="flex gap-3 group" onClick={(e) => e.stopPropagation()}>
             <Avatar className="h-10 w-10 border border-muted/20 rounded-full bg-primary/5">
-              {post.authorAvatar ? <AvatarImage src={post.authorAvatar} alt={post.authorName} /> : null}
-              <AvatarFallback className="text-[10px] font-bold">{post.authorName?.[0] || 'ت'}</AvatarFallback>
+              {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
+              <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5 leading-tight">
-                <span className="text-sm font-bold text-primary group-hover:underline">{post.authorName || 'مستخدم تواصل'}</span>
+                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تواصل'}</span>
                 <VerifiedBadge type={verificationType} size={14} />
               </div>
               <span className="text-[10px] text-muted-foreground mt-0.5">
@@ -292,9 +308,9 @@ export default function PostCard({ post }: { post: PostData }) {
         </CardHeader>
         
         <CardContent className="px-0 py-0 pr-16 pl-4">
-          {post.content && (
+          {displayPost.content && (
             <p className="pb-3 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap tracking-tight">
-              {renderContent(post.content)}
+              {renderContent(displayPost.content)}
             </p>
           )}
           
@@ -338,7 +354,7 @@ export default function PostCard({ post }: { post: PostData }) {
                 isLikeAnimating ? "animate-icon-pop" : ""
               )} 
             />
-            <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
+            <span className="text-[11px] font-bold">{displayPost.likesCount || 0}</span>
           </Button>
           
           <Button 
@@ -351,7 +367,7 @@ export default function PostCard({ post }: { post: PostData }) {
             }}
           >
             <MessageCircle size={18} />
-            <span className="text-[11px] font-bold">{post.commentsCount || 0}</span>
+            <span className="text-[11px] font-bold">{displayPost.commentsCount || 0}</span>
           </Button>
 
           <Button 
@@ -371,7 +387,7 @@ export default function PostCard({ post }: { post: PostData }) {
                 isRepostAnimating ? "animate-icon-pop" : ""
               )} 
             />
-            <span className="text-[11px] font-bold">{post.repostsCount || 0}</span>
+            <span className="text-[11px] font-bold">{displayPost.repostsCount || 0}</span>
           </Button>
 
           <Button 
@@ -381,7 +397,7 @@ export default function PostCard({ post }: { post: PostData }) {
             onClick={(e) => e.stopPropagation()}
           >
             <BarChart3 size={18} />
-            <span className="text-[11px] font-bold">{post.viewsCount || 0}</span>
+            <span className="text-[11px] font-bold">{displayPost.viewsCount || 0}</span>
           </Button>
         </CardFooter>
       </Card>
@@ -390,9 +406,9 @@ export default function PostCard({ post }: { post: PostData }) {
         <DialogContent className="sm:max-w-full h-[100dvh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col sm:max-w-[600px] sm:h-[95vh] animate-in fade-in zoom-in-95 duration-200">
           <DialogTitle className="sr-only">تفاصيل المنشور</DialogTitle>
           <CommentsDialog 
-            postId={post.id} 
-            postAuthorId={post.authorId} 
-            post={post}
+            postId={displayPost.id} 
+            postAuthorId={displayPost.authorId} 
+            post={displayPost}
             onClose={() => setIsCommentsOpen(false)} 
           />
         </DialogContent>
