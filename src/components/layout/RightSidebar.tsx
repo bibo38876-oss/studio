@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useFirebase, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, limit, doc, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
+import { Loader2, BadgeCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -65,6 +65,7 @@ export default function RightSidebar() {
           ) : suggestions.length > 0 ? (
             suggestions.map((user) => {
               const isFollowing = (user.followerIds || []).includes(currentUser?.uid);
+              const isVerified = user.email === 'adelbenmaza8@gmail.com' || user.role === 'admin';
               return (
                 <div key={user.id} className="flex items-center justify-between">
                   <Link href={`/profile/${user.id}`} className="flex items-center gap-3 group">
@@ -73,7 +74,10 @@ export default function RightSidebar() {
                       <AvatarFallback>{user.username?.[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-primary leading-tight group-hover:underline">{user.username}</span>
+                      <div className="flex items-center gap-1 leading-tight">
+                        <span className="text-xs font-bold text-primary group-hover:underline">{user.username}</span>
+                        {isVerified && <BadgeCheck size={12} className="text-accent fill-current" />}
+                      </div>
                       <span className="text-[8px] text-muted-foreground">{user.email || 'مستخدم تواصل'}</span>
                     </div>
                   </Link>

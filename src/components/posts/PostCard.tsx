@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, BadgeCheck } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -53,6 +53,7 @@ export default function PostCard({ post }: { post: PostData }) {
   
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
+  const isAdmin = post.email === 'adelbenmaza8@gmail.com';
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -178,7 +179,10 @@ export default function PostCard({ post }: { post: PostData }) {
               <AvatarFallback className="text-[10px] font-bold">{post.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col justify-center">
-              <span className="text-[11px] font-bold text-primary leading-tight group-hover:underline">{post.authorName || 'مستخدم مجهول'}</span>
+              <div className="flex items-center gap-1 leading-tight">
+                <span className="text-[11px] font-bold text-primary group-hover:underline">{post.authorName || 'مستخدم مجهول'}</span>
+                {isAdmin && <BadgeCheck size={14} className="text-accent fill-current" />}
+              </div>
               <span className="text-[9px] text-muted-foreground flex items-center gap-1">
                 {formattedDate}
               </span>

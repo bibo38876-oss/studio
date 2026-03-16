@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Input } from '@/components/ui/input';
-import { Search, TrendingUp, Users, Hash, Loader2 } from 'lucide-react';
+import { Search, TrendingUp, Users, Hash, Loader2, BadgeCheck } from 'lucide-react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -103,24 +103,30 @@ export default function ExplorePage() {
               </div>
             ) : filteredUsers.length > 0 ? (
               <div className="divide-y divide-muted">
-                {filteredUsers.map((user) => (
-                  <div key={user.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
-                    <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 border border-muted/20">
-                        <AvatarImage src={user.profilePictureUrl} alt={user.username} />
-                        <AvatarFallback>{user.username?.[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
-                        <span className="text-[10px] text-muted-foreground">{user.email}</span>
-                        <p className="text-[10px] text-foreground line-clamp-1 mt-0.5">{user.bio}</p>
-                      </div>
-                    </Link>
-                    <Button variant="outline" size="sm" className="rounded-full px-4 h-8 text-[11px] font-bold">
-                      متابعة
-                    </Button>
-                  </div>
-                ))}
+                {filteredUsers.map((user) => {
+                  const isVerified = user.email === 'adelbenmaza8@gmail.com' || user.role === 'admin';
+                  return (
+                    <div key={user.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
+                      <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12 border border-muted/20">
+                          <AvatarImage src={user.profilePictureUrl} alt={user.username} />
+                          <AvatarFallback>{user.username?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1 leading-tight">
+                            <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
+                            {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground">{user.email}</span>
+                          <p className="text-[10px] text-foreground line-clamp-1 mt-0.5">{user.bio}</p>
+                        </div>
+                      </Link>
+                      <Button variant="outline" size="sm" className="rounded-full px-4 h-8 text-[11px] font-bold">
+                        متابعة
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-20">

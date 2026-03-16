@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, BadgeCheck } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
@@ -148,7 +148,7 @@ export default function ProfilePage() {
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
-            {/* زر الإدارة فوق البنر - يظهر فقط لصاحب التطبيق adelbenmaza8@gmail.com */}
+            {/* زر الإدارة فوق البنر */}
             {isAdmin && isOwnProfile && (
               <div className="absolute top-2 right-2 z-10">
                 <Button 
@@ -266,7 +266,7 @@ export default function ProfilePage() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-md font-bold text-primary">{profile.username}</h1>
-                  {isProfileAdmin && <ShieldCheck size={14} className="text-accent" />}
+                  {isProfileAdmin && <BadgeCheck size={18} className="text-accent fill-current" />}
                 </div>
                 <p className="text-[9px] text-muted-foreground">{profile.email}</p>
               </div>

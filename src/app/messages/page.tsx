@@ -1,10 +1,11 @@
+
 "use client"
 
 import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, MessageSquare, Search } from 'lucide-react';
+import { Loader2, MessageSquare, Search, BadgeCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 
@@ -30,7 +31,7 @@ export default function MessagesPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container mx-auto max-w-xl pt-7 pb-20 px-0 md:px-4">
+      <main className="container mx-auto max-xl pt-7 pb-20 px-0 md:px-4">
         <div className="bg-background sticky top-7 z-30 p-4 border-b">
           <h1 className="text-sm font-bold text-primary">الرسائل</h1>
           <div className="relative mt-3">
@@ -48,21 +49,27 @@ export default function MessagesPage() {
           </div>
         ) : chats && chats.length > 0 ? (
           <div className="divide-y divide-muted">
-            {chats.filter(u => u.id !== user.uid).map((chat: any) => (
-              <div key={chat.id} className="p-4 flex items-center gap-3 hover:bg-muted/10 cursor-pointer transition-colors group">
-                <Avatar className="h-12 w-12 border border-muted/20">
-                  <AvatarImage src={chat.profilePictureUrl} alt={chat.username} />
-                  <AvatarFallback>{chat.username?.[0]}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 flex flex-col gap-0.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-primary">{chat.username}</span>
-                    <span className="text-[8px] text-muted-foreground">الآن</span>
+            {chats.filter(u => u.id !== user.uid).map((chat: any) => {
+              const isVerified = chat.email === 'adelbenmaza8@gmail.com' || chat.role === 'admin';
+              return (
+                <div key={chat.id} className="p-4 flex items-center gap-3 hover:bg-muted/10 cursor-pointer transition-colors group">
+                  <Avatar className="h-12 w-12 border border-muted/20">
+                    <AvatarImage src={chat.profilePictureUrl} alt={chat.username} />
+                    <AvatarFallback>{chat.username?.[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 flex flex-col gap-0.5">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-1 leading-tight">
+                        <span className="text-xs font-bold text-primary">{chat.username}</span>
+                        {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
+                      </div>
+                      <span className="text-[8px] text-muted-foreground">الآن</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground line-clamp-1">ابدأ محادثة جديدة مع {chat.username}...</p>
                   </div>
-                  <p className="text-[10px] text-muted-foreground line-clamp-1">ابدأ محادثة جديدة مع {chat.username}...</p>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-32 px-10 flex flex-col items-center">

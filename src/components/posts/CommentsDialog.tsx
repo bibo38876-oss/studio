@@ -8,7 +8,7 @@ import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, BadgeCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -71,6 +71,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
       authorAvatar: profile?.profilePictureUrl || '',
       content: content,
       createdAt: serverTimestamp(),
+      authorEmail: user.email // Added to track verification badge
     };
 
     addDocumentNonBlocking(collection(firestore, 'posts', postId, 'comments'), commentData);
@@ -128,7 +129,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col justify-center">
-                <span className="text-xs font-bold text-primary leading-tight">{post.authorName}</span>
+                <div className="flex items-center gap-1 leading-tight">
+                  <span className="text-xs font-bold text-primary">{post.authorName}</span>
+                  {post.email === 'adelbenmaza8@gmail.com' && <BadgeCheck size={14} className="text-accent fill-current" />}
+                </div>
                 <span className="text-[10px] text-muted-foreground">@{post.email?.split('@')[0] || 'مستخدم'}</span>
               </div>
             </div>
@@ -180,7 +184,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 </Avatar>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
+                      {comment.authorEmail === 'adelbenmaza8@gmail.com' && <BadgeCheck size={12} className="text-accent fill-current" />}
+                    </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[8px] text-muted-foreground">
                         {comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { locale: ar }) : 'الآن'}
