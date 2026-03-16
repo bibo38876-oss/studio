@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, Image as ImageIcon, Lock, Heart, Repeat, UserRoundPlus } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, Image as ImageIcon, Lock, Heart, Repeat, UserRoundPlus, ShieldCheck } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -232,13 +232,23 @@ export default function ProfilePage() {
                 </DialogContent>
               </Dialog>
               {isOwnProfile && <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20" onClick={() => router.push('/settings')}><Settings size={14} /></Button>}
+              
+              {/* Admin Management Icon in Corner */}
+              {currentUser?.email === ADMIN_EMAIL && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7 rounded-full bg-accent/20 text-accent backdrop-blur-sm hover:bg-accent/40 border border-accent/30" 
+                  onClick={() => router.push('/admin')}
+                >
+                  <ShieldCheck size={14} />
+                </Button>
+              )}
             </div>
           </div>
 
           <div className="px-4 pb-6 relative">
-            {/* Header Content like Twitter (X) */}
             <div className="flex flex-row justify-between items-start -mt-10 mb-4">
-              {/* Avatar and Name on the Right (RTL) */}
               <div className="flex flex-col items-start text-right">
                 <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
                   {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
@@ -253,7 +263,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Action Buttons on the Left (RTL) */}
               <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
