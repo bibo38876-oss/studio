@@ -4,9 +4,10 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useFirebase, initiateSignOut } from '@/firebase';
+import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
-import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2 } from 'lucide-react';
+import { doc } from 'firebase/firestore';
+import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, EyeOff, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -23,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 
 export default function SettingsPage() {
-  const { auth, user } = useFirebase();
+  const { auth, user, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -32,7 +33,13 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  // التحكم في الوضع الليلي
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: profile } = useDoc(userRef);
+
   useEffect(() => {
     const theme = localStorage.getItem('theme');
     if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -55,6 +62,16 @@ export default function SettingsPage() {
     });
   };
 
+  const togglePrivateAccount = (checked: boolean) => {
+    if (!firestore || !user) return;
+    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+      isPrivate: checked
+    });
+    toast({
+      description: checked ? "حسابك الآن خاص 🔒" : "حسابك الآن عام 🌍",
+    });
+  };
+
   const handleLogout = () => {
     if (!auth) return;
     initiateSignOut(auth);
@@ -66,7 +83,6 @@ export default function SettingsPage() {
       toast({ variant: "destructive", description: "يجب أن تكون كلمة المرور 6 أحرف على الأقل." });
       return;
     }
-
     setIsUpdatingPassword(true);
     try {
       await updatePassword(auth.currentUser, newPassword);
@@ -86,32 +102,17 @@ export default function SettingsPage() {
     }
   };
 
-  if (!user || user.isAnonymous) {
-    if (typeof window !== 'undefined') router.push('/login');
-    return null;
-  }
+  if (!user || user.isAnonymous) return null;
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="bg-primary pt-12 pb-10 px-6 relative overflow-hidden">
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl" />
-        
         <div className="relative z-10 container max-w-xl mx-auto flex flex-col items-center gap-4">
-          <button 
-            onClick={() => router.back()} 
-            className="absolute right-0 top-0 text-white/80 hover:text-white transition-colors"
-          >
-            <ArrowRight size={20} />
-          </button>
-          
-          <div className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center mb-2">
-            <span className="text-2xl font-bold text-white font-headline tracking-tighter">ت</span>
-          </div>
-          <div className="text-center">
-            <h1 className="text-xl font-bold text-white font-headline tracking-tighter">تواصل | Tawasul</h1>
-            <p className="text-[10px] text-white/60 mt-1 uppercase tracking-widest font-medium">إعدادات المنصة</p>
-          </div>
+          <button onClick={() => router.back()} className="absolute right-0 top-0 text-white/80 hover:text-white transition-colors"><ArrowRight size={20} /></button>
+          <div className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center mb-2"><span className="text-2xl font-bold text-white font-headline tracking-tighter">ت</span></div>
+          <div className="text-center"><h1 className="text-xl font-bold text-white font-headline tracking-tighter">تواصل | Tawasul</h1><p className="text-[10px] text-white/60 mt-1 uppercase tracking-widest font-medium">إعدادات المنصة</p></div>
         </div>
       </div>
 
@@ -119,112 +120,52 @@ export default function SettingsPage() {
         <Card className="border-none shadow-sm rounded-none bg-card mb-4">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">
-                {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-primary">المظهر</span>
-                <span className="text-[9px] text-muted-foreground">{isDarkMode ? 'الوضع الليلي نشط' : 'الوضع النهاري نشط'}</span>
-              </div>
-            </div>
-            <Switch checked={isDarkMode} onCheckedChange={toggleDarkMode} />
+              <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">{isDarkMode ? <Moon size={18} /> : <Sun size={18} />}</div>
+              <div className="flex flex-col"><span className="text-xs font-bold text-primary">المظهر</span><span className="text-[9px] text-muted-foreground">{isDarkMode ? 'الوضع الليلي نشط' : 'الوضع النهاري نشط'}</span></div>
+            </div><Switch checked={isDarkMode} onCheckedChange={toggleDarkMode} />
           </CardContent>
         </Card>
 
         <div className="space-y-2">
-          {/* إعدادات الحساب */}
+          <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mb-1">الخصوصية والأمان</h2>
+          <Card className="border-none shadow-sm rounded-none bg-card">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary"><Shield size={16} /></div>
+                <div className="flex flex-col"><span className="text-xs font-bold text-primary">حساب خاص</span><span className="text-[9px] text-muted-foreground">فقط المتابعون يمكنهم رؤية منشوراتك</span></div>
+              </div><Switch checked={profile?.isPrivate || false} onCheckedChange={togglePrivateAccount} />
+            </CardContent>
+          </Card>
+
           <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
             <DialogTrigger asChild>
               <Card className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group">
                 <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                      <Lock size={16} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-primary">أمان الحساب</span>
-                      <span className="text-[9px] text-muted-foreground">تغيير كلمة المرور الخاصة بك</span>
-                    </div>
-                  </div>
-                  <ChevronLeft size={14} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-[-4px] transition-all" />
+                  <div className="flex items-center gap-4"><div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all"><Lock size={16} /></div><div className="flex flex-col"><span className="text-xs font-bold text-primary">أمان الحساب</span><span className="text-[9px] text-muted-foreground">تغيير كلمة المرور</span></div></div><ChevronLeft size={14} className="text-muted-foreground/30" />
                 </CardContent>
               </Card>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle className="text-sm font-bold">تغيير كلمة المرور</DialogTitle>
-                <DialogDescription className="text-[10px]">أدخل كلمة المرور الجديدة أدناه. يجب أن تكون قوية.</DialogDescription>
-              </DialogHeader>
-              <div className="py-4">
-                <Input 
-                  type="password" 
-                  placeholder="كلمة المرور الجديدة..." 
-                  className="h-9 rounded-none bg-secondary/30 border-none text-xs"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-              </div>
-              <DialogFooter>
-                <Button 
-                  className="w-full rounded-full text-xs h-9 font-bold" 
-                  onClick={handleChangePassword}
-                  disabled={isUpdatingPassword}
-                >
-                  {isUpdatingPassword ? <Loader2 className="animate-spin h-4 w-4" /> : "تحديث كلمة المرور"}
-                </Button>
-              </DialogFooter>
+            <DialogContent><DialogHeader><DialogTitle className="text-sm font-bold">تغيير كلمة المرور</DialogTitle><DialogDescription className="text-[10px]">أدخل كلمة المرور الجديدة.</DialogDescription></DialogHeader>
+              <div className="py-4"><Input type="password" placeholder="كلمة المرور الجديدة..." className="h-9 rounded-none bg-secondary/30 border-none text-xs" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /></div>
+              <DialogFooter><Button className="w-full rounded-full text-xs h-9 font-bold" onClick={handleChangePassword} disabled={isUpdatingPassword}>{isUpdatingPassword ? <Loader2 className="animate-spin h-4 w-4" /> : "تحديث كلمة المرور"}</Button></DialogFooter>
             </DialogContent>
           </Dialog>
 
-          {/* خيارات قيد التطوير */}
+          <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mt-4 mb-1">عام</h2>
           {[
-            { icon: <Bell size={16} />, label: 'التنبيهات والإشعارات', desc: 'إدارة كيفية وصول التنبيهات إليك' },
-            { icon: <Shield size={16} />, label: 'الخصوصية والأمان', desc: 'التحكم في من يشاهد محتواك' },
-            { icon: <HelpCircle size={16} />, label: 'المساعدة والدعم', desc: 'مركز المساعدة وقوانين المنصة' },
+            { icon: <Bell size={16} />, label: 'التنبيهات', desc: 'إدارة الإشعارات' },
+            { icon: <HelpCircle size={16} />, label: 'المساعدة', desc: 'مركز الدعم' },
           ].map((option, i) => (
             <Card key={i} className="border-none shadow-sm rounded-none bg-card opacity-60 cursor-not-allowed group">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">
-                    {option.icon}
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-primary">{option.label}</span>
-                      <Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 border-primary/20 text-primary/70 rounded-none">قيد التطوير</Badge>
-                    </div>
-                    <span className="text-[9px] text-muted-foreground">{option.desc}</span>
-                  </div>
-                </div>
-                <ChevronLeft size={14} className="text-muted-foreground/30" />
-              </CardContent>
+              <CardContent className="p-4 flex items-center justify-between"><div className="flex items-center gap-4"><div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">{option.icon}</div><div className="flex flex-col"><div className="flex items-center gap-2"><span className="text-xs font-bold text-primary">{option.label}</span><Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 border-primary/20 text-primary/70 rounded-none">قيد التطوير</Badge></div><span className="text-[9px] text-muted-foreground">{option.desc}</span></div></div><ChevronLeft size={14} className="text-muted-foreground/30" /></CardContent>
             </Card>
           ))}
         </div>
 
-        <Card className="border-none shadow-sm rounded-none bg-card mt-8 hover:bg-red-50 transition-colors cursor-pointer group border-r-4 border-r-destructive">
-          <CardContent className="p-0">
-            <button 
-              onClick={handleLogout}
-              className="w-full p-4 flex items-center justify-between text-destructive"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                  <LogOut size={16} />
-                </div>
-                <div className="flex flex-col text-right">
-                  <span className="text-xs font-bold">تسجيل الخروج</span>
-                  <span className="text-[9px] opacity-70">الخروج من حسابك الآمن</span>
-                </div>
-              </div>
-            </button>
-          </CardContent>
+        <Card className="border-none shadow-sm rounded-none bg-card mt-8 hover:bg-red-50 transition-colors cursor-pointer border-r-4 border-r-destructive">
+          <CardContent className="p-0"><button onClick={handleLogout} className="w-full p-4 flex items-center justify-between text-destructive"><div className="flex items-center gap-4"><div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center"><LogOut size={16} /></div><div className="flex flex-col text-right"><span className="text-xs font-bold">تسجيل الخروج</span><span className="text-[9px] opacity-70">الخروج من الحساب</span></div></div></button></CardContent>
         </Card>
-
-        <div className="pt-10 text-center space-y-1">
-          <p className="text-[10px] font-bold text-primary/40 tracking-tighter uppercase">Tawasul Platform</p>
-          <p className="text-[8px] text-muted-foreground/50">إصدار 1.0.0 • صنع بكل فخر للمجتمع العربي</p>
-        </div>
+        <div className="pt-10 text-center space-y-1"><p className="text-[10px] font-bold text-primary/40 tracking-tighter uppercase">Tawasul Platform</p><p className="text-[8px] text-muted-foreground/50">إصدار 1.0.0 • صنع بكل فخر للمجتمع العربي</p></div>
       </main>
     </div>
   );

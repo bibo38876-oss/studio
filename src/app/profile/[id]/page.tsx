@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useParams, useRouter } from 'next/navigation';
@@ -11,15 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Hourglass } from 'lucide-react';
+import { Calendar, MapPin, Edit3, Settings, Loader2, UserPlus, UserCheck, Repeat, Share, Copy, ExternalLink, Twitter, ShieldCheck, Camera, Image as ImageIcon, Hourglass, Lock } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
+import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import { Badge } from '@/components/ui/badge';
 
-// دالة لضغط الصور
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -31,7 +31,6 @@ const compressImage = (file: File, maxWidth: number, maxHeight: number, quality:
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-
         if (width > height) {
           if (width > maxWidth) {
             height *= maxWidth / width;
@@ -43,7 +42,6 @@ const compressImage = (file: File, maxWidth: number, maxHeight: number, quality:
             height = maxHeight;
           }
         }
-
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
@@ -83,9 +81,9 @@ export default function ProfilePage() {
   }, [currentUser, isUserLoading, router]);
 
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !id || !currentUser?.uid) return null;
+    if (!firestore || !id) return null;
     return doc(firestore, 'users', id);
-  }, [firestore, id, currentUser?.uid]);
+  }, [firestore, id]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
@@ -97,29 +95,28 @@ export default function ProfilePage() {
   const { data: currentUserProfile } = useDoc(currentUserProfileRef);
 
   const postsQuery = useMemoFirebase(() => {
-    if (!firestore || !id || !currentUser?.uid) return null;
+    if (!firestore || !id) return null;
     return query(
       collection(firestore, 'posts'),
       where('authorId', '==', id),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, id, currentUser?.uid]);
+  }, [firestore, id]);
 
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
 
   const repostsQuery = useMemoFirebase(() => {
-    if (!firestore || !id || !currentUser?.uid) return null;
+    if (!firestore || !id) return null;
     return query(
       collection(firestore, 'users', id, 'reposts'),
       orderBy('repostedAt', 'desc')
     );
-  }, [firestore, id, currentUser?.uid]);
+  }, [firestore, id]);
 
   const { data: reposts, isLoading: isRepostsLoading } = useCollection(repostsQuery);
 
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
-  
   const isAdmin = currentUserProfile?.role === 'admin' || currentUser?.email === ADMIN_EMAIL;
   
   const verificationType: VerificationType = profile?.email === ADMIN_EMAIL 
@@ -129,13 +126,11 @@ export default function ProfilePage() {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     try {
       setIsSaving(true);
       const maxWidth = type === 'banner' ? 1200 : 400;
       const maxHeight = type === 'banner' ? 600 : 400;
       const compressedData = await compressImage(file, maxWidth, maxHeight, 0.7);
-      
       if (type === 'profile') setEditProfilePic(compressedData);
       else setEditBanner(compressedData);
     } catch (error) {
@@ -148,7 +143,6 @@ export default function ProfilePage() {
   const handleUpdateProfile = async () => {
     if (!firestore || !currentUser?.uid) return;
     setIsSaving(true);
-    
     try {
       updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), {
         username: editName || profile?.username,
@@ -177,77 +171,43 @@ export default function ProfilePage() {
     } else {
       updateDoc(curUserRef, { followingIds: arrayUnion(id) });
       updateDoc(targetUserRef, { followerIds: arrayUnion(currentUser.uid) });
+      
+      // إرسال تنبيه متابعة
+      addDocumentNonBlocking(collection(firestore, 'users', id, 'notifications'), {
+        type: 'follow',
+        fromUserId: currentUser.uid,
+        fromUsername: currentUserProfile?.username || currentUser.displayName || 'مستخدم تواصل',
+        fromAvatar: currentUserProfile?.profilePictureUrl || '',
+        createdAt: serverTimestamp(),
+        read: false
+      });
     }
   };
 
-  const copyShareLink = () => {
-    const url = `${window.location.origin}/profile/${id}`;
-    navigator.clipboard.writeText(url);
-    toast({
-      title: "تم النسخ!",
-      description: "تم نسخ رابط الملف الشخصي لمشاركته.",
-    });
-  };
+  if (isUserLoading || !currentUser) return null;
+  if (isProfileLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary h-8 w-8" /></div>;
+  if (!profile) return <div className="min-h-screen flex items-center justify-center p-4"><p className="text-muted-foreground text-sm font-bold">المستخدم غير موجود.</p></div>;
 
-  if (isUserLoading || !currentUser) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="animate-spin text-primary h-8 w-8" />
-      </div>
-    );
-  }
-
-  if (isProfileLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="animate-spin text-primary h-8 w-8" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <Navbar />
-      <p className="text-muted-foreground text-sm font-bold mt-20">المستخدم غير موجود.</p>
-    </div>
-  );
+  const isPrivateAndNotFollowing = profile.isPrivate && !isFollowing && !isOwnProfile;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
       <main className="container mx-auto max-w-xl pt-8 pb-20 px-0 md:px-4">
         <div className="bg-card rounded-none overflow-hidden mb-1 border-b">
           <div className="h-28 bg-primary/10 relative">
-            {profile.bannerUrl && (
-              <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover" />
-            )}
-            
+            {profile.bannerUrl && <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover" />}
             {isAdmin && isOwnProfile && (
               <div className="absolute top-2 right-2 z-10">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 text-[9px] font-bold bg-black/20 text-white backdrop-blur-md rounded-full gap-1 hover:bg-black/40 border border-white/10" 
-                  onClick={() => router.push('/admin')}
-                >
-                  <ShieldCheck size={12} className="text-accent" />
-                  إدارة النظام
+                <Button variant="ghost" size="sm" className="h-7 text-[9px] font-bold bg-black/20 text-white backdrop-blur-md rounded-full gap-1 hover:bg-black/40 border border-white/10" onClick={() => router.push('/admin')}>
+                  <ShieldCheck size={12} className="text-accent" /> إدارة النظام
                 </Button>
               </div>
             )}
-
             <div className="absolute top-2 left-2 flex gap-2">
               <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20">
-                    <Share size={14} />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden border-none bg-background">
+                <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20"><Share size={14} /></Button></DialogTrigger>
+                <DialogContent className="p-0 overflow-hidden border-none bg-background">
                   <DialogTitle className="sr-only">مشاركة الملف الشخصي</DialogTitle>
                   <div className="bg-primary p-6 text-center text-white space-y-4">
                     <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-md">
@@ -259,34 +219,16 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="p-6 space-y-4">
-                    <Card className="border-none bg-secondary/30 rounded-none p-4">
-                      <p className="text-xs leading-relaxed text-center font-medium text-primary">
-                        انضم إلينا في تواصل، حيث المجتمع العربي يلتقي في بيئة تقنية متطورة، فائقة السرعة، ومصممة خصيصاً لتناسب احتياجاتك.
-                      </p>
-                    </Card>
+                    <Card className="border-none bg-secondary/30 rounded-none p-4"><p className="text-xs leading-relaxed text-center font-medium text-primary">انضم إلينا في تواصل، حيث المجتمع العربي يلتقي في بيئة تقنية متطورة.</p></Card>
                     <div className="grid grid-cols-3 gap-2">
-                      <Button variant="outline" className="rounded-none text-[8px] h-8 font-bold gap-1 px-1" onClick={copyShareLink}>
-                        <Copy size={10} />
-                        نسخ الرابط
-                      </Button>
-                      <Button className="rounded-none text-[8px] h-8 font-bold gap-1 px-1 bg-green-600 hover:bg-green-700" onClick={() => window.open(`https://wa.me/?text=انضم%20إلي%20في%20تواصل!%20${window.location.origin}`)}>
-                        <ExternalLink size={10} />
-                        واتساب
-                      </Button>
-                      <Button className="rounded-none text-[8px] h-8 font-bold gap-1 px-1 bg-black hover:bg-black/90" onClick={() => window.open(`https://twitter.com/intent/tweet?text=انضم%20إلي%20في%20تواصل!&url=${window.location.origin}`)}>
-                        <Twitter size={10} />
-                        تويتر
-                      </Button>
+                      <Button variant="outline" className="rounded-none text-[8px] h-8 font-bold gap-1 px-1" onClick={() => {navigator.clipboard.writeText(window.location.href); toast({description: "تم نسخ الرابط"});}}><Copy size={10} /> نسخ الرابط</Button>
+                      <Button className="rounded-none text-[8px] h-8 font-bold gap-1 px-1 bg-green-600" onClick={() => window.open(`https://wa.me/?text=${window.location.href}`)}><ExternalLink size={10} /> واتساب</Button>
+                      <Button className="rounded-none text-[8px] h-8 font-bold gap-1 px-1 bg-black" onClick={() => window.open(`https://twitter.com/intent/tweet?url=${window.location.href}`)}><Twitter size={10} /> تويتر</Button>
                     </div>
                   </div>
                 </DialogContent>
               </Dialog>
-
-              {isOwnProfile && (
-                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20" onClick={() => router.push('/settings')}>
-                  <Settings size={14} />
-                </Button>
-              )}
+              {isOwnProfile && <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/10 text-white backdrop-blur-sm hover:bg-black/20" onClick={() => router.push('/settings')}><Settings size={14} /></Button>}
             </div>
           </div>
           <div className="px-4 pb-6 relative">
@@ -298,180 +240,70 @@ export default function ProfilePage() {
               <div className="pb-1">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="rounded-full gap-2 font-bold h-8 text-[11px]" onClick={() => {
-                        setEditName(profile.username);
-                        setEditBio(profile.bio || '');
-                        setEditProfilePic(profile.profilePictureUrl || null);
-                        setEditBanner(profile.bannerUrl || null);
-                      }}>
-                        <Edit3 size={12} />
-                        تعديل الملف
-                      </Button>
-                    </DialogTrigger>
+                    <DialogTrigger asChild><Button variant="outline" className="rounded-full gap-2 font-bold h-8 text-[11px]"><Edit3 size={12} /> تعديل الملف</Button></DialogTrigger>
                     <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="text-sm font-bold">تعديل الملف الشخصي</DialogTitle>
-                      </DialogHeader>
+                      <DialogHeader><DialogTitle className="text-sm font-bold">تعديل الملف الشخصي</DialogTitle></DialogHeader>
                       <div className="grid gap-6 py-4">
                         <div className="space-y-4">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase">صورة البنر</label>
-                            <div 
-                              className="h-24 bg-secondary/30 relative cursor-pointer group overflow-hidden"
-                              onClick={() => bannerInputRef.current?.click()}
-                            >
-                              {editBanner ? (
-                                <img src={editBanner} alt="Banner preview" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="flex items-center justify-center h-full text-muted-foreground/40">
-                                  <ImageIcon size={24} />
-                                </div>
-                              )}
-                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Camera className="text-white" size={20} />
-                              </div>
-                            </div>
-                            <input type="file" hidden ref={bannerInputRef} onChange={(e) => handleImageChange(e, 'banner')} accept="image/*" />
+                          <div className="space-y-2"><label className="text-[10px] font-bold text-muted-foreground uppercase">صورة البنر</label>
+                            <div className="h-24 bg-secondary/30 relative cursor-pointer group overflow-hidden" onClick={() => bannerInputRef.current?.click()}>
+                              {editBanner ? <img src={editBanner} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-muted-foreground/40"><ImageIcon size={24} /></div>}
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Camera className="text-white" size={20} /></div>
+                            </div><input type="file" hidden ref={bannerInputRef} onChange={(e) => handleImageChange(e, 'banner')} accept="image/*" />
                           </div>
-
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase">الصورة الشخصية</label>
+                          <div className="space-y-2"><label className="text-[10px] font-bold text-muted-foreground uppercase">الصورة الشخصية</label>
                             <div className="flex items-center gap-4">
-                              <div 
-                                className="h-16 w-16 rounded-full bg-secondary/30 relative cursor-pointer group overflow-hidden shrink-0"
-                                onClick={() => profilePicInputRef.current?.click()}
-                              >
-                                {editProfilePic ? (
-                                  <img src={editProfilePic} alt="Profile preview" className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="flex items-center justify-center h-full text-muted-foreground/40 font-bold">
-                                    {editName?.[0] || 'ت'}
-                                  </div>
-                                )}
-                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <Camera className="text-white" size={16} />
-                                </div>
-                              </div>
-                              <p className="text-[9px] text-muted-foreground">اضغط على الدائرة لتغيير صورتك الشخصية.</p>
-                            </div>
-                            <input type="file" hidden ref={profilePicInputRef} onChange={(e) => handleImageChange(e, 'profile')} accept="image/*" />
+                              <div className="h-16 w-16 rounded-full bg-secondary/30 relative cursor-pointer group overflow-hidden shrink-0" onClick={() => profilePicInputRef.current?.click()}>
+                                {editProfilePic ? <img src={editProfilePic} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-muted-foreground/40 font-bold">{editName?.[0] || 'ت'}</div>}
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Camera className="text-white" size={16} /></div>
+                              </div><p className="text-[9px] text-muted-foreground">اضغط لتغيير صورتك.</p>
+                            </div><input type="file" hidden ref={profilePicInputRef} onChange={(e) => handleImageChange(e, 'profile')} accept="image/*" />
                           </div>
                         </div>
-
-                        <div className="grid gap-2">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase">الاسم</label>
-                          <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-9 rounded-none bg-secondary/30 border-none text-xs" />
-                        </div>
-                        <div className="grid gap-2">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase">النبذة الشخصية</label>
-                          <Textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="rounded-none bg-secondary/30 border-none text-xs min-h-[100px]" />
-                        </div>
+                        <div className="grid gap-2"><label className="text-[10px] font-bold text-muted-foreground uppercase">الاسم</label><Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-9 rounded-none bg-secondary/30 border-none text-xs" /></div>
+                        <div className="grid gap-2"><label className="text-[10px] font-bold text-muted-foreground uppercase">النبذة الشخصية</label><Textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="rounded-none bg-secondary/30 border-none text-xs min-h-[100px]" /></div>
                       </div>
-                      <DialogFooter>
-                        <Button 
-                          className="w-full rounded-full font-bold text-xs h-9" 
-                          onClick={handleUpdateProfile}
-                          disabled={isSaving}
-                        >
-                          {isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : "حفظ التغييرات"}
-                        </Button>
-                      </DialogFooter>
+                      <DialogFooter><Button className="w-full rounded-full font-bold text-xs h-9" onClick={handleUpdateProfile} disabled={isSaving}>{isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : "حفظ التغييرات"}</Button></DialogFooter>
                     </DialogContent>
                   </Dialog>
                 ) : (
-                  <Button 
-                    onClick={handleFollow}
-                    variant={isFollowing ? "outline" : "default"}
-                    className={`rounded-full px-6 font-bold h-8 text-[11px] gap-2 ${isFollowing ? 'border-primary text-primary' : 'bg-primary text-white'}`}
-                  >
-                    {isFollowing ? <UserCheck size={12} /> : <UserPlus size={12} />}
-                    {isFollowing ? 'متابع' : 'متابعة'}
+                  <Button onClick={handleFollow} variant={isFollowing ? "outline" : "default"} className={`rounded-full px-6 font-bold h-8 text-[11px] gap-2 ${isFollowing ? 'border-primary text-primary' : 'bg-primary text-white'}`}>
+                    {isFollowing ? <UserCheck size={12} /> : <UserPlus size={12} />} {isFollowing ? 'متابع' : 'متابعة'}
                   </Button>
                 )}
               </div>
             </div>
-
             <div className="space-y-3">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5">
-                  <h1 className="text-md font-bold text-primary">{profile.username}</h1>
-                  <VerifiedBadge type={verificationType} size={16} />
-                </div>
-                <p className="text-[9px] text-muted-foreground">{profile.email}</p>
-              </div>
-
+              <div className="space-y-0.5"><div className="flex items-center gap-1.5"><h1 className="text-md font-bold text-primary">{profile.username}</h1><VerifiedBadge type={verificationType} size={16} /></div><p className="text-[9px] text-muted-foreground">{profile.email}</p></div>
               <p className="text-xs leading-relaxed text-foreground/80">{profile.bio || 'لا يوجد نبذة شخصية.'}</p>
-
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
-                <div className="flex items-center gap-1"><MapPin size={10} /><span>الجزائر</span></div>
-                <div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div>
-              </div>
-
-              <div className="flex gap-4 pt-1">
-                <div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followingIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">يتابع</span></div>
-                <div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followerIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">متابع</span></div>
-              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground"><div className="flex items-center gap-1"><MapPin size={10} /><span>الجزائر</span></div><div className="flex items-center gap-1"><Calendar size={10} /><span>انضم {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) : 'حديثاً'}</span></div></div>
+              <div className="flex gap-4 pt-1"><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followingIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">يتابع</span></div><div className="flex gap-1 items-center text-xs"><span className="font-bold text-primary">{profile.followerIds?.length || 0}</span><span className="text-muted-foreground text-[10px]">متابع</span></div></div>
             </div>
           </div>
         </div>
 
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0 mb-0.5 sticky top-7 z-40 bg-background/80 backdrop-blur-md overflow-x-auto no-scrollbar">
-            <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">
-              المنشورات
-              <span className="text-[9px] opacity-50">({posts?.length || 0})</span>
-            </TabsTrigger>
-            <TabsTrigger value="reposts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">
-              المعاد نشرها
-              <span className="text-[9px] opacity-50">({reposts?.length || 0})</span>
-            </TabsTrigger>
-            <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 text-[10px] font-bold h-full shrink-0">الإعجابات</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="posts" className="mt-0 space-y-[1px]">
-            {isPostsLoading ? (
-              <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div>
-            ) : posts && posts.length > 0 ? (
-              posts.map((post: any) => <PostCard key={post.id} post={post} />)
-            ) : (
-              <div className="text-center py-24 bg-card px-8 border-b">
-                <p className="text-muted-foreground text-[10px]">لا توجد منشورات لهذا المستخدم بعد.</p>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="reposts" className="mt-0 space-y-[1px]">
-            {isRepostsLoading ? (
-              <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div>
-            ) : reposts && reposts.length > 0 ? (
-              reposts.map((repost: any) => (
-                <div key={repost.id} className="relative">
-                  <div className="bg-muted/30 px-4 py-1 flex items-center gap-2 text-[9px] text-muted-foreground font-bold border-b border-muted/50">
-                    <Repeat size={10} className="text-green-500" />
-                    أعاد نشر هذا
-                  </div>
-                  <PostCard post={repost.postData} />
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center">
-                <Repeat size={30} className="text-muted-foreground/20 mb-3" />
-                <p className="text-muted-foreground text-[10px]">لا توجد منشورات معاد نشرها بعد.</p>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="likes" className="mt-0">
-            <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center gap-3">
-              <Hourglass size={32} className="text-primary/20 animate-pulse" />
-              <div className="space-y-1">
-                <p className="text-primary font-bold text-xs uppercase tracking-widest">قيد التطوير</p>
-                <p className="text-muted-foreground text-[10px]">سيتم عرض المنشورات التي أعجبت بها هنا في التحديث القادم.</p>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+        {isPrivateAndNotFollowing ? (
+          <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center gap-3">
+            <Lock size={40} className="text-muted-foreground/30" />
+            <h2 className="text-sm font-bold text-primary">هذا الحساب خاص</h2>
+            <p className="text-[10px] text-muted-foreground max-w-[200px]">يجب عليك متابعة هذا المستخدم لمشاهدة منشوراته وتفاعلاته.</p>
+          </div>
+        ) : (
+          <Tabs defaultValue="posts" className="w-full">
+            <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-10 p-0 mb-0.5 sticky top-7 z-40 bg-background/80 backdrop-blur-md overflow-x-auto no-scrollbar">
+              <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المنشورات <span className="text-[9px] opacity-50">({posts?.length || 0})</span></TabsTrigger>
+              <TabsTrigger value="reposts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full gap-1.5 shrink-0">المعاد نشرها <span className="text-[9px] opacity-50">({reposts?.length || 0})</span></TabsTrigger>
+              <TabsTrigger value="likes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-4 text-[10px] font-bold h-full shrink-0">الإعجابات</TabsTrigger>
+            </TabsList>
+            <TabsContent value="posts" className="mt-0 space-y-[1px]">
+              {isPostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : posts && posts.length > 0 ? posts.map((post: any) => <PostCard key={post.id} post={post} />) : <div className="text-center py-24 bg-card px-8 border-b"><p className="text-muted-foreground text-[10px]">لا توجد منشورات.</p></div>}
+            </TabsContent>
+            <TabsContent value="reposts" className="mt-0 space-y-[1px]">
+              {isRepostsLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary h-6 w-6" /></div> : reposts && reposts.length > 0 ? reposts.map((repost: any) => (<div key={repost.id} className="relative"><div className="bg-muted/30 px-4 py-1 flex items-center gap-2 text-[9px] text-muted-foreground font-bold border-b"><Repeat size={10} className="text-green-500" /> أعاد نشر هذا</div><PostCard post={repost.postData} /></div>)) : <div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center"><Repeat size={30} className="text-muted-foreground/20 mb-3" /><p className="text-muted-foreground text-[10px]">لا توجد منشورات معاد نشرها.</p></div>}
+            </TabsContent>
+            <TabsContent value="likes" className="mt-0"><div className="text-center py-24 bg-card px-8 border-b flex flex-col items-center gap-3"><Hourglass size={32} className="text-primary/20 animate-pulse" /><div className="space-y-1"><p className="text-primary font-bold text-xs uppercase tracking-widest">قيد التطوير</p><p className="text-muted-foreground text-[10px]">سيتم عرض الإعجابات قريباً.</p></div></div></TabsContent>
+          </Tabs>
+        )}
       </main>
       <Toaster />
     </div>
