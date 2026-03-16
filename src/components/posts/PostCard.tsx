@@ -36,6 +36,7 @@ interface PostData {
   authorAvatar?: string;
   content: string;
   mediaUrl?: string;
+  mediaUrl?: string;
   mediaUrls?: string[];
   mediaType?: 'image' | 'video';
   createdAt: any;
@@ -63,7 +64,6 @@ export default function PostCard({ post }: { post: PostData }) {
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
-  // استدعاء جميع الـ Hooks في البداية لضمان ترتيب ثابت
   const centralPostRef = useMemoFirebase(() => {
     if (!firestore || !post.id) return null;
     return doc(firestore, 'posts', post.id);
@@ -120,7 +120,6 @@ export default function PostCard({ post }: { post: PostData }) {
     return () => observer.disconnect();
   }, [firestore, post.id]);
 
-  // التحقق من الحذف بعد استدعاء الـ Hooks
   if (!isCentralLoading && centralPost === null) {
     return null;
   }
@@ -288,7 +287,25 @@ export default function PostCard({ post }: { post: PostData }) {
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
-          {/* النقاط الثلاث على اليمين */}
+          {/* معلومات المستخدم على اليمين (ليطابق طلب المستخدم) */}
+          <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
+            <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 shrink-0">
+              {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
+              <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col text-right">
+              <div className="flex items-center gap-1.5 leading-tight justify-end">
+                {/* الترتيب الموحد: الشارة ثم الاسم */}
+                <VerifiedBadge type={verificationType} size={13} />
+                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
+              </div>
+              <span className="text-[9px] text-muted-foreground text-right">
+                {formattedDate}
+              </span>
+            </div>
+          </Link>
+
+          {/* النقاط الثلاث على اليسار */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full hover:bg-secondary">
@@ -313,24 +330,6 @@ export default function PostCard({ post }: { post: PostData }) {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* معلومات المستخدم على اليسار */}
-          <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col text-right">
-              <div className="flex items-center gap-1.5 leading-tight justify-end">
-                {/* الشارة ثم الاسم */}
-                <VerifiedBadge type={verificationType} size={13} />
-                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
-              </div>
-              <span className="text-[9px] text-muted-foreground text-right">
-                {formattedDate}
-              </span>
-            </div>
-            <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 shrink-0">
-              {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
-              <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
-            </Avatar>
-          </Link>
         </CardHeader>
         
         <CardContent className="px-4 py-1 text-right">

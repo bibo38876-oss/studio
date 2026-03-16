@@ -242,6 +242,23 @@ export default function ProfilePage() {
           </div>
           <div className="px-4 pb-6 relative">
             <div className="flex justify-between items-start -mt-10 mb-4">
+              {/* القسم الأيمن: الصورة والاسم (ليطابق البطاقة) */}
+              <div className="flex flex-col items-end">
+                <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
+                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
+                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
+                </Avatar>
+                <div className="text-right">
+                  <div className="flex items-center gap-1.5 justify-end">
+                    {/* الترتيب المطلوب للملف الشخصي: الاسم ثم الشارة */}
+                    <h1 className="text-md font-bold text-primary">{profile.username}</h1>
+                    <VerifiedBadge type={verificationType} size={16} />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
+                </div>
+              </div>
+
+              {/* القسم الأيسر: أزرار التحكم (ليطابق البطاقة) */}
               <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -276,20 +293,6 @@ export default function ProfilePage() {
                     {isFollowing ? <UserCheck size={12} /> : <UserPlus size={12} />} {isFollowing ? 'متابع' : 'متابعة'}
                   </Button>
                 )}
-              </div>
-              
-              <div className="flex flex-col items-end">
-                <Avatar className="h-20 w-20 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
-                  {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
-                  <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
-                </Avatar>
-                <div className="text-right">
-                  <div className="flex items-center gap-1.5 justify-end">
-                    <h1 className="text-md font-bold text-primary">{profile.username}</h1>
-                    <VerifiedBadge type={verificationType} size={16} />
-                  </div>
-                  <p className="text-[9px] text-muted-foreground">{profile.email}</p>
-                </div>
               </div>
             </div>
 
