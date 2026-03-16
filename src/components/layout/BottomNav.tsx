@@ -17,6 +17,16 @@ export default function BottomNav() {
 
   const isAnonymous = !user || user.isAnonymous;
 
+  // إخفاء القائمة في الصفحات الفرعية مثل الدردشة، الإعدادات، الإدارة، وتسجيل الدخول
+  const isChatPage = pathname?.startsWith('/groups/') && pathname?.split('/').length > 2;
+  const isSettingsPage = pathname === '/settings';
+  const isLoginPage = pathname === '/login';
+  const isAdminPage = pathname === '/admin';
+
+  if (isChatPage || isSettingsPage || isLoginPage || isAdminPage) {
+    return null;
+  }
+
   const handleProfileClick = (e: React.MouseEvent) => {
     if (isAnonymous) {
       e.preventDefault();
@@ -67,7 +77,7 @@ export default function BottomNav() {
             );
           }
 
-          const isActive = pathname === item.path || (item.path === '/groups' && pathname.startsWith('/groups'));
+          const isActive = pathname === item.path || (item.path === '/groups' && pathname === '/groups');
           return (
             <Link 
               key={index} 
