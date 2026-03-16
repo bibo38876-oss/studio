@@ -169,7 +169,7 @@ export default function WalletPage() {
                 { 
                   icon: <Sparkles size={14} />, 
                   title: "دعم المبدعين داخلياً", 
-                  desc: "ستتمكن قريباً من إهداء هذه النقاط للمنشورات التي تعجبك كنوع من "التصفيق الرقمي" داخل التطبيق." 
+                  desc: "ستتمكن قريباً من إهداء هذه النقاط للمنشورات التي تعجبك كنوع من 'التصفيق الرقمي' داخل التطبيق." 
                 }
               ].map((item, i) => (
                 <div key={i} className="bg-secondary/30 p-4 flex gap-4 items-start border border-transparent hover:border-primary/10 transition-colors">
