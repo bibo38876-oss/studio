@@ -209,8 +209,9 @@ export default function ExplorePage() {
                           </Avatar>
                           <div className="flex flex-col text-right">
                             <div className="flex items-center gap-1 leading-tight justify-end">
-                              <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
+                              {/* الشارة ثم الاسم لتطابق البطاقة */}
                               {isVerified && <BadgeCheck size={14} className="text-accent fill-current" />}
+                              <span className="text-sm font-bold text-primary leading-tight">{user.username}</span>
                             </div>
                             <span className="text-[10px] text-muted-foreground">{user.email}</span>
                           </div>

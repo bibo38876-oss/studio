@@ -261,8 +261,9 @@ export default function GroupChatPage() {
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                   {!isMe && (
                     <div className="flex items-center gap-1 mb-0.5 ml-1">
-                      <span className="text-[8px] font-bold text-primary">{msg.senderName}</span>
+                      {/* الشارة ثم الاسم لتطابق البطاقة */}
                       <VerifiedBadge type={msg.senderVerificationType || 'none'} size={10} />
+                      <span className="text-[8px] font-bold text-primary">{msg.senderName}</span>
                     </div>
                   )}
                   <div className={`px-3 py-1.5 text-xs leading-relaxed shadow-sm break-words ${isMe ? 'bg-primary text-white rounded-l-xl rounded-tr-xl' : 'bg-card border text-foreground rounded-r-xl rounded-tl-xl'}`}>

@@ -225,8 +225,9 @@ export default function AdminPage() {
                       </Avatar>
                       <div className="flex flex-col text-right">
                         <div className="flex items-center gap-1.5 justify-end">
-                          <span className="text-xs font-bold text-primary">{user.username}</span>
+                          {/* الشارة ثم الاسم لتطابق البطاقة */}
                           <VerifiedBadge type={user.email === ADMIN_EMAIL ? 'blue' : (user.verificationType || 'none')} />
+                          <span className="text-xs font-bold text-primary">{user.username}</span>
                         </div>
                         <span className="text-[10px] text-muted-foreground">{user.email}</span>
                       </div>

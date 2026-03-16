@@ -63,6 +63,7 @@ export default function PostCard({ post }: { post: PostData }) {
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
+  // استدعاء جميع الـ Hooks في البداية لضمان ترتيب ثابت
   const centralPostRef = useMemoFirebase(() => {
     if (!firestore || !post.id) return null;
     return doc(firestore, 'posts', post.id);
@@ -119,6 +120,7 @@ export default function PostCard({ post }: { post: PostData }) {
     return () => observer.disconnect();
   }, [firestore, post.id]);
 
+  // التحقق من الحذف بعد استدعاء الـ Hooks
   if (!isCentralLoading && centralPost === null) {
     return null;
   }
@@ -286,6 +288,7 @@ export default function PostCard({ post }: { post: PostData }) {
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
+          {/* النقاط الثلاث على اليمين */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full hover:bg-secondary">
@@ -311,9 +314,11 @@ export default function PostCard({ post }: { post: PostData }) {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* معلومات المستخدم على اليسار */}
           <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col text-right">
               <div className="flex items-center gap-1.5 leading-tight justify-end">
+                {/* الشارة ثم الاسم */}
                 <VerifiedBadge type={verificationType} size={13} />
                 <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
               </div>

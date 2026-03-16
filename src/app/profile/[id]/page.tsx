@@ -285,6 +285,7 @@ export default function ProfilePage() {
             <div className="space-y-3">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5 justify-end">
+                  {/* استعادة الملف الشخصي السابق: الاسم ثم الشارة */}
                   <h1 className="text-md font-bold text-primary">{profile.username}</h1>
                   <VerifiedBadge type={verificationType} size={16} />
                 </div>
