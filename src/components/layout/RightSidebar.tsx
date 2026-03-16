@@ -4,9 +4,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useFirebase, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, limit, doc, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
-import { Loader2, BadgeCheck } from 'lucide-react';
+import { useFirebase, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
+import { collection, query, limit, doc, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { Loader2, BadgeCheck, UserRoundPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -24,31 +24,39 @@ export default function RightSidebar() {
 
   const { data: users, isLoading } = useCollection(usersQuery);
 
+  const currentUserRef = useMemoFirebase(() => {
+    if (!firestore || !currentUser?.uid) return null;
+    return doc(firestore, 'users', currentUser.uid);
+  }, [firestore, currentUser?.uid]);
+  const { data: currentUserProfile } = useDoc(currentUserRef);
+
   const suggestions = users?.filter(u => u.id !== currentUser?.uid) || [];
 
-  const handleFollow = (targetUserId: string, isFollowing: boolean) => {
+  const handleFollow = (targetUserId: string, targetUser: any, isFollowing: boolean) => {
     if (isAnonymous) {
       router.push('/login');
       return;
     }
     if (!firestore || !currentUser) return;
 
-    const currentUserRef = doc(firestore, 'users', currentUser.uid);
+    const curUserRef = doc(firestore, 'users', currentUser.uid);
     const targetUserRef = doc(firestore, 'users', targetUserId);
 
-    const followingEntryRef = doc(firestore, 'users', currentUser.uid, 'following', targetUserId);
-    const followerEntryRef = doc(firestore, 'users', targetUserId, 'followers', currentUser.uid);
-
     if (isFollowing) {
-      deleteDocumentNonBlocking(followingEntryRef);
-      deleteDocumentNonBlocking(followerEntryRef);
-      updateDoc(currentUserRef, { followingIds: arrayRemove(targetUserId) });
+      updateDoc(curUserRef, { followingIds: arrayRemove(targetUserId) });
       updateDoc(targetUserRef, { followerIds: arrayRemove(currentUser.uid) });
     } else {
-      setDocumentNonBlocking(followingEntryRef, { followedUserId: targetUserId, followedAt: new Date().toISOString() }, { merge: true });
-      setDocumentNonBlocking(followerEntryRef, { followerUserId: currentUser.uid, followedAt: new Date().toISOString() }, { merge: true });
-      updateDoc(currentUserRef, { followingIds: arrayUnion(targetUserId) });
+      updateDoc(curUserRef, { followingIds: arrayUnion(targetUserId) });
       updateDoc(targetUserRef, { followerIds: arrayUnion(currentUser.uid) });
+      
+      addDocumentNonBlocking(collection(firestore, 'users', targetUserId, 'notifications'), {
+        type: 'follow',
+        fromUserId: currentUser.uid,
+        fromUsername: currentUserProfile?.username || currentUser.displayName || 'مستكشف تيمقاد',
+        fromAvatar: currentUserProfile?.profilePictureUrl || '',
+        createdAt: serverTimestamp(),
+        read: false
+      });
     }
   };
 
@@ -66,6 +74,7 @@ export default function RightSidebar() {
           ) : suggestions.length > 0 ? (
             suggestions.map((user) => {
               const isFollowing = (user.followerIds || []).includes(currentUser?.uid);
+              const isFollowingMe = (user.followingIds || []).includes(currentUser?.uid);
               const verificationType = user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none');
               return (
                 <div key={user.id} className="flex items-center justify-between">
@@ -85,10 +94,11 @@ export default function RightSidebar() {
                   <Button 
                     size="sm" 
                     variant={isFollowing ? "secondary" : "outline"} 
-                    className="rounded-full px-4 h-7 text-[10px] font-bold"
-                    onClick={() => handleFollow(user.id, isFollowing)}
+                    className="rounded-full px-4 h-7 text-[10px] font-bold gap-1"
+                    onClick={() => handleFollow(user.id, user, isFollowing)}
                   >
-                    {isFollowing ? 'متابع' : 'متابعة'}
+                    {!isFollowing && isFollowingMe && <UserRoundPlus size={10} />}
+                    {isFollowing ? 'متابع' : isFollowingMe ? 'رد المتابعة' : 'متابعة'}
                   </Button>
                 </div>
               );
