@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Target, Rocket, ShieldCheck, Heart, Sparkles, Globe, Scale, History, Ban, ShieldAlert } from 'lucide-react';
+import { ChevronRight, Target, Rocket, ShieldCheck, Heart, Sparkles, Globe, Scale, History, Ban, ShieldAlert, Gavel, FileText, Users } from 'lucide-react';
 import TimgadLogo from '@/components/ui/Logo';
 
 export default function AboutPage() {
@@ -21,129 +21,146 @@ export default function AboutPage() {
             <ChevronRight size={20} />
           </Button>
           <div className="flex flex-col">
-            <h1 className="text-sm font-bold text-primary">الميثاق التأسيسي والتعريف بالمنصة</h1>
-            <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-medium">الرؤية الاستراتيجية | تيمقاد</span>
+            <h1 className="text-sm font-bold text-primary">الميثاق التأسيسي والرؤية الاستراتيجية</h1>
+            <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-medium">منصة تيمقاد الرقمية | الإصدار المؤسسي</span>
           </div>
         </div>
 
         <div className="space-y-12 text-right">
           {/* Intro Hero */}
-          <section className="flex flex-col items-center text-center gap-6 py-10 bg-primary/5 border-y border-primary/10 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-20 h-20 bg-accent/5 rounded-full -translate-x-10 -translate-y-10" />
-            <div className="w-20 h-20 bg-white shadow-xl rounded-full flex items-center justify-center relative z-10 border-2 border-primary/10">
-              <TimgadLogo size={40} className="text-primary" />
+          <section className="flex flex-col items-center text-center gap-6 py-12 bg-primary/5 border-y border-primary/10 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-accent/5 rounded-full -translate-x-16 -translate-y-16" />
+            <div className="w-24 h-24 bg-white shadow-2xl rounded-full flex items-center justify-center relative z-10 border-4 border-primary/5">
+              <TimgadLogo size={48} className="text-primary" />
             </div>
             <div className="space-y-3 px-6 relative z-10">
-              <h2 className="text-xl font-bold text-primary leading-tight">فلسفة تيمقاد الرقمية</h2>
+              <h2 className="text-2xl font-bold text-primary leading-tight">فلسفة تيمقاد: الريادة بالأصالة</h2>
               <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                تعد منصة تيمقاد مشروعاً تقنياً طموحاً يهدف إلى بلورة مفهوم جديد للتواصل الاجتماعي الرقمي، من خلال دمج مقومات الهوية العربية الأصيلة مع أحدث النظم البرمجية، لتقديم تجربة مستخدم تتسم بالكفاءة العالية والاستدامة.
+                تُعد منصة تيمقاد صرحاً تقنياً عربياً يهدف إلى إعادة صياغة مفاهيم التواصل الرقمي، من خلال دمج الموروث الحضاري مع أحدث الابتكارات البرمجية، لتقديم تجربة مستخدم تتسم بالرصانة والكفاءة والاستدامة.
               </p>
             </div>
           </section>
 
-          {/* Core Content */}
-          <div className="grid gap-12">
-            {/* Legal and Compliance Section */}
-            <section className="space-y-4">
-              <div className="flex items-center gap-3 text-primary">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center"><Scale size={16} /></div>
-                <h3 className="font-bold text-sm uppercase tracking-tighter">الإطار القانوني والامتثال</h3>
+          {/* Legal and Compliance Section */}
+          <section className="space-y-5">
+            <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
+              <Scale size={20} />
+              <h3 className="font-bold text-md uppercase tracking-tighter">الإطار التشريعي والامتثال القانوني</h3>
+            </div>
+            <div className="bg-secondary/20 p-6 space-y-4">
+              <p className="text-xs text-foreground/80 leading-relaxed">
+                تعمل منصة تيمقاد بموجب **النظم والتشريعات الرقمية السارية في الجمهورية الجزائرية الديمقراطية الشعبية**، وبالتوافق التام مع المعاهدات العربية للجرائم المعلوماتية. إن الالتزام بهذا الإطار التشريعي يُعد عقداً ملزماً لكافة الأعضاء:
+              </p>
+              <div className="grid gap-3">
+                <div className="flex items-start gap-2 bg-background p-3 border">
+                  <Gavel size={14} className="text-primary mt-0.5" />
+                  <p className="text-[10px] text-muted-foreground">تخضع كافة البيانات والأنشطة لسلطة القانون الجزائري والعربي، مع الالتزام بالشفافية الكاملة تجاه الجهات الرقابية الرسمية.</p>
+                </div>
+                <div className="flex items-start gap-2 bg-background p-3 border">
+                  <FileText size={14} className="text-primary mt-0.5" />
+                  <p className="text-[10px] text-muted-foreground">يُطالب المستخدمون بالتقيد التام بمعايير الآداب العامة والنظم الأخلاقية المتبعة في المجتمعات العربية الأصيلة.</p>
+                </div>
               </div>
-              <div className="bg-secondary/10 p-5 border-r-4 border-primary">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  تعمل منصة تيمقاد بموجب **القوانين والتشريعات المعمول بها في الجمهورية الجزائرية الديمقراطية الشعبية**، وبالتوافق مع النظم التشريعية الرقمية في العالم العربي. إن الالتزام بهذه الضوابط القانونية يعد شرطاً أساسياً لاستخدام المنصة، ويُطالب كافة الأعضاء بالتقيد التام بالمعايير الأخلاقية والقانونية المنصوص عليها، لضمان بيئة رقمية آمنة تحترم الحقوق وتنبذ التجاوزات.
-                </p>
-              </div>
-            </section>
+            </div>
+          </section>
 
-            {/* Content Integrity Section (Prohibited Content) */}
-            <section className="space-y-4">
-              <div className="flex items-center gap-3 text-destructive">
-                <div className="w-8 h-8 bg-destructive/10 rounded-full flex items-center justify-center"><ShieldAlert size={16} /></div>
-                <h3 className="font-bold text-sm uppercase tracking-tighter">سلامة المجتمع والمحتوى المحظور</h3>
-              </div>
-              <div className="p-5 border border-destructive/20 bg-destructive/5 space-y-3">
-                <p className="text-xs text-foreground/80 leading-relaxed">
-                  تلتزم تيمقاد بمعايير السلامة العالمية الرقمية؛ حيث **يُحظر تماماً** نشر أو الترويج لأي محتوى يتعلق بـ:
+          {/* Strict Content Prohibitions */}
+          <section className="space-y-5">
+            <div className="flex items-center gap-3 text-destructive border-r-4 border-destructive pr-3">
+              <ShieldAlert size={20} />
+              <h3 className="font-bold text-md uppercase tracking-tighter">سلامة المجتمع والمحتوى المحظور قطعيًا</h3>
+            </div>
+            <div className="p-6 border border-destructive/20 bg-destructive/5 space-y-4">
+              <p className="text-xs text-foreground/80 leading-relaxed font-bold">
+                تلتزم تيمقاد بمعايير السلامة العالمية الصارمة؛ حيث يُحظر تماماً وبشكل نهائي نشر أو الترويج لأي محتوى يتعلق بـ:
+              </p>
+              <ul className="text-[11px] text-muted-foreground space-y-3 list-disc pr-5">
+                <li className="text-destructive font-bold">الترويج للمواد المخدرة، المؤثرات العقلية، أو السموم بكافة أشكالها.</li>
+                <li>نشر الفكر المتطرف، التحريض على الإرهاب، أو دعم الكيانات التخريبية.</li>
+                <li>خطاب الكراهية، العنصرية، أو المساس بالثوابت الوطنية والدينية للمجتمعات.</li>
+                <li>المحتوى الخادش للحياء العام أو الذي ينتهك حقوق الإنسان والخصوصية الفردية.</li>
+              </ul>
+              <div className="bg-destructive/10 p-3 flex items-center gap-3">
+                <Ban size={16} className="text-destructive shrink-0" />
+                <p className="text-[10px] text-destructive font-bold italic">
+                  * أي مخالفة لهذه البنود ستؤدي إلى الحظر النهائي والفوري للمستخدم مع إمكانية الملاحقة القانونية وفق التشريعات المعمول بها.
                 </p>
-                <ul className="text-[11px] text-muted-foreground space-y-2 list-disc pr-5">
-                  <li>الترويج للمواد المخدرة والسموم العقلية بكافة أشكالها.</li>
-                  <li>نشر الفكر المتطرف، التحريض على الإرهاب، أو دعم المنظمات التخريبية.</li>
-                  <li>خطاب الكراهية، التحريض على العنف، أو المساس بالثوابت الوطنية والدينية.</li>
-                </ul>
-                <p className="text-[10px] text-destructive font-medium italic">
-                  * إن مخالفة هذه البنود تضع صاحبها تحت طائلة القانون الجزائري والعربي وتؤدي للحظر الفوري والنهائي.
-                </p>
               </div>
-            </section>
+            </div>
+          </section>
 
-            {/* Expansion and Origin */}
-            <section className="space-y-4">
+          {/* Expansion Story */}
+          <section className="space-y-5">
+            <div className="flex items-center gap-3 text-primary border-r-4 border-accent pr-3">
+              <History size={20} />
+              <h3 className="font-bold text-md uppercase tracking-tighter">منشأ التطبيق ومسيرة التوسع المؤسسي</h3>
+            </div>
+            <div className="relative pr-6 border-r-2 border-dotted border-muted">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                بدأت تيمقاد كرؤية تقنية طموحة لإيجاد بديل رقمي يحترم الخصوصية العربية. وبفضل التطور المتسارع، شهد منشأ التطبيق **تحولاً استراتيجياً** من مجرد واجهة تواصل إلى منظومة برمجية متكاملة. نحن الآن في مرحلة **التوسع المؤسسي الرقمي**، حيث نستثمر في تطوير خوارزميات ذكية تدعم جودة المحتوى وتكفل سلامة المجتمع، سعياً للريادة في المشهد التقني الإقليمي.
+              </p>
+            </div>
+          </section>
+
+          {/* Pillars Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <section className="space-y-4 p-6 bg-secondary/30 border-t-4 border-primary">
               <div className="flex items-center gap-3 text-primary">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center"><History size={16} /></div>
-                <h3 className="font-bold text-sm uppercase tracking-tighter">منشأ التطبيق ومسيرة التوسع</h3>
+                <Target size={22} />
+                <h3 className="font-bold text-sm">الرؤية الاستراتيجية</h3>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed pr-11">
-                انطلق مشروع تيمقاد من رؤية تقنية فردية تسعى لسد الفجوة في المنصات الاجتماعية العربية. وبفضل التطور المتسارع، شهد منشأ التطبيق **توسعاً مؤسسياً وتقنياً استراتيجياً**، حيث تحول من مجرد واجهة تواصل إلى منظومة رقمية متكاملة تهدف للريادة الإقليمية، مع الالتزام بتطوير خوارزميات ذكية تخدم الهوية العربية وتكفل جودة المحتوى.
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                أن نتبوأ مكانة الصدارة كأكثر المنصات الرقمية موثوقية في الوطن العربي، من خلال تقديم بيئة تكنولوجية تجمع بين الحماية الفائقة والجودة المعيارية.
               </p>
             </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <section className="space-y-4 p-5 bg-secondary/20 border-r-4 border-primary">
-                <div className="flex items-center gap-3 text-primary">
-                  <Target size={18} />
-                  <h3 className="font-bold text-sm">رؤيتنا الاستراتيجية</h3>
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  أن نتبوأ مكانة الصدارة كمنصة رقمية موثوقة تعتمد عليها الكوادر العربية كمحرك أساسي للتواصل والابتكار الرقمي بكفاءة استثنائية.
-                </p>
-              </section>
-
-              <section className="space-y-4 p-5 bg-secondary/20 border-r-4 border-accent">
-                <div className="flex items-center gap-3 text-accent">
-                  <Rocket size={18} />
-                  <h3 className="font-bold text-sm">رسالتنا التقنية</h3>
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  تمكين المستخدمين عبر واجهات برمجية تجمع بين التبسيط والعمق الوظيفي، بما يحقق أقصى درجات الفعالية في إدارة المحتوى الاجتماعي.
-                </p>
-              </section>
-            </div>
-
-            {/* Values Section */}
-            <section className="space-y-6">
-              <div className="flex items-center gap-3 text-primary border-b pb-2">
-                <Sparkles size={18} />
-                <h3 className="font-bold text-sm">منظومة القيم الجوهرية</h3>
+            <section className="space-y-4 p-6 bg-secondary/30 border-t-4 border-accent">
+              <div className="flex items-center gap-3 text-accent">
+                <Rocket size={22} />
+                <h3 className="font-bold text-sm">الرسالة التقنية</h3>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { icon: <Heart size={14} />, title: "المسؤولية الاجتماعية", desc: "إعطاء الأولوية لاحتياجات المجتمع الرقمي العربي." },
-                  { icon: <ShieldCheck size={14} />, title: "الجودة والمعيارية", desc: "الالتزام بأعلى معايير الأداء والأمان المعلوماتي." },
-                  { icon: <Globe size={14} />, title: "الأصالة والابتكار", desc: "الموازنة بين الهوية الحضارية والتطور التكنولوجي." },
-                  { icon: <Rocket size={14} />, title: "الريادة المستمرة", desc: "تبني التحولات التقنية لضمان التفوق البرمجي." }
-                ].map((val, i) => (
-                  <div key={i} className="space-y-2 p-4 border hover:bg-muted/5 transition-colors">
-                    <div className="flex items-center gap-2 text-primary">
-                      {val.icon}
-                      <h4 className="text-[11px] font-bold">{val.title}</h4>
-                    </div>
-                    <p className="text-[9px] text-muted-foreground leading-snug">{val.desc}</p>
-                  </div>
-                ))}
-              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                تمكين الكوادر العربية عبر أدوات تواصل حديثة تخدم أهداف الابتكار المعرفي، مع الالتزام بتطوير بنية تحتية برمجية مستقلة وآمنة تماماً.
+              </p>
             </section>
           </div>
 
-          <footer className="pt-16 border-t text-center space-y-6">
-            <div className="flex flex-col items-center gap-2">
-              <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                تيمقاد هي نتاج رؤية وطنية تسعى لتمكين المجتمع العربي تقنياً.<br />نثمن ثقتكم وانضمامكم لهذه الرحلة الطموحة.
+          {/* Values Section */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-3 text-primary border-b pb-2">
+              <Sparkles size={20} />
+              <h3 className="font-bold text-sm uppercase">منظومة القيم الجوهرية</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              {[
+                { icon: <Heart size={16} />, title: "المسؤولية الاجتماعية", desc: "وضع مصلحة المجتمع الرقمي فوق كل اعتبار تجاري." },
+                { icon: <ShieldCheck size={16} />, title: "الجودة والمعيارية", desc: "الالتزام الصارم بأعلى معايير الأمان الأداء العالمي." },
+                { icon: <Globe size={16} />, title: "الأصالة والابتكار", desc: "الموازنة بين الهوية الحضارية والتحول التكنولوجي." },
+                { icon: <Users size={16} />, title: "الاهتمام بالعضو", desc: "بناء تجربة مستخدم محورها الاحترام المتبادل والخصوصية." }
+              ].map((val, i) => (
+                <div key={i} className="space-y-2 p-4 border bg-card hover:shadow-md transition-all">
+                  <div className="flex items-center gap-2 text-primary">
+                    {val.icon}
+                    <h4 className="text-[11px] font-bold">{val.title}</h4>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground leading-snug">{val.desc}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <footer className="pt-20 border-t text-center space-y-8">
+            <div className="flex flex-col items-center gap-3">
+              <p className="text-[11px] text-muted-foreground italic leading-relaxed max-w-md">
+                تيمقاد هي نتاج طموح وطني يسعى للسيادة التقنية.<br />نثمن ثقتكم وانضمامكم لهذه الرحلة التي تهدف لبناء مستقبل رقمي عربي أفضل.
               </p>
-              <p className="text-[8px] font-bold text-primary/40 uppercase tracking-widest mt-2">Legal Compliance | Algerian & Arab Jurisdiction</p>
+              <div className="flex flex-col gap-1 items-center">
+                <span className="text-[9px] font-bold text-primary uppercase tracking-[0.2em]">Legal Compliance Division</span>
+                <span className="text-[8px] text-muted-foreground uppercase tracking-widest">Algerian & Arab Jurisdiction | 2024-2025</span>
+              </div>
             </div>
             <div className="flex justify-center gap-2">
-              <Button variant="outline" size="sm" className="rounded-full text-[10px] h-8 px-8 font-bold" onClick={() => router.push('/')}>العودة للرئيسية</Button>
+              <Button variant="outline" size="sm" className="rounded-full text-[10px] h-9 px-10 font-bold border-primary/20 text-primary" onClick={() => router.push('/')}>العودة للرئيسية</Button>
             </div>
           </footer>
         </div>
