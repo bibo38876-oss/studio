@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Target, Rocket, ShieldCheck, Heart, Sparkles, Globe, Scale, History, Ban, ShieldAlert, Gavel, FileText, Users } from 'lucide-react';
+import { ChevronRight, Target, Rocket, ShieldCheck, Heart, Sparkles, Globe, Scale, History, ShieldAlert, FileText, Users, Briefcase } from 'lucide-react';
 import TimgadLogo from '@/components/ui/Logo';
 
 export default function AboutPage() {
@@ -45,16 +45,16 @@ export default function AboutPage() {
           <section className="space-y-5">
             <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
               <Scale size={20} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">الإطار التشريعي والامتثال القانوني</h3>
+              <h3 className="font-bold text-md uppercase tracking-tighter">الإطار التشريعي والالتزام القانوني</h3>
             </div>
             <div className="bg-secondary/20 p-6 space-y-4">
               <p className="text-xs text-foreground/80 leading-relaxed">
-                تعمل منصة تيمقاد بموجب **النظم والتشريعات الرقمية السارية في الجمهورية الجزائرية الديمقراطية الشعبية**، وبالتوافق التام مع المعاهدات العربية للجرائم المعلوماتية. إن الالتزام بهذا الإطار التشريعي يُعد عقداً ملزماً لكافة الأعضاء:
+                تعمل منصة تيمقاد بموجب **النظم والتشريعات الرقمية السارية في الجمهورية الجزائرية الديمقراطية الشعبية**، وبالتوافق التام مع المعاهدات العربية ذات الصلة. إن الالتزام بهذا الإطار التشريعي يُعد ركيزة أساسية لضمان استمرارية العضوية وجودة التفاعل:
               </p>
               <div className="grid gap-3">
                 <div className="flex items-start gap-2 bg-background p-3 border">
-                  <Gavel size={14} className="text-primary mt-0.5" />
-                  <p className="text-[10px] text-muted-foreground">تخضع كافة البيانات والأنشطة لسلطة القانون الجزائري والعربي، مع الالتزام بالشفافية الكاملة تجاه الجهات الرقابية الرسمية.</p>
+                  <Globe size={14} className="text-primary mt-0.5" />
+                  <p className="text-[10px] text-muted-foreground">تخضع كافة البيانات والأنشطة للمعايير القانونية الوطنية والعربية، مع الالتزام بالشفافية الكاملة في إدارة المحتوى الرقمي.</p>
                 </div>
                 <div className="flex items-start gap-2 bg-background p-3 border">
                   <FileText size={14} className="text-primary mt-0.5" />
@@ -68,22 +68,22 @@ export default function AboutPage() {
           <section className="space-y-5">
             <div className="flex items-center gap-3 text-destructive border-r-4 border-destructive pr-3">
               <ShieldAlert size={20} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">سلامة المجتمع والمحتوى المحظور قطعيًا</h3>
+              <h3 className="font-bold text-md uppercase tracking-tighter">سلامة المجتمع والمعايير السلوكية</h3>
             </div>
             <div className="p-6 border border-destructive/20 bg-destructive/5 space-y-4">
               <p className="text-xs text-foreground/80 leading-relaxed font-bold">
-                تلتزم تيمقاد بمعايير السلامة العالمية الصارمة؛ حيث يُحظر تماماً وبشكل نهائي نشر أو الترويج لأي محتوى يتعلق بـ:
+                تلتزم تيمقاد بمعايير السلامة العالمية الصارمة؛ حيث تُطبق ضوابط حازمة لضمان خلو المنصة من أي محتوى يتعلق بـ:
               </p>
               <ul className="text-[11px] text-muted-foreground space-y-3 list-disc pr-5">
-                <li className="text-destructive font-bold">الترويج للمواد المخدرة، المؤثرات العقلية، أو السموم بكافة أشكالها.</li>
-                <li>نشر الفكر المتطرف، التحريض على الإرهاب، أو دعم الكيانات التخريبية.</li>
+                <li className="text-destructive font-bold">الترويج للمواد المخدرة، المؤثرات العقلية، أو المواد المحظورة بكافة أشكالها.</li>
+                <li>نشر الفكر المتطرف، التحريض على العنف، أو دعم الكيانات غير المشروعة.</li>
                 <li>خطاب الكراهية، العنصرية، أو المساس بالثوابت الوطنية والدينية للمجتمعات.</li>
                 <li>المحتوى الخادش للحياء العام أو الذي ينتهك حقوق الإنسان والخصوصية الفردية.</li>
               </ul>
-              <div className="bg-destructive/10 p-3 flex items-center gap-3">
-                <Ban size={16} className="text-destructive shrink-0" />
-                <p className="text-[10px] text-destructive font-bold italic">
-                  * أي مخالفة لهذه البنود ستؤدي إلى الحظر النهائي والفوري للمستخدم مع إمكانية الملاحقة القانونية وفق التشريعات المعمول بها.
+              <div className="bg-primary/10 p-3 flex items-center gap-3 border border-primary/20">
+                <ShieldCheck size={16} className="text-primary shrink-0" />
+                <p className="text-[10px] text-primary font-bold italic">
+                  * إن الالتزام بهذه الضوابط هو ميثاق أخلاقي يربط كافة أعضاء تيمقاد لضمان بيئة تواصل آمنة ومثمرة للجميع.
                 </p>
               </div>
             </div>
@@ -97,7 +97,7 @@ export default function AboutPage() {
             </div>
             <div className="relative pr-6 border-r-2 border-dotted border-muted">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                بدأت تيمقاد كرؤية تقنية طموحة لإيجاد بديل رقمي يحترم الخصوصية العربية. وبفضل التطور المتسارع، شهد منشأ التطبيق **تحولاً استراتيجياً** من مجرد واجهة تواصل إلى منظومة برمجية متكاملة. نحن الآن في مرحلة **التوسع المؤسسي الرقمي**، حيث نستثمر في تطوير خوارزميات ذكية تدعم جودة المحتوى وتكفل سلامة المجتمع، سعياً للريادة في المشهد التقني الإقليمي.
+                بدأت تيمقاد كرؤية تقنية طموحة لإيجاد بديل رقمي يحترم الخصوصية العربية ويدعم الهوية الوطنية. وبفضل التطور المتسارع، شهد منشأ التطبيق **تحولاً استراتيجياً** من مجرد واجهة تواصل إلى منظومة برمجية متكاملة تسعى للريادة الإقليمية. نحن الآن في مرحلة **التوسع المؤسسي الرقمي**، حيث نستثمر في تطوير بنية تحتية مستقلة وآمنة، تهدف إلى تمكين الكوادر العربية وتقديم نموذج تقني يحتذى به في الابتكار والجودة.
               </p>
             </div>
           </section>
@@ -155,7 +155,7 @@ export default function AboutPage() {
                 تيمقاد هي نتاج طموح وطني يسعى للسيادة التقنية.<br />نثمن ثقتكم وانضمامكم لهذه الرحلة التي تهدف لبناء مستقبل رقمي عربي أفضل.
               </p>
               <div className="flex flex-col gap-1 items-center">
-                <span className="text-[9px] font-bold text-primary uppercase tracking-[0.2em]">Legal Compliance Division</span>
+                <span className="text-[9px] font-bold text-primary uppercase tracking-[0.2em]">Institutional Compliance Division</span>
                 <span className="text-[8px] text-muted-foreground uppercase tracking-widest">Algerian & Arab Jurisdiction | 2024-2025</span>
               </div>
             </div>
