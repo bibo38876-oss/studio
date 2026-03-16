@@ -49,11 +49,11 @@ export default function LoginPage() {
           followingIds: [],
           followerIds: [],
           role: 'user',
-          verificationType: 'none'
+          verificationType: 'none',
+          coins: 0
         });
 
         toast({ title: "تم إنشاء الحساب!", description: "مرحباً بك في تيمقاد. اختر بعض الحسابات لمتابعتها." });
-        // التحويل إلى صفحة الانضمام للمستخدمين الجدد
         router.push('/onboarding');
       }
     } catch (error: any) {

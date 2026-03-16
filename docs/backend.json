@@ -20,7 +20,8 @@
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["user", "admin"] },
         "verificationType": { "type": "string", "enum": ["none", "blue", "gold"] },
-        "isPrivate": { "type": "boolean", "default": false }
+        "isPrivate": { "type": "boolean", "default": false },
+        "coins": { "type": "number", "default": 0 }
       },
       "required": ["id", "username", "createdAt"]
     },
