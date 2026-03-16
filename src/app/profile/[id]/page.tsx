@@ -140,6 +140,7 @@ export default function ProfilePage() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden border-none bg-background">
+                  <DialogTitle className="sr-only">مشاركة الملف الشخصي</DialogTitle>
                   <div className="bg-primary p-6 text-center text-white space-y-4">
                     <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-md">
                       <span className="text-2xl font-bold font-headline tracking-tighter">ت</span>
@@ -304,4 +305,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
