@@ -8,14 +8,17 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'adelbenmaza8@gmail.com';
+    }
 
-    // Force Deploy ID: security_v16_groups_delete_support
+    // Force Deploy ID: security_fix_v20_posts_access
 
     match /posts/{postId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
-      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
 
       match /likes/{userId} {
         allow read: if isSignedIn();
@@ -25,13 +28,13 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read, list: if isSignedIn();
         allow create: if isSignedIn();
-        allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isOwner(resource.data.authorId));
+        allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
       }
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isOwner(userId);
+      allow read, get: if isSignedIn();
+      allow write: if isOwner(userId) || isAdmin();
       allow update: if isSignedIn();
       
       match /notifications/{notifId} {
@@ -51,14 +54,24 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow write: if isOwner(userId);
       }
+
+      match /bookmarks/{postId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /groupInvites/{inviteId} {
+        allow read, write: if isOwner(userId) || isSignedIn();
+      }
     }
 
     match /groups/{groupId} {
-      allow read, create, update: if isSignedIn();
-      allow delete: if isSignedIn() && resource.data.creatorId == request.auth.uid;
+      allow read, get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && (resource.data.creatorId == request.auth.uid || isAdmin());
       
       match /messages/{messageId} {
-        allow read, create: if isSignedIn();
+        allow read, list, create: if isSignedIn();
       }
     }
   }
