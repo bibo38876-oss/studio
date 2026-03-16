@@ -34,12 +34,12 @@ export default function BottomNav() {
   };
 
   const navItems = [
-    { icon: <Home size={20} />, label: 'الرئيسية', path: '/' },
-    { icon: <Compass size={20} />, label: 'استكشف', path: '/explore' },
+    { icon: <Home size={18} />, label: 'الرئيسية', path: '/' },
+    { icon: <Compass size={18} />, label: 'استكشف', path: '/explore' },
     { icon: null, label: 'نشر', path: 'post' },
-    { icon: <MessageSquare size={20} />, label: 'المجموعات', path: '/groups' },
+    { icon: <MessageSquare size={18} />, label: 'المجموعات', path: '/groups' },
     { 
-      icon: <User size={20} />, 
+      icon: <User size={18} />, 
       label: 'حسابي', 
       path: user && !user.isAnonymous ? `/profile/${user.uid}` : '/login',
       onClick: handleProfileClick
@@ -47,7 +47,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 z-50 w-full h-14 bg-background/95 backdrop-blur-md border-t px-2 md:hidden">
+    <nav className="fixed bottom-0 left-0 z-50 w-full h-12 bg-background/95 backdrop-blur-md border-t px-1 md:hidden">
       <div className="grid h-full grid-cols-5 items-center justify-items-center max-w-lg mx-auto">
         {navItems.map((item, index) => {
           if (item.path === 'post') {
@@ -60,11 +60,11 @@ export default function BottomNav() {
                 setIsPostOpen(open);
               }}>
                 <DialogTrigger asChild>
-                  <button className="relative w-10 h-8 transition-transform hover:scale-110 active:scale-95 mx-2 group">
+                  <button className="relative w-8 h-7 transition-transform hover:scale-110 active:scale-95 mx-1 group">
                     <div className="absolute inset-0 bg-accent rounded-sm -translate-x-0.5 opacity-60"></div>
                     <div className="absolute inset-0 bg-primary rounded-sm translate-x-0.5 opacity-60"></div>
                     <div className="absolute inset-0 bg-foreground dark:bg-foreground rounded-sm flex items-center justify-center">
-                      <Plus size={20} className="text-background dark:text-background" strokeWidth={3} />
+                      <Plus size={16} className="text-background dark:text-background" strokeWidth={3} />
                     </div>
                   </button>
                 </DialogTrigger>
@@ -85,7 +85,7 @@ export default function BottomNav() {
               className={`flex flex-col items-center justify-center gap-0.5 transition-colors w-full h-full ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
             >
               {item.icon}
-              <span className={`text-[8px] font-bold tracking-tighter ${isActive ? 'opacity-100' : 'opacity-60'}`}>{item.label}</span>
+              <span className={`text-[7.5px] font-bold tracking-tighter ${isActive ? 'opacity-100' : 'opacity-60'}`}>{item.label}</span>
             </Link>
           );
         })}
