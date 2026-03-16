@@ -103,7 +103,6 @@ export default function PostCard({ post }: { post: PostData }) {
       (entries) => {
         if (entries[0].isIntersecting && !viewedRef.current) {
           viewedRef.current = true;
-          // Increment views via non-blocking update
           updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { viewsCount: increment(1) });
         }
       },
@@ -159,7 +158,7 @@ export default function PostCard({ post }: { post: PostData }) {
   return (
     <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
       <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
-        {/* النقاط الثلاث في الجهة اليمنى */}
+        {/* النقاط الثلاث في الجهة اليمنى لتماثل اتجاهات تيمقاد */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="text-xs">
@@ -168,7 +167,7 @@ export default function PostCard({ post }: { post: PostData }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* معلومات المستخدم في الجهة اليسرى */}
+        {/* معلومات المستخدم في الجهة اليسرى (الشارة ثم الاسم) */}
         <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
           <div className="flex flex-col text-right">
             <div className="flex items-center gap-1.5 leading-tight justify-end">
@@ -212,10 +211,6 @@ export default function PostCard({ post }: { post: PostData }) {
                   </div>
                 );
               })}
-            </div>
-            <div className="flex justify-between items-center pt-1 border-t border-primary/5">
-              <span className="text-[8px] text-muted-foreground font-bold">{displayPost.poll.totalVotes} تصويت</span>
-              <span className="text-[8px] text-muted-foreground italic">ينتهي بعد 24 ساعة</span>
             </div>
           </div>
         )}

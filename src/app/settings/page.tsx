@@ -37,7 +37,6 @@ export default function SettingsPage() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
-  const isAdmin = user?.email === ADMIN_EMAIL;
 
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -45,6 +44,7 @@ export default function SettingsPage() {
   }, [firestore, user?.uid]);
 
   const { data: profile } = useDoc(userRef);
+  const isAdmin = user?.email === ADMIN_EMAIL || profile?.role === 'admin';
 
   useEffect(() => {
     const theme = localStorage.getItem('theme');

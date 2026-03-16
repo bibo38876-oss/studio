@@ -28,7 +28,8 @@ export default function LeftSidebar() {
     );
   }
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  // التأكد من أن الإدارة تظهر للمسؤول دائماً
+  const isAdmin = user?.email === ADMIN_EMAIL || profile?.role === 'admin';
 
   return (
     <aside className="hidden md:block w-64 space-y-4">
