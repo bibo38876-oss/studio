@@ -38,11 +38,11 @@ export default function Navbar() {
           <div className="relative w-full max-w-sm group">
             <Search 
               size={12} 
-              className={`absolute right-2.5 top-1/2 -translate-y-1/2 transition-colors ${isSearchFocused ? 'text-primary' : 'text-muted-foreground'}`} 
+              className={`absolute end-2.5 top-1/2 -translate-y-1/2 transition-colors ${isSearchFocused ? 'text-primary' : 'text-muted-foreground'}`} 
             />
             <input 
               placeholder="بحث في تيمقاد..." 
-              className={`h-6 w-full pr-8 pl-4 bg-secondary/50 border-none rounded-full text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/20 focus:bg-secondary transition-all ${isSearchFocused ? 'shadow-sm' : ''}`}
+              className={`h-6 w-full pe-8 ps-4 bg-secondary/50 border-none rounded-full text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/20 focus:bg-secondary transition-all ${isSearchFocused ? 'shadow-sm' : ''}`}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
             />
@@ -54,7 +54,7 @@ export default function Navbar() {
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full relative hover:bg-secondary">
               <Bell size={16} className="text-muted-foreground" />
               {hasUnread && (
-                <span className="absolute top-2 left-2 w-1.5 h-1.5 bg-accent rounded-full border border-background animate-pulse"></span>
+                <span className="absolute top-2 start-2 w-1.5 h-1.5 bg-accent rounded-full border border-background animate-pulse"></span>
               )}
             </Button>
           </Link>

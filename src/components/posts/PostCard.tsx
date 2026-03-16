@@ -63,7 +63,6 @@ export default function PostCard({ post }: { post: PostData }) {
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
-  // استدعاء جميع الـ Hooks في البداية لضمان ثبات الترتيب
   const centralPostRef = useMemoFirebase(() => {
     if (!firestore || !post.id) return null;
     return doc(firestore, 'posts', post.id);
@@ -258,7 +257,7 @@ export default function PostCard({ post }: { post: PostData }) {
     });
 
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col text-start">
         <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap tracking-tight">
           {parts}
         </p>
@@ -268,7 +267,7 @@ export default function PostCard({ post }: { post: PostData }) {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
             }}
-            className="text-accent text-[10px] font-bold mt-1 text-right hover:underline"
+            className="text-accent text-[10px] font-bold mt-1 text-start hover:underline"
           >
             {isExpanded ? 'عرض أقل' : 'اقرأ المزيد'}
           </button>
@@ -287,8 +286,8 @@ export default function PostCard({ post }: { post: PostData }) {
         onClick={() => setIsCommentsOpen(true)}
       >
         <CardHeader className="p-3 pb-2 flex-row items-start justify-between space-y-0">
-          <Link href={`/profile/${displayPost.authorId}`} className="flex gap-3 group" onClick={(e) => e.stopPropagation()}>
-            <Avatar className="h-10 w-10 border border-muted/20 rounded-full bg-primary/5">
+          <Link href={`/profile/${displayPost.authorId}`} className="flex gap-3 group text-start" onClick={(e) => e.stopPropagation()}>
+            <Avatar className="h-10 w-10 border border-muted/20 rounded-full bg-primary/5 shrink-0">
               {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
               <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
             </Avatar>
@@ -329,7 +328,7 @@ export default function PostCard({ post }: { post: PostData }) {
           </DropdownMenu>
         </CardHeader>
         
-        <CardContent className="px-0 py-0 pr-16 pl-4">
+        <CardContent className="px-0 py-0 ps-16 pe-4 text-start">
           {displayPost.content && renderContent(displayPost.content)}
           
           {allMedia.length > 0 && (
@@ -354,7 +353,7 @@ export default function PostCard({ post }: { post: PostData }) {
           )}
         </CardContent>
 
-        <CardFooter className="pr-16 pl-4 py-2 border-t-0 flex justify-between items-center h-10">
+        <CardFooter className="ps-16 pe-4 py-2 border-t-0 flex justify-between items-center h-10">
           <Button 
             variant="ghost" 
             size="sm" 
