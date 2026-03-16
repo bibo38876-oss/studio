@@ -16,10 +16,6 @@ service cloud.firestore {
       );
     }
 
-    match /{path=**}/reposts/{repostId} {
-      allow read: if isSignedIn();
-    }
-
     match /posts/{postId} {
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
@@ -48,7 +44,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, get: if isSignedIn();
+      allow read: if isSignedIn();
       allow write: if isOwner(userId) || isAdmin();
       allow update: if isSignedIn() && (isOwner(userId) || isAdmin());
       
@@ -86,7 +82,7 @@ service cloud.firestore {
     }
 
     match /groups/{groupId} {
-      allow read, get, list: if isSignedIn();
+      allow read, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn() && (resource.data.creatorId == request.auth.uid || isAdmin());

@@ -35,28 +35,28 @@ export default function ExplorePage() {
     if (initialQuery) setSearchQuery(initialQuery);
   }, [initialQuery]);
 
-  // جلب المستخدمين للبحث
+  // جلب المستخدمين للبحث - يتطلب تسجيل الدخول
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore || !currentUser) return null;
+    if (!firestore || !currentUser?.uid) return null;
     return query(collection(firestore, 'users'), limit(100));
-  }, [firestore, currentUser]);
+  }, [firestore, currentUser?.uid]);
 
-  // جلب المنشورات العامة للترند والبحث النصي
+  // جلب المنشورات العامة للترند والبحث النصي - يتطلب تسجيل الدخول
   const postsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentUser?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
-  }, [firestore]);
+  }, [firestore, currentUser?.uid]);
 
   // جلب نتائج الوسوم
   const hashtagResultsQuery = useMemoFirebase(() => {
-    if (!firestore || !searchQuery || !searchQuery.startsWith('#')) return null;
+    if (!firestore || !currentUser?.uid || !searchQuery || !searchQuery.startsWith('#')) return null;
     return query(
       collection(firestore, 'posts'),
       where('hashtags', 'array-contains', searchQuery),
       orderBy('createdAt', 'desc'),
       limit(50)
     );
-  }, [firestore, searchQuery]);
+  }, [firestore, currentUser?.uid, searchQuery]);
 
   const { data: allUsers, isLoading: isUsersLoading } = useCollection(usersQuery);
   const { data: recentPosts, isLoading: isPostsLoading } = useCollection(postsQuery);

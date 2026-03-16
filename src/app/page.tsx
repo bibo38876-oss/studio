@@ -44,16 +44,16 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // جلب المنشورات المروجة (Ads)
+  // جلب المنشورات المروجة (Ads) - تتطلب تسجيل الدخول لتفادي خطأ الصلاحيات
   const promotedQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'posts'),
       where('promoted', '==', true),
       where('impressions_left', '>', 0),
       limit(10)
     );
-  }, [firestore]);
+  }, [firestore, user?.uid]);
 
   const { data: promotedPosts } = useCollection(promotedQuery);
 
@@ -94,7 +94,7 @@ export default function Home() {
     }).sort((a, b) => b.recommendationScore - a.recommendationScore);
 
     // دمج الإعلانات: منشور مروج كل 5 منشورات
-    const finalFeed = [];
+    const finalFeed: any[] = [];
     let adIdx = 0;
     const ads = promotedPosts?.filter(ad => !basePosts.some(p => p.id === ad.id)) || [];
 

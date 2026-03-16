@@ -80,9 +80,9 @@ export default function PostCard({ post }: { post: PostData }) {
   const displayPost = centralPost || post;
 
   const authorRef = useMemoFirebase(() => {
-    if (!firestore || !displayPost.authorId) return null;
+    if (!firestore || !displayPost.authorId || !user?.uid) return null;
     return doc(firestore, 'users', displayPost.authorId);
-  }, [firestore, displayPost.authorId]);
+  }, [firestore, displayPost.authorId, user?.uid]);
   const { data: authorData } = useDoc(authorRef);
 
   const currentUserProfileRef = useMemoFirebase(() => {
@@ -92,39 +92,36 @@ export default function PostCard({ post }: { post: PostData }) {
   const { data: currentUserProfile } = useDoc(currentUserProfileRef);
 
   const likeRef = useMemoFirebase(() => {
-    if (!firestore || !user || !displayPost.id) return null;
+    if (!firestore || !user?.uid || !displayPost.id) return null;
     return doc(firestore, 'posts', displayPost.id, 'likes', user.uid);
-  }, [firestore, displayPost.id, user]);
+  }, [firestore, displayPost.id, user?.uid]);
   const { data: likeData, isLoading: isLikeLoading } = useDoc(likeRef);
 
   const bookmarkRef = useMemoFirebase(() => {
-    if (!firestore || !user || !displayPost.id) return null;
+    if (!firestore || !user?.uid || !displayPost.id) return null;
     return doc(firestore, 'users', user.uid, 'bookmarks', displayPost.id);
-  }, [firestore, displayPost.id, user]);
+  }, [firestore, displayPost.id, user?.uid]);
   const { data: bookmarkData, isLoading: isBookmarkLoading } = useDoc(bookmarkRef);
 
   const userVoteRef = useMemoFirebase(() => {
-    if (!firestore || !user || !displayPost.id) return null;
+    if (!firestore || !user?.uid || !displayPost.id) return null;
     return doc(firestore, 'posts', displayPost.id, 'pollVotes', user.uid);
-  }, [firestore, displayPost.id, user]);
+  }, [firestore, displayPost.id, user?.uid]);
   const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
 
   useEffect(() => {
-    if (!firestore || !displayPost.id) return;
+    if (!firestore || !displayPost.id || !user?.uid) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          // عداد المشاهدات العادي
           if (!viewedRef.current) {
             viewedRef.current = true;
             updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { viewsCount: increment(1) });
           }
-          // عداد الترويج
           if (displayPost.promoted && (displayPost.impressions_left || 0) > 0 && !promotedViewedRef.current) {
             promotedViewedRef.current = true;
             updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { 
               impressions_left: increment(-1),
-              // سيختفي المنشور من الاستعلام تلقائياً عندما يصبح العدد 0
             });
           }
         }
@@ -133,7 +130,7 @@ export default function PostCard({ post }: { post: PostData }) {
     );
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
-  }, [firestore, displayPost.id, displayPost.promoted, displayPost.impressions_left]);
+  }, [firestore, displayPost.id, displayPost.promoted, displayPost.impressions_left, user?.uid]);
 
   const handleFollow = (e: React.MouseEvent) => {
     e.stopPropagation();

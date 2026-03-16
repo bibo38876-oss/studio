@@ -39,23 +39,23 @@ export default function AdminPage() {
     }
   }, [currentUser, isUserLoading, router]);
 
-  // جلب المستخدمين
+  // جلب المستخدمين - يتطلب تسجيل الدخول والتأكد من الأدمن
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentUser?.uid) return null;
     return query(collection(firestore, 'users'), limit(100));
-  }, [firestore]);
+  }, [firestore, currentUser?.uid]);
 
   // جلب المنشورات العامة للإحصائيات
   const postsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentUser?.uid) return null;
     return query(collection(firestore, 'posts'), limit(500));
-  }, [firestore]);
+  }, [firestore, currentUser?.uid]);
 
-  // جلب المنشورات التي بلغت 100 بلاغ (أو أكثر)
+  // جلب المنشورات التي بلغت 100 بلاغ
   const reportedPostsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentUser?.uid) return null;
     return query(collection(firestore, 'posts'), where('reportsCount', '>=', 100), limit(50));
-  }, [firestore]);
+  }, [firestore, currentUser?.uid]);
 
   const { data: users, isLoading: isUsersLoading } = useCollection(usersQuery);
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery);
@@ -190,8 +190,7 @@ export default function AdminPage() {
                 <CardContent className="p-4 pt-0">
                   <p className="text-2xl font-bold text-foreground">{stats.trendingTags}</p>
                 </CardContent>
-              </Card>
-            </div>
+              </div>
 
             <Card className="border-none shadow-sm rounded-none text-right">
               <CardHeader>

@@ -27,26 +27,26 @@ export default function GroupsPage() {
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
-  // جلب المجموعات
+  // جلب المجموعات - يتطلب تسجيل الدخول
   const myGroupsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'groups'), where('creatorId', '==', user.uid));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const joinedGroupsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'groups'), where('members', 'array-contains', user.uid));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const invitesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'users', user.uid, 'groupInvites'), where('status', '==', 'pending'));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'users'), limit(30));
-  }, [firestore]);
+  }, [firestore, user?.uid]);
 
   const { data: myGroups, isLoading: isMyGroupsLoading } = useCollection(myGroupsQuery);
   const { data: joinedGroups, isLoading: isJoinedLoading } = useCollection(joinedGroupsQuery);
@@ -69,7 +69,6 @@ export default function GroupsPage() {
     const adminAccount = others.find(u => u.email === ADMIN_EMAIL);
     const restOfUsers = others.filter(u => u.email !== ADMIN_EMAIL);
     
-    // خلط بقية المستخدمين لضمان العدالة في الظهور وتكافؤ فرص المتابعة
     const shuffledRest = [...restOfUsers].sort(() => Math.random() - 0.5);
     
     const result = adminAccount ? [adminAccount, ...shuffledRest] : shuffledRest;
