@@ -13,34 +13,21 @@
         "profilePictureUrl": { "type": "string", "format": "uri" },
         "bannerUrl": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time" },
+        "lastPollCreatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last poll created by the user." },
         "followingIds": { "type": "array", "items": { "type": "string" } },
         "followerIds": { "type": "array", "items": { "type": "string" } },
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["user", "admin"] },
         "verificationType": { "type": "string", "enum": ["none", "blue", "gold"] },
-        "isPrivate": { "type": "boolean", "default": false, "description": "Whether the user profile is private." }
+        "isPrivate": { "type": "boolean", "default": false }
       },
       "required": ["id", "username", "createdAt"]
-    },
-    "Notification": {
-      "title": "Notification",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["like", "comment", "follow", "repost"] },
-        "fromUserId": { "type": "string" },
-        "fromUsername": { "type": "string" },
-        "fromAvatar": { "type": "string" },
-        "postId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "read": { "type": "boolean" }
-      }
     },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a user post in Timgad.",
+      "description": "Represents a user post in Timgad, potentially including a poll.",
       "properties": {
         "id": { "type": "string" },
         "authorId": { "type": "string" },
@@ -49,6 +36,24 @@
         "content": { "type": "string" },
         "mediaUrls": { "type": "array", "items": { "type": "string" } },
         "mediaType": { "type": "string", "enum": ["image", "video"] },
+        "poll": {
+          "type": "object",
+          "properties": {
+            "question": { "type": "string" },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": { "type": "string" },
+                  "votes": { "type": "number", "default": 0 }
+                }
+              }
+            },
+            "totalVotes": { "type": "number", "default": 0 },
+            "expiresAt": { "type": "string", "format": "date-time" }
+          }
+        },
         "createdAt": { "type": "string", "format": "date-time" },
         "hashtags": { "type": "array", "items": { "type": "string" } },
         "likesCount": { "type": "number" },
@@ -65,19 +70,8 @@
   "firestore": {
     "structure": [
       { "path": "users/{userId}", "definition": { "entityName": "User" } },
-      { "path": "users/{userId}/notifications/{notifId}", "definition": { "entityName": "Notification" } },
-      { "path": "users/{userId}/likedPosts/{postId}", "definition": { "entityName": "Post" } },
-      { "path": "posts/{postId}", "definition": { "entityName": "Post" } }
-    ],
-    "indexes": [
-      {
-        "collectionGroup": "posts",
-        "queryScope": "COLLECTION",
-        "fields": [
-          { "fieldPath": "hashtags", "arrayConfig": "CONTAINS" },
-          { "fieldPath": "createdAt", "order": "DESCENDING" }
-        ]
-      }
+      { "path": "posts/{postId}", "definition": { "entityName": "Post" } },
+      { "path": "posts/{postId}/pollVotes/{userId}", "description": "Stores individual user votes for a poll." }
     ]
   }
 }

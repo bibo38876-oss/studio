@@ -234,7 +234,7 @@ export default function ProfilePage() {
           </div>
           <div className="px-4 pb-6 relative">
             <div className="flex justify-between items-start -mt-10 mb-4">
-              {/* أزرار التحكم في الجهة اليمنى (عكس البطاقة) */}
+              {/* أزرار التحكم في الجهة اليمنى لتماثل البطاقة */}
               <div className="pt-12">
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -271,16 +271,17 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* صورة المستخدم والمعلومات في الجهة اليسرى (ليطابق البطاقة) */}
+              {/* صورة المستخدم والمعلومات في الجهة اليسرى لتماثل البطاقة */}
               <div className="flex flex-col items-center">
                 <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
                   {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
                   <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
                 </Avatar>
+                {/* الاسم تحت الصورة الشخصية مباشرة */}
                 <div className="text-center">
                   <div className="flex items-center gap-1.5 justify-center">
+                    <span className="text-md font-bold text-primary">{profile.username}</span>
                     <VerifiedBadge type={verificationType} size={16} />
-                    <h1 className="text-md font-bold text-primary">{profile.username}</h1>
                   </div>
                   <p className="text-[9px] text-muted-foreground">{profile.email}</p>
                 </div>

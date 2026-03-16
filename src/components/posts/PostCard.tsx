@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3 } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Repeat, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, increment, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -28,6 +28,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
+import { Progress } from "@/components/ui/progress";
 
 interface PostData {
   id: string;
@@ -35,9 +36,13 @@ interface PostData {
   authorName?: string;
   authorAvatar?: string;
   content: string;
-  mediaUrl?: string;
   mediaUrls?: string[];
-  mediaType?: 'image' | 'video';
+  poll?: {
+    question: string;
+    options: { text: string; votes: number }[];
+    totalVotes: number;
+    expiresAt: string;
+  };
   createdAt: any;
   likesCount?: number;
   commentsCount?: number;
@@ -53,385 +58,203 @@ export default function PostCard({ post }: { post: PostData }) {
   const router = useRouter();
   const { toast } = useToast();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const [isLikeAnimating, setIsLikeAnimating] = useState(false);
-  const [isRepostAnimating, setIsRepostAnimating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  
   const cardRef = useRef<HTMLDivElement>(null);
   const viewedRef = useRef(false);
   
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
-  const centralPostRef = useMemoFirebase(() => {
+  const postRef = useMemoFirebase(() => {
     if (!firestore || !post.id) return null;
     return doc(firestore, 'posts', post.id);
   }, [firestore, post.id]);
 
-  const { data: centralPost, isLoading: isCentralLoading } = useDoc(centralPostRef);
-
+  const { data: centralPost } = useDoc(postRef);
   const displayPost = centralPost || post;
 
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !displayPost.authorId) return null;
     return doc(firestore, 'users', displayPost.authorId);
   }, [firestore, displayPost.authorId]);
-  
   const { data: authorData } = useDoc(authorRef);
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user || !displayPost.id) return null;
     return doc(firestore, 'posts', displayPost.id, 'likes', user.uid);
   }, [firestore, displayPost.id, user]);
-
   const { data: likeData } = useDoc(likeRef);
-  const isLiked = !!likeData;
 
   const repostRef = useMemoFirebase(() => {
     if (!firestore || !user || !displayPost.id) return null;
     return doc(firestore, 'users', user.uid, 'reposts', displayPost.id);
   }, [firestore, displayPost.id, user]);
-
   const { data: repostData } = useDoc(repostRef);
-  const isReposted = !!repostData;
+
+  const userVoteRef = useMemoFirebase(() => {
+    if (!firestore || !user || !displayPost.id) return null;
+    return doc(firestore, 'posts', displayPost.id, 'pollVotes', user.uid);
+  }, [firestore, displayPost.id, user]);
+  const { data: userVote } = useDoc(userVoteRef);
 
   useEffect(() => {
     if (!firestore || !displayPost.id || viewedRef.current) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !viewedRef.current) {
           viewedRef.current = true;
-          const postRef = doc(firestore, 'posts', displayPost.id);
-          updateDocumentNonBlocking(postRef, {
-            viewsCount: increment(1)
-          });
-          observer.disconnect();
+          updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { viewsCount: increment(1) });
         }
       },
       { threshold: 0.5 }
     );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
+    if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
   }, [firestore, displayPost.id]);
 
-  if (!isCentralLoading && centralPost === null) {
-    return null;
-  }
+  const handleVote = async (optionIndex: number) => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !user || !displayPost.poll || userVote) return;
 
-  const verificationType: VerificationType = displayPost.email === 'adelbenmaza8@gmail.com' 
-    ? 'blue' 
-    : (authorData?.verificationType || displayPost.authorVerificationType || 'none');
-
-  const formattedDate = displayPost.createdAt?.toDate 
-    ? formatDistanceToNow(displayPost.createdAt.toDate(), { addSuffix: true, locale: ar })
-    : 'منذ قليل';
-
-  const handleLike = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isAnonymous) {
-      router.push('/login');
-      return;
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const postDoc = await transaction.get(postRef!);
+        if (!postDoc.exists()) return;
+        
+        const currentPoll = postDoc.data().poll;
+        currentPoll.options[optionIndex].votes += 1;
+        currentPoll.totalVotes += 1;
+        
+        transaction.update(postRef!, { poll: currentPoll });
+        transaction.set(userVoteRef!, { optionIndex, votedAt: serverTimestamp() });
+      });
+      toast({ description: "تم تسجيل تصويتك بنجاح." });
+    } catch (e) {
+      toast({ variant: "destructive", description: "فشل في تسجيل التصويت." });
     }
-    if (!user || !firestore) return;
-
-    setIsLikeAnimating(true);
-    setTimeout(() => setIsLikeAnimating(false), 500);
-
-    const postRef = doc(firestore, 'posts', displayPost.id);
-    const userLikeRef = doc(firestore, 'posts', displayPost.id, 'likes', user.uid);
-    const personalLikeRef = doc(firestore, 'users', user.uid, 'likedPosts', displayPost.id);
-
-    if (isLiked) {
-      deleteDocumentNonBlocking(userLikeRef);
-      deleteDocumentNonBlocking(personalLikeRef);
-      updateDocumentNonBlocking(postRef, { likesCount: increment(-1) });
-    } else {
-      const timestamp = new Date().toISOString();
-      setDocumentNonBlocking(userLikeRef, { userId: user.uid, likedAt: timestamp }, { merge: true });
-      setDocumentNonBlocking(personalLikeRef, { 
-        ...displayPost, 
-        likedAt: timestamp,
-        createdAt: displayPost.createdAt?.toDate ? displayPost.createdAt.toDate().toISOString() : displayPost.createdAt
-      }, { merge: true });
-      updateDocumentNonBlocking(postRef, { likesCount: increment(1) });
-      
-      if (displayPost.authorId !== user.uid) {
-        const notifRef = doc(collection(firestore, 'users', displayPost.authorId, 'notifications'));
-        setDocumentNonBlocking(notifRef, {
-          type: 'like',
-          fromUserId: user.uid,
-          fromUsername: user.displayName || 'مستخدم تيمقاد',
-          fromAvatar: user.photoURL || '',
-          postId: displayPost.id,
-          createdAt: serverTimestamp(),
-          read: false
-        }, { merge: true });
-      }
-    }
-  };
-
-  const handleRepost = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isAnonymous) {
-      router.push('/login');
-      return;
-    }
-    if (!user || !firestore) return;
-
-    setIsRepostAnimating(true);
-    setTimeout(() => setIsRepostAnimating(false), 500);
-
-    const postRef = doc(firestore, 'posts', displayPost.id);
-    const userRepostRef = doc(firestore, 'users', user.uid, 'reposts', displayPost.id);
-
-    if (isReposted) {
-      deleteDocumentNonBlocking(userRepostRef);
-      updateDocumentNonBlocking(postRef, { repostsCount: increment(-1) });
-    } else {
-      setDocumentNonBlocking(userRepostRef, { 
-        postId: displayPost.id, 
-        repostedAt: serverTimestamp(),
-        originalAuthorId: displayPost.authorId,
-        postData: { ...displayPost, createdAt: displayPost.createdAt?.toDate ? displayPost.createdAt.toDate().toISOString() : displayPost.createdAt }
-      }, { merge: true });
-      updateDocumentNonBlocking(postRef, { repostsCount: increment(1) });
-      
-      if (displayPost.authorId !== user.uid) {
-        const notifRef = doc(collection(firestore, 'users', displayPost.authorId, 'notifications'));
-        setDocumentNonBlocking(notifRef, {
-          type: 'repost', 
-          fromUserId: user.uid,
-          fromUsername: user.displayName || 'مستخدم تيمقاد',
-          postId: displayPost.id,
-          createdAt: serverTimestamp(),
-          read: false
-        }, { merge: true });
-      }
-    }
-  };
-
-  const handleDeletePost = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isOwner || !firestore) return;
-    deleteDocumentNonBlocking(doc(firestore, 'posts', displayPost.id));
-    toast({ title: "تم الحذف", description: "تم حذف المنشور بنجاح." });
-  };
-
-  const handleReport = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    toast({ title: "شكراً لك", description: "تم استلام بلاغك وسنقوم بمراجعته قريباً." });
-  };
-
-  const handleCopyLink = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const url = `${window.location.origin}/post/${displayPost.id}`;
-    navigator.clipboard.writeText(url);
-    toast({ title: "تم النسخ", description: "تم نسخ رابط المنشور إلى الحافظة." });
   };
 
   const renderContent = (content: string) => {
     if (!content) return null;
-
     const isLong = content.length > 250;
     const displayContent = isLong && !isExpanded ? content.slice(0, 250) + "..." : content;
-
     const parts = displayContent.split(/(\s+)/).map((part, i) => {
       if (part.startsWith('#')) {
-        return (
-          <Link 
-            key={i} 
-            href={`/explore?q=${encodeURIComponent(part)}`}
-            className="text-accent font-bold hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {part}
-          </Link>
-        );
+        return <Link key={i} href={`/explore?q=${encodeURIComponent(part)}`} className="text-accent font-bold hover:underline" onClick={(e) => e.stopPropagation()}>{part}</Link>;
       }
       return part;
     });
-
     return (
       <div className="flex flex-col text-right">
-        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap tracking-tight text-right">
-          {parts}
-        </p>
-        {isLong && (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(!isExpanded);
-            }}
-            className="text-accent text-[10px] font-bold mt-1 text-right hover:underline"
-          >
-            {isExpanded ? 'عرض أقل' : 'اقرأ المزيد'}
-          </button>
-        )}
+        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap tracking-tight text-right">{parts}</p>
+        {isLong && <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="text-accent text-[10px] font-bold mt-1 text-right hover:underline">{isExpanded ? 'عرض أقل' : 'اقرأ المزيد'}</button>}
       </div>
     );
   };
 
-  const allMedia = displayPost.mediaUrls || (displayPost.mediaUrl ? [displayPost.mediaUrl] : []);
+  const verificationType: VerificationType = displayPost.email === 'adelbenmaza8@gmail.com' 
+    ? 'blue' : (authorData?.verificationType || displayPost.authorVerificationType || 'none');
 
   return (
-    <>
-      <Card 
-        ref={cardRef}
-        className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors"
-        onClick={() => setIsCommentsOpen(true)}
-      >
-        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
-          {/* النقاط الثلاث على اليمين (أصبحت أول عنصر في flex-row العربي) */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground rounded-full hover:bg-secondary">
-                <MoreHorizontal size={14} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-xs">
-              <DropdownMenuItem onClick={handleCopyLink} className="gap-2 cursor-pointer">
-                <LinkIcon size={12} />
-                نسخ الرابط
-              </DropdownMenuItem>
-              {isOwner ? (
-                <DropdownMenuItem onClick={handleDeletePost} className="gap-2 text-destructive cursor-pointer">
-                  <Trash2 size={12} />
-                  حذف المنشور
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={handleReport} className="gap-2 cursor-pointer">
-                  <AlertTriangle size={12} />
-                  إبلاغ
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+    <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
+      <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
+        {/* النقاط الثلاث في الجهة اليمنى */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="text-xs">
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
+            {isOwner && <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteDocumentNonBlocking(doc(firestore!, 'posts', displayPost.id)); toast({ description: "تم الحذف" }); }} className="gap-2 text-destructive cursor-pointer"><Trash2 size={12} /> حذف المنشور</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-          {/* معلومات المستخدم على اليسار (أصبحت ثاني عنصر) */}
-          <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col text-right">
-              <div className="flex items-center gap-1.5 leading-tight justify-end">
-                <VerifiedBadge type={verificationType} size={13} />
-                <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
-              </div>
-              <span className="text-[9px] text-muted-foreground text-right">
-                {formattedDate}
-              </span>
+        {/* معلومات المستخدم في الجهة اليسرى */}
+        <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-col text-right">
+            <div className="flex items-center gap-1.5 leading-tight justify-end">
+              <VerifiedBadge type={verificationType} size={13} />
+              <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
             </div>
-            <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 shrink-0">
-              {displayPost.authorAvatar ? <AvatarImage src={displayPost.authorAvatar} alt={displayPost.authorName} /> : null}
-              <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0] || 'ت'}</AvatarFallback>
-            </Avatar>
-          </Link>
-        </CardHeader>
-        
-        <CardContent className="px-4 py-1 text-right">
-          {displayPost.content && renderContent(displayPost.content)}
-          
-          {allMedia.length > 0 && (
-            <div className="w-full mt-2 mb-2 rounded-lg overflow-hidden border border-muted/10">
-              <Carousel className="w-full" opts={{ direction: 'rtl' }}>
-                <CarouselContent className="-ml-0">
-                  {allMedia.map((url: string, index: number) => (
-                    <CarouselItem key={index} className="pl-0">
-                      <div className="relative w-full aspect-auto bg-black/5">
-                        <img 
-                          src={url} 
-                          alt={`Post media ${index + 1}`} 
-                          className="w-full h-auto block object-cover"
-                          loading="lazy"
-                        />
+            <span className="text-[9px] text-muted-foreground">{displayPost.createdAt?.toDate ? formatDistanceToNow(displayPost.createdAt.toDate(), { addSuffix: true, locale: ar }) : 'الآن'}</span>
+          </div>
+          <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5"><AvatarImage src={displayPost.authorAvatar} /><AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0]}</AvatarFallback></Avatar>
+        </Link>
+      </CardHeader>
+      
+      <CardContent className="px-4 py-1 text-right space-y-3">
+        {displayPost.content && renderContent(displayPost.content)}
+
+        {displayPost.poll && (
+          <div className="bg-secondary/10 p-4 border border-primary/5 space-y-4 rounded-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-primary">{displayPost.poll.question}</span>
+              {userVote && <CheckCircle2 size={14} className="text-accent" />}
+            </div>
+            <div className="space-y-3">
+              {displayPost.poll.options.map((option, i) => {
+                const percentage = displayPost.poll!.totalVotes > 0 ? Math.round((option.votes / displayPost.poll!.totalVotes) * 100) : 0;
+                const isSelected = userVote?.optionIndex === i;
+                return (
+                  <div key={i} className="relative group">
+                    {userVote ? (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[10px] mb-1 px-1">
+                          <span className={cn("font-bold", isSelected ? "text-primary" : "text-muted-foreground")}>{option.text}</span>
+                          <span className="font-bold">{percentage}%</span>
+                        </div>
+                        <Progress value={percentage} className={cn("h-6 rounded-none bg-secondary", isSelected ? "bg-primary/20" : "")} />
                       </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-              </Carousel>
+                    ) : (
+                      <Button variant="outline" className="w-full h-9 justify-start text-[11px] rounded-none hover:bg-primary/5 hover:border-primary/30 font-medium" onClick={() => handleVote(i)}>
+                        {option.text}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </CardContent>
+            <div className="flex justify-between items-center pt-1 border-t border-primary/5">
+              <span className="text-[8px] text-muted-foreground font-bold">{displayPost.poll.totalVotes} تصويت</span>
+              <span className="text-[8px] text-muted-foreground italic">ينتهي بعد 24 ساعة</span>
+            </div>
+          </div>
+        )}
+        
+        {displayPost.mediaUrls && displayPost.mediaUrls.length > 0 && (
+          <div className="w-full mt-2 rounded-lg overflow-hidden border border-muted/10">
+            <Carousel className="w-full" opts={{ direction: 'rtl' }}>
+              <CarouselContent className="-ml-0">
+                {displayPost.mediaUrls.map((url: string, index: number) => (
+                  <CarouselItem key={index} className="pl-0">
+                    <img src={url} alt={`Post media ${index + 1}`} className="w-full h-auto block" loading="lazy" />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </div>
+        )}
+      </CardContent>
 
-        <CardFooter className="px-4 py-1 border-t-0 flex flex-row justify-between items-center h-9">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={cn(
-              "h-7 flex items-center gap-1.5 rounded-full px-2 transition-all duration-200 active:scale-90 border-none bg-transparent group",
-              isLiked ? "text-red-500 hover:bg-red-500/10" : "text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
-            )}
-            onClick={handleLike}
-          >
-            <Heart 
-              size={16} 
-              className={cn(
-                "transition-all duration-300", 
-                isLiked ? "fill-current scale-110" : "",
-                isLikeAnimating ? "animate-icon-pop" : ""
-              )} 
-            />
-            <span className="text-[10px] font-bold">{displayPost.likesCount || 0}</span>
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-7 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsCommentsOpen(true);
-            }}
-          >
-            <MessageCircle size={16} />
-            <span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={cn(
-              "h-7 flex items-center gap-1.5 rounded-full px-2 transition-all duration-200 active:scale-90 border-none bg-transparent",
-              isReposted ? "text-green-500 hover:bg-green-500/10" : "text-muted-foreground hover:bg-green-500/10 hover:text-green-500"
-            )}
-            onClick={handleRepost}
-          >
-            <Repeat 
-              size={16} 
-              className={cn(
-                "transition-all duration-300", 
-                isReposted ? "stroke-[2.5px] scale-110" : "",
-                isRepostAnimating ? "animate-icon-pop" : ""
-              )} 
-            />
-            <span className="text-[10px] font-bold">{displayPost.repostsCount || 0}</span>
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-7 flex items-center text-muted-foreground gap-1.5 rounded-full px-2 border-none bg-transparent hover:bg-secondary hover:text-foreground transition-all active:scale-95"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <BarChart3 size={16} />
-            <span className="text-[10px] font-bold">{displayPost.viewsCount || 0}</span>
-          </Button>
-        </CardFooter>
-      </Card>
+      <CardFooter className="px-4 py-1 flex flex-row justify-between items-center h-9">
+        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); }}>
+          <Heart size={16} className={cn(likeData ? "fill-current" : "")} /><span className="text-[10px] font-bold">{displayPost.likesCount || 0}</span>
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
+          <MessageCircle size={16} /><span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
+        </Button>
+        <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2", repostData ? "text-green-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); }}>
+          <Repeat size={16} /><span className="text-[10px] font-bold">{displayPost.repostsCount || 0}</span>
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => e.stopPropagation()}>
+          <BarChart3 size={16} /><span className="text-[10px] font-bold">{displayPost.viewsCount || 0}</span>
+        </Button>
+      </CardFooter>
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-        <DialogContent className="sm:max-w-full h-[100dvh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col sm:max-w-[600px] sm:h-[95vh] animate-in fade-in zoom-in-95 duration-200">
+        <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[95vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col">
           <DialogTitle className="sr-only">تفاصيل المنشور</DialogTitle>
-          <CommentsDialog 
-            postId={displayPost.id} 
-            postAuthorId={displayPost.authorId} 
-            post={displayPost}
-            onClose={() => setIsCommentsOpen(false)} 
-          />
+          <CommentsDialog postId={displayPost.id} postAuthorId={displayPost.authorId} post={displayPost} onClose={() => setIsCommentsOpen(false)} />
         </DialogContent>
       </Dialog>
-    </>
+    </Card>
   );
 }
