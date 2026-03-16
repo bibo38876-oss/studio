@@ -9,14 +9,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Force Deploy ID: security_enforcement_v5_final_global
+    // Force Deploy ID: security_final_social_v10
 
     match /posts/{postId} {
-      allow read: if isSignedIn();
-      allow list: if isSignedIn();
+      // السماح للقراءة والقائمة لجميع المسجلين لرؤية المحتوى
+      allow read, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
-      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid);
+      // الحذف فقط للمالك
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
 
       match /likes/{userId} {
         allow read: if isSignedIn();
@@ -24,7 +25,7 @@ service cloud.firestore {
       }
 
       match /comments/{commentId} {
-        allow read: if isSignedIn();
+        allow read, list: if isSignedIn();
         allow create: if isSignedIn();
         allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isOwner(resource.data.authorId));
       }
@@ -46,6 +47,11 @@ service cloud.firestore {
       match /followers/{followerId} {
         allow read: if isSignedIn();
         allow write: if isSignedIn();
+      }
+      
+      // لدعم نظام التنبيهات والبحث
+      match /bookmarks/{postRef} {
+        allow read, write: if isOwner(userId);
       }
     }
 

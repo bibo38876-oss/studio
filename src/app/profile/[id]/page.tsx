@@ -32,15 +32,17 @@ export default function ProfilePage() {
     }
   }, [currentUser, isUserLoading, router]);
 
+  // جلب بيانات ملف المستخدم المعروض
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !id || id === 'undefined' || !currentUser?.uid) return null;
+    if (!firestore || !id || !currentUser?.uid) return null;
     return doc(firestore, 'users', id);
   }, [firestore, id, currentUser?.uid]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
+  // استعلام منشورات المستخدم المعروض - يتطلب فهرس مركب (authorId ==, createdAt DESC)
   const postsQuery = useMemoFirebase(() => {
-    if (!firestore || !id || id === 'undefined' || !currentUser?.uid) return null;
+    if (!firestore || !id || !currentUser?.uid) return null;
     return query(
       collection(firestore, 'posts'),
       where('authorId', '==', id),
@@ -63,11 +65,7 @@ export default function ProfilePage() {
   };
 
   const handleFollow = () => {
-    if (!currentUser?.uid) {
-      router.push('/login');
-      return;
-    }
-    if (!firestore || !profile || isOwnProfile) return;
+    if (!currentUser?.uid || !firestore || !profile || isOwnProfile) return;
 
     const currentUserRef = doc(firestore, 'users', currentUser.uid);
     const targetUserRef = doc(firestore, 'users', id);
@@ -203,14 +201,14 @@ export default function ProfilePage() {
             ) : posts && posts.length > 0 ? (
               posts.map((post: any) => <PostCard key={post.id} post={post} />)
             ) : (
-              <div className="text-center py-24 bg-card px-8">
+              <div className="text-center py-24 bg-card px-8 border-b">
                 <p className="text-muted-foreground text-[10px]">لا توجد منشورات لهذا المستخدم بعد.</p>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="likes" className="mt-0">
-            <div className="text-center py-24 bg-card px-8">
+            <div className="text-center py-24 bg-card px-8 border-b">
               <p className="text-muted-foreground text-[10px]">سيتم عرض الإعجابات هنا قريباً.</p>
             </div>
           </TabsContent>

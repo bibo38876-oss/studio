@@ -24,7 +24,7 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Query for profile - only run if user is strictly loaded and exists
+  // جلب بيانات المستخدم للتأكد من قائمة المتابعة
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
@@ -32,15 +32,16 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // Query for all posts - only run if user is strictly loaded
+  // استعلام المنشورات العامة - لا يتطلب فهرس مركب
   const allPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
   }, [firestore, user?.uid]);
 
-  // Query for posts from followed users
+  // استعلام المتابعة - يتطلب فهرس مركب (authorId IN, createdAt DESC)
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
+    // نأخذ أول 10 متابعين فقط لضمان عمل الاستعلام ضمن حدود Firebase IN operator
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 10)),
@@ -95,24 +96,28 @@ export default function Home() {
               ) : allPosts && allPosts.length > 0 ? (
                 allPosts.map((post: any) => <PostCard key={post.id} post={post} />)
               ) : (
-                <div className="text-center py-20 bg-card">
+                <div className="text-center py-20 bg-card border-b">
                   <p className="text-muted-foreground text-xs font-medium">لا توجد منشورات بعد.</p>
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="following" className="mt-0">
-              {isFollowingLoading ? (
+              {!profile?.followingIds || profile.followingIds.length === 0 ? (
+                <div className="text-center py-24 bg-card px-8 border-b">
+                  <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-primary font-bold text-sm mb-1">ابدأ بمتابعة الآخرين</p>
+                  <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
+                </div>
+              ) : isFollowingLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : followingPosts && followingPosts.length > 0 ? (
                 followingPosts.map((post: any) => <PostCard key={post.id} post={post} />)
               ) : (
-                <div className="text-center py-24 bg-card px-8">
-                  <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-primary font-bold text-sm mb-1">ابدأ بمتابعة الآخرين</p>
-                  <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
+                <div className="text-center py-20 bg-card border-b">
+                  <p className="text-muted-foreground text-[10px]">لا توجد منشورات جديدة ممن تتابعهم.</p>
                 </div>
               )}
             </TabsContent>
