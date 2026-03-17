@@ -1,14 +1,14 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment, runTransaction } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, Users, Sparkles } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, Users, Sparkles, ImageIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import {
   DropdownMenu,
@@ -37,6 +38,10 @@ interface CommentsDialogProps {
 
 export default function CommentsDialog({ postId, postAuthorId, post, onClose }: CommentsDialogProps) {
   const [commentText, setCommentText] = useState('');
+  const [api, setApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [countSlides, setCountSlides] = useState(0);
+  
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
@@ -49,14 +54,12 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
   }, [firestore, user, isAnonymous]);
   const { data: profile } = useDoc(userRef);
 
-  // جلب بيانات كاتب المنشور الحية لضمان تحديث صورته واسمه في نافذة التعليقات
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !postAuthorId) return null;
     return doc(firestore, 'users', postAuthorId);
   }, [firestore, postAuthorId]);
   const { data: authorData } = useDoc(authorRef);
 
-  // جلب بيانات المنشور الحية (خاصة الاستطلاع)
   const postLiveRef = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
     return doc(firestore, 'posts', postId);
@@ -69,6 +72,15 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     return doc(firestore, 'posts', postId, 'pollVotes', user.uid);
   }, [firestore, postId, user?.uid]);
   const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
+
+  useEffect(() => {
+    if (!api) return;
+    setCountSlides(api.scrollSnapList().length);
+    setCurrentSlide(api.selectedScrollSnap() + 1);
+    api.on("select", () => {
+      setCurrentSlide(api.selectedScrollSnap() + 1);
+    });
+  }, [api]);
 
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
@@ -175,7 +187,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
 
   const allMedia = displayPost?.mediaUrls || (displayPost?.mediaUrl ? [displayPost.mediaUrl] : []);
   
-  // بيانات كاتب المنشور الحية
   const currentAuthorName = authorData?.username || displayPost?.authorName || 'مستخدم تيمقاد';
   const currentAuthorAvatar = authorData?.profilePictureUrl || displayPost?.authorAvatar;
   const currentVerificationType = authorData?.verificationType || displayPost?.authorVerificationType || 'none';
@@ -211,7 +222,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <AvatarImage src={currentAuthorAvatar} alt={currentAuthorName} />
                 <AvatarFallback>{currentAuthorName?.[0]}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col justify-center">
+              <div className="flex flex-col justify-center text-right">
                 <div className="flex items-center gap-1.5 leading-tight justify-end">
                   <VerifiedBadge type={currentVerificationType === 'blue' || displayPost.email === 'adelbenmaza8@gmail.com' ? 'blue' : currentVerificationType} />
                   <span className="text-xs font-bold text-primary">{currentAuthorName}</span>
@@ -225,7 +236,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
               </p>
             )}
 
-            {/* عرض الاستطلاع في التفاصيل */}
             {displayPost.poll && (
               <div className="px-4 mb-4">
                 <div className="bg-secondary/10 p-4 border border-primary/5 space-y-4 rounded-xl">
@@ -283,17 +293,20 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
             )}
 
             {allMedia.length > 0 && (
-              <div className="w-full bg-black/5">
-                <Carousel className="w-full">
+              <div className="w-full bg-black/5 relative">
+                <Carousel 
+                  setApi={setApi}
+                  className="w-full"
+                  opts={{ direction: 'rtl', align: 'start', loop: false }}
+                >
                   <CarouselContent className="-ml-0">
                     {allMedia.map((url: string, index: number) => (
                       <CarouselItem key={index} className="pl-0">
-                        <div className="relative w-full flex items-center justify-center bg-black/5">
+                        <div className="relative w-full flex items-center justify-center bg-black/5 min-h-[300px]">
                           <img 
                             src={url} 
                             alt={`Post detail ${index + 1}`} 
                             className="w-full h-auto block"
-                            style={{ maxHeight: 'none', width: '100%', objectFit: 'contain' }}
                             loading="lazy"
                           />
                         </div>
@@ -301,6 +314,27 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                     ))}
                   </CarouselContent>
                 </Carousel>
+
+                {/* مؤشر الصور المتعددة */}
+                {countSlides > 1 && (
+                  <div className="absolute top-4 left-4 z-10 flex flex-col items-center gap-1.5">
+                    <div className="bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-xl">
+                      <ImageIcon size={12} />
+                      <span>{currentSlide} / {countSlides}</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {Array.from({ length: countSlides }).map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={cn(
+                            "h-1.5 rounded-full transition-all duration-300 shadow-sm",
+                            currentSlide === i + 1 ? "w-4 bg-primary" : "w-1.5 bg-white/40"
+                          )} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -341,12 +375,12 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="text-xs">
                           {user?.uid === comment.authorId ? (
-                            <DropdownMenuItem onClick={() => handleDeleteComment(comment.id)} className="text-destructive gap-2">
+                            <DropdownMenuItem onClick={() => handleDeleteComment(comment.id)} className="text-destructive gap-2 cursor-pointer">
                               <Trash2 size={12} />
                               حذف التعليق
                             </DropdownMenuItem>
                           ) : (
-                            <DropdownMenuItem onClick={handleReportComment} className="gap-2">
+                            <DropdownMenuItem onClick={handleReportComment} className="gap-2 cursor-pointer">
                               <AlertTriangle size={12} />
                               إبلاغ
                             </DropdownMenuItem>
