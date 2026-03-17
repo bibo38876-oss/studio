@@ -1,11 +1,10 @@
-
 'use client';
 /**
  * @fileOverview Cloudinary upload utility for Timgad application.
  */
 
 const CLOUD_NAME = 'df4ogwkyn';
-const UPLOAD_PRESET = 'ml_default'; // الإعداد الافتراضي لضمان عمل الرفع Unsigned
+const UPLOAD_PRESET = 'timgad_preset'; // تم التحديث بناءً على لوحة التحكم الخاصة بك
 
 /**
  * Uploads a file to Cloudinary and returns the secure URL.
@@ -31,8 +30,8 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
       const errorMessage = errorData.error?.message || 'فشل رفع الصورة';
       
       // توجيه المستخدم في حال كان الخطأ متعلقاً بالإعدادات
-      if (errorMessage.includes('Upload preset not found')) {
-        throw new Error('خطأ: لم يتم العثور على إعداد الرفع. يرجى تفعيل Unsigned Upload باسم ml_default في إعدادات Cloudinary');
+      if (errorMessage.includes('Upload preset not found') || errorMessage.includes('Must provide API Key')) {
+        throw new Error('خطأ في إعدادات Cloudinary: يرجى التأكد من أن timgad_preset مضبوط على وضع "Unsigned" (غير موقع) في لوحة التحكم لتفعيل الرفع المباشر.');
       }
       
       throw new Error(errorMessage);
