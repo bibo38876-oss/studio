@@ -103,12 +103,12 @@ export default function Navbar() {
         </div>
 
         <div className={`flex items-center gap-1 transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
-          <Link href="/wallet">
+          <Link href="/vault">
             <motion.div
               whileHover={{ scale: 1.15, rotate: [-2, 2, -2, 0] }}
               whileTap={{ scale: 0.9 }}
               className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full transition-colors"
-              title="محفظة المكافآت"
+              title="خزانة تيمقاد"
             >
               <WoodenChestIcon size={22} />
             </motion.div>
