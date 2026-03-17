@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -56,8 +57,9 @@ export default function BottomNav() {
               }}>
                 <DialogTrigger asChild>
                   <motion.button 
-                    whileTap={{ scale: 0.9 }}
-                    className="relative w-8 h-7 transition-transform mx-1 group"
+                    whileTap={{ scale: 0.9, y: 1 }}
+                    whileHover={{ scale: 1.05 }}
+                    className="relative w-8 h-7 transition-all mx-1 group"
                   >
                     <div className="absolute inset-0 bg-accent rounded-sm -translate-x-0.5 opacity-60 group-hover:opacity-80 transition-opacity"></div>
                     <div className="absolute inset-0 bg-primary rounded-sm translate-x-0.5 opacity-60 group-hover:opacity-80 transition-opacity"></div>
@@ -83,7 +85,7 @@ export default function BottomNav() {
               className={`w-full h-full`}
             >
               <motion.div 
-                whileTap={{ scale: 0.85 }}
+                whileTap={{ scale: 0.85, y: 1 }}
                 className={`flex flex-col items-center justify-center gap-0.5 transition-all duration-300 w-full h-full ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary/70'}`}
               >
                 <div className={isActive ? 'animate-icon-pop' : ''}>

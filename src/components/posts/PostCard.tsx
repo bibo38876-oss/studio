@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
@@ -79,7 +80,6 @@ export default function PostCard({ post }: { post: PostData }) {
   }, [firestore, post.id]);
 
   const { data: centralPost } = useDoc(postRef);
-  // نفضل استخدام البيانات الممررة من القائمة لضمان استقرار الأداء، ونحدث فقط العدادات من الـ Live Doc
   const displayPost = { ...post, ...centralPost };
 
   const authorRef = useMemoFirebase(() => {
@@ -119,12 +119,10 @@ export default function PostCard({ post }: { post: PostData }) {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          // عد المشاهدات العادية
           if (!viewedRef.current) {
             viewedRef.current = true;
             updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { viewsCount: increment(1) });
           }
-          // خصم من المشاهدات المروجة
           if (displayPost.promoted && (displayPost.impressions_left || 0) > 0 && !promotedViewedRef.current) {
             promotedViewedRef.current = true;
             updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { 
@@ -363,7 +361,7 @@ export default function PostCard({ post }: { post: PostData }) {
   const currentAuthorAvatar = authorData?.profilePictureUrl || displayPost.authorAvatar;
   const currentVerificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
   const isVerified = currentVerificationType !== 'none';
-  const isFollowing = currentUserProfile?.followingIds?.includes(displayPost.authorId);
+  const isFollowingUser = currentUserProfile?.followingIds?.includes(displayPost.authorId);
   const isFollowingMe = currentUserProfile?.followerIds?.includes(displayPost.authorId);
 
   return (
@@ -371,8 +369,8 @@ export default function PostCard({ post }: { post: PostData }) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.3 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         className="relative"
       >
         <AnimatePresence>
@@ -409,7 +407,11 @@ export default function PostCard({ post }: { post: PostData }) {
           <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
             <div className="flex items-center gap-2">
               <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-secondary/50"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <motion.button whileTap={{ scale: 0.9 }} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-secondary/50">
+                    <MoreHorizontal size={14} />
+                  </motion.button>
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="text-xs">
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
                   
@@ -430,6 +432,7 @@ export default function PostCard({ post }: { post: PostData }) {
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <motion.button 
                         whileTap={{ scale: 0.9 }}
+                        whileHover={{ scale: 1.1 }}
                         className="h-7 w-7 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-all border border-primary/10 flex items-center justify-center"
                       >
                         <Coffee size={14} />
@@ -453,16 +456,15 @@ export default function PostCard({ post }: { post: PostData }) {
                 )}
 
                 {!isOwner && !isUserLoading && (
-                  <Button 
-                    size="sm" 
-                    variant={isFollowing ? "outline" : "default"} 
+                  <motion.button 
+                    whileTap={{ scale: 0.95 }}
                     className={cn(
-                      "h-6 px-3 text-[9px] font-bold rounded-full transition-all gap-1.5",
-                      isFollowing ? "border-primary/20 text-primary hover:bg-primary/5" : "bg-primary text-white hover:bg-primary/90"
+                      "h-6 px-3 text-[9px] font-bold rounded-full transition-all flex items-center gap-1.5",
+                      isFollowingUser ? "border border-primary/20 text-primary hover:bg-primary/5" : "bg-primary text-white hover:bg-primary/90"
                     )}
                     onClick={handleFollow}
                   >
-                    {isFollowing ? (
+                    {isFollowingUser ? (
                       <>
                         <UserCheck size={10} />
                         متابع
@@ -478,7 +480,7 @@ export default function PostCard({ post }: { post: PostData }) {
                         متابعة
                       </>
                     )}
-                  </Button>
+                  </motion.button>
                 )}
               </div>
             </div>
@@ -591,9 +593,11 @@ export default function PostCard({ post }: { post: PostData }) {
               </Button>
             </motion.div>
 
-            <Button variant="ghost" size="sm" className="h-8 text-muted-foreground gap-1.5 rounded-full px-3 hover:bg-secondary/50" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
-              <MessageCircle size={18} /><span className="text-[11px] font-bold">{displayPost.commentsCount || 0}</span>
-            </Button>
+            <motion.div whileTap={{ scale: 0.9 }}>
+              <Button variant="ghost" size="sm" className="h-8 text-muted-foreground gap-1.5 rounded-full px-3 hover:bg-secondary/50" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
+                <MessageCircle size={18} /><span className="text-[11px] font-bold">{displayPost.commentsCount || 0}</span>
+              </Button>
+            </motion.div>
 
             <motion.div whileTap={{ scale: 0.9 }}>
               <Button variant="ghost" size="sm" className={cn("h-8 gap-1.5 rounded-full px-3 transition-all", bookmarkData ? "text-accent bg-accent/5" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleBookmark(); }} disabled={isBookmarkLoading}>

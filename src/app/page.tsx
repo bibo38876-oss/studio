@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -33,7 +34,6 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // مراقبة وقت انكسار الجرة للحدث المباشر (19:55 - 20:00 بتوقيت الجزائر)
   useEffect(() => {
     const checkTime = () => {
       const now = new Date();
@@ -48,7 +48,7 @@ export default function Home() {
       }
     };
 
-    const interval = setInterval(checkTime, 30000); // تحقق كل 30 ثانية
+    const interval = setInterval(checkTime, 30000);
     checkTime();
     return () => clearInterval(interval);
   }, []);
@@ -60,7 +60,6 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // نظام مكافأة الدخول اليومي (1 عملة كل 24 ساعة)
   useEffect(() => {
     if (!firestore || !user?.uid || !profile) return;
 
@@ -83,7 +82,6 @@ export default function Home() {
     }
   }, [firestore, user?.uid, profile, toast]);
 
-  // استعلام التغذية العامة
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(limitForYou));
@@ -91,7 +89,6 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // نظام الإعلانات
   const promotedQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -104,7 +101,6 @@ export default function Home() {
 
   const { data: promotedPosts } = useCollection(promotedQuery);
 
-  // استعلام المتابعين
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -117,7 +113,6 @@ export default function Home() {
 
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
-  // خوارزمية دمج الإعلانات مع المحتوى الموصى به
   const recommendedPosts = useMemo(() => {
     if (!postsPool || !profile) return [];
 
@@ -188,8 +183,7 @@ export default function Home() {
           <LeftSidebar />
         </div>
 
-        <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto">
-          {/* شريط حدث انكسار الجرة المباشر */}
+        <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto min-h-screen">
           <AnimatePresence>
             {isJarBreakingSoon && (
               <motion.div
@@ -240,56 +234,60 @@ export default function Home() {
             </TabsList>
 
             <AnimatePresence mode="wait">
-              <TabsContent value="for-you" key="for-you" className="mt-0 outline-none">
-                {isPoolLoading && limitForYou === 10 ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    <p className="text-[10px] text-muted-foreground animate-pulse font-bold">جاري تحضير التوصيات...</p>
-                  </div>
-                ) : (
+              {activeTab === 'for-you' ? (
+                <TabsContent value="for-you" key="for-you" className="mt-0 outline-none">
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }} 
                     animate={{ opacity: 1, y: 0 }} 
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
                     className="flex flex-col"
                   >
-                    {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
-                    
-                    <div ref={loadMoreForYouRef} className="py-10 flex justify-center">
-                      {isPoolLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
-                    </div>
+                    {isPoolLoading && limitForYou === 10 ? (
+                      <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <p className="text-[10px] text-muted-foreground animate-pulse font-bold">جاري تحضير التوصيات...</p>
+                      </div>
+                    ) : (
+                      <>
+                        {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
+                        <div ref={loadMoreForYouRef} className="py-10 flex justify-center">
+                          {isPoolLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
+                        </div>
+                      </>
+                    )}
                   </motion.div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="following" key="following" className="mt-0 outline-none">
-                {!profile?.followingIds || profile.followingIds.length === 0 ? (
-                  <div className="text-center py-24 bg-card px-8 border-b">
-                    <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
-                    <p className="text-primary font-bold text-xs mb-1">ابدأ بمتابعة الآخرين</p>
-                    <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
-                  </div>
-                ) : isFollowingLoading && limitFollowing === 10 ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                ) : (
+                </TabsContent>
+              ) : (
+                <TabsContent value="following" key="following" className="mt-0 outline-none">
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }} 
                     animate={{ opacity: 1, y: 0 }} 
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
                     className="flex flex-col"
                   >
-                    {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
-                    
-                    <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">
-                      {isFollowingLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
-                    </div>
+                    {!profile?.followingIds || profile.followingIds.length === 0 ? (
+                      <div className="text-center py-24 bg-card px-8 border-b">
+                        <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
+                        <p className="text-primary font-bold text-xs mb-1">ابدأ بمتابعة الآخرين</p>
+                        <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
+                      </div>
+                    ) : isFollowingLoading && limitFollowing === 10 ? (
+                      <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : (
+                      <>
+                        {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
+                        <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">
+                          {isFollowingLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
+                        </div>
+                      </>
+                    )}
                   </motion.div>
-                )}
-              </TabsContent>
+                </TabsContent>
+              )}
             </AnimatePresence>
           </Tabs>
         </div>
