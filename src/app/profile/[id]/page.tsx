@@ -97,7 +97,6 @@ export default function ProfilePage() {
 
   const { data: likedPosts, isLoading: isLikesLoading } = useCollection(likedPostsQuery);
 
-  // الأشخاص الذين دعمهم هذا العضو
   const supportedPeopleQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return query(
@@ -108,7 +107,6 @@ export default function ProfilePage() {
 
   const { data: supportedPeople, isLoading: isSupportedPeopleLoading } = useCollection(supportedPeopleQuery);
 
-  // الأشخاص الذين دعموا هذا العضو
   const supportersQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return query(
@@ -248,9 +246,9 @@ export default function ProfilePage() {
           </div>
 
           <div className="px-4 pb-6 relative">
-            <div className="flex flex-row justify-between items-start -mt-10 mb-4">
-              <div className="flex flex-col items-start text-right">
-                <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end -mt-12 md:-mt-10 mb-4 gap-4">
+              <div className="flex flex-col items-start text-right w-full md:w-auto">
+                <Avatar className="h-24 w-24 border-4 border-card bg-background rounded-full text-primary bg-primary/5 mb-2 shrink-0">
                   {profile.profilePictureUrl ? <AvatarImage src={profile.profilePictureUrl} alt={profile.username} /> : null}
                   <AvatarFallback className="text-xl font-bold">{profile.username?.[0] || 'ت'}</AvatarFallback>
                 </Avatar>
@@ -263,18 +261,18 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="pt-12 flex gap-2 items-center">
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
                 {isOwnProfile && (
                   <Button 
                     variant="ghost" 
-                    className="h-12 border border-muted hover:bg-secondary transition-all rounded-full flex items-center gap-2 px-4 group"
+                    className="h-10 border border-muted hover:bg-secondary transition-all rounded-full flex items-center gap-2 px-3 group shrink-0"
                     onClick={() => router.push('/wallet')}
                   >
                     <div className="flex flex-col items-end">
-                      <span className="text-[8px] text-muted-foreground uppercase font-bold tracking-tighter">رصيدي الحالي</span>
-                      <span className="text-xs font-bold text-primary">{isInfiniteAdmin ? '∞' : (profile.coins || 0)}</span>
+                      <span className="text-[7px] text-muted-foreground uppercase font-bold tracking-tighter">رصيدي</span>
+                      <span className="text-[10px] font-bold text-primary">{isInfiniteAdmin ? '∞' : (profile.coins || 0)}</span>
                     </div>
-                    <TimgadCoin size={24} className="group-hover:scale-110 transition-transform" />
+                    <TimgadCoin size={20} className="group-hover:scale-110 transition-transform" />
                   </Button>
                 )}
 
@@ -283,9 +281,9 @@ export default function ProfilePage() {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="rounded-full h-12 w-12 border border-muted hover:bg-secondary transition-all"
+                      className="rounded-full h-10 w-10 border border-muted hover:bg-secondary transition-all shrink-0"
                     >
-                      <Coffee size={24} className="text-primary" />
+                      <Coffee size={20} className="text-primary" />
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
@@ -375,9 +373,9 @@ export default function ProfilePage() {
 
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogTrigger asChild><Button variant="outline" className="rounded-full gap-2 font-bold h-8 text-[11px] px-6">تعديل الملف</Button></DialogTrigger>
+                    <DialogTrigger asChild><Button variant="outline" className="rounded-full gap-2 font-bold h-10 text-[11px] px-5 shrink-0">تعديل الملف</Button></DialogTrigger>
                     <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-                      <DialogHeader><DialogHeader><DialogTitle className="text-sm font-bold">تعديل الملف الشخصي</DialogTitle></DialogHeader></DialogHeader>
+                      <DialogHeader><DialogTitle className="text-sm font-bold">تعديل الملف الشخصي</DialogTitle></DialogHeader>
                       <div className="grid gap-6 py-4">
                         <div className="space-y-4">
                           <div className="space-y-2"><label className="text-[10px] font-bold text-muted-foreground uppercase">صورة البنر</label>
@@ -409,7 +407,7 @@ export default function ProfilePage() {
                   <Button 
                     onClick={handleFollow} 
                     variant={isFollowing ? "outline" : "default"} 
-                    className={`rounded-full px-6 font-bold h-8 text-[11px] gap-2 ${isFollowing ? 'border-primary text-primary' : 'bg-primary text-white'}`}
+                    className={`rounded-full px-5 font-bold h-10 text-[11px] gap-2 shrink-0 ${isFollowing ? 'border-primary text-primary' : 'bg-primary text-white'}`}
                   >
                     {isFollowing ? (
                       <UserCheck size={12} />
