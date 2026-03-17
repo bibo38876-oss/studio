@@ -4,8 +4,8 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Info, Sparkles, TrendingUp, Wallet, ShieldCheck, Star, Scale, Gavel, AlertCircle, Package, BadgeCheck, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ChevronRight, Info, Sparkles, TrendingUp, Wallet, ShieldCheck, Star, Scale, Gavel, AlertCircle, Package, BadgeCheck, Loader2, Coins, Trophy } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
@@ -28,8 +28,8 @@ export default function WalletPage() {
 
   const handlePackageClick = () => {
     toast({
-      title: "قريباً في تيمقاد",
-      description: "نظام شحن الباقات قيد التطوير والتدقيق القانوني حالياً.",
+      title: "قريباً في خزانة تيمقاد",
+      description: "نظام شحن الكنوز قيد التدقيق القانوني حالياً.",
     });
   };
 
@@ -39,8 +39,8 @@ export default function WalletPage() {
     if ((profile.coins || 0) < 500) {
       toast({
         variant: "destructive",
-        title: "رصيد غير كافٍ",
-        description: "تحتاج إلى 500 عملة تيمقاد لتوثيق حسابك. يمكنك الحصول عليها من الداعمين أو شراء باقة.",
+        title: "الكنز لا يكفي",
+        description: "تحتاج إلى 500 عملة لتوثيق حسابك. اجمع المزيد من المكافآت أو الدعم.",
       });
       return;
     }
@@ -57,108 +57,114 @@ export default function WalletPage() {
       });
 
       toast({
-        title: "تم التوثيق بنجاح!",
-        description: "مبروك! حصلت على الشارة الزرقاء لمدة 3 أشهر وامتيازات إضافية.",
+        title: "تم نيل التوثيق!",
+        description: "مبروك! لقد أصبحت من نخبة تيمقاد الموثقين لمدة 3 أشهر.",
       });
     } catch (error) {
-      toast({ variant: "destructive", description: "فشل إتمام العملية." });
+      toast({ variant: "destructive", description: "فشل في فتح قفل التوثيق." });
     } finally {
       setIsVerifying(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#2D1606] text-[#F3E5AB]">
       <Navbar />
 
-      <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0">
-        {/* Header */}
-        <div className="bg-background sticky top-8 z-30 py-4 border-b flex items-center gap-4 mb-10">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full">
+      {/* Background patterns for a wooden texture feel */}
+      <div className="fixed inset-0 pointer-events-none opacity-10 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]" />
+
+      <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0 relative z-10">
+        {/* Header - Wooden theme */}
+        <div className="bg-[#451A03]/80 backdrop-blur-md sticky top-8 z-30 py-4 border-b border-[#B45309]/30 flex items-center gap-4 mb-10 shadow-2xl">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full text-[#FBBF24] hover:bg-[#78350F]">
             <ChevronRight size={20} />
           </Button>
           <div className="flex flex-col text-right">
-            <h1 className="text-sm font-bold text-primary">محفظة تيمقاد الرقمية</h1>
-            <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-medium">نظام المكافآت والتحفيز الرقمي</span>
+            <h1 className="text-sm font-bold text-[#FBBF24] uppercase tracking-tighter">خزانة تيمقاد الملكية</h1>
+            <span className="text-[8px] text-[#FBBF24]/60 uppercase tracking-[0.2em] font-medium">Ancient Rewards & Treasure Vault</span>
           </div>
         </div>
 
         <div className="flex flex-col items-center gap-10 text-center">
-          {/* Large Coin Section */}
+          {/* Large Coin Section with glowing effect */}
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 100 }}
             className="relative group"
           >
-            <div className="absolute inset-0 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-            <TimgadCoin size={200} className="relative z-10 drop-shadow-2xl" />
+            <div className="absolute inset-0 bg-[#FBBF24]/20 rounded-full blur-3xl animate-pulse" />
+            <div className="relative z-10 p-4 bg-[#451A03] rounded-full border-4 border-[#B45309] shadow-[0_0_50px_rgba(180,83,9,0.5)]">
+              <TimgadCoin size={180} className="drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]" />
+            </div>
           </motion.div>
 
           <div className="space-y-3 px-6">
-            <h2 className="text-2xl font-bold text-primary">عملة تيمقاد: وسام التفاعل الرقمي</h2>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-              نظام "عملة تيمقاد" هو آلية تقنية مبتكرة صُممت حصرياً لمكافأة جودة المحتوى وتعزيز روح المجتمع داخل المنصة.
+            <h2 className="text-2xl font-bold text-[#FBBF24] font-headline tracking-tighter">ثروتك الرقمية في تيمقاد</h2>
+            <p className="text-xs text-[#F3E5AB]/70 max-w-sm mx-auto leading-relaxed italic">
+              "هنا تُحفظ كنوزك التي جمعتها بجهدك وإبداعك. عملة تيمقاد هي مفتاحك للتميز والريادة في المجتمع."
             </p>
           </div>
 
-          {/* Stats Grid */}
+          {/* Stats Grid - Wooden Dark Style */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-            <Card className="border-none shadow-none rounded-none bg-primary/5 border-r-4 border-primary">
+            <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-[#FBBF24]">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-primary">رصيد النقاط الحالي</CardTitle>
-                <Wallet size={14} className="text-primary" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-[#FBBF24]">رصيد الخزانة</CardTitle>
+                <Coins size={14} className="text-[#FBBF24]" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
-                <p className="text-3xl font-bold text-primary">{profile?.coins || 0}</p>
-                <p className="text-[8px] text-muted-foreground mt-1 italic">نقاط افتراضية غير قابلة للصرف المالي.</p>
+                <p className="text-3xl font-bold text-[#FBBF24] drop-shadow-sm">{profile?.coins || 0}</p>
+                <p className="text-[8px] text-[#F3E5AB]/40 mt-1">عملات ذهبية افتراضية</p>
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-none rounded-none bg-accent/5 border-r-4 border-accent">
+            <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-blue-500">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-accent">المساهمة المجتمعية</CardTitle>
-                <TrendingUp size={14} className="text-accent" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-400">رتبة العضوية</CardTitle>
+                <Trophy size={14} className="text-blue-400" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
-                <p className="text-3xl font-bold text-accent">
-                  {profile?.verificationType === 'gold' ? 'ELITE' : profile?.verificationType === 'blue' ? 'VERIFIED' : 'STANDARD'}
+                <p className="text-3xl font-bold text-[#F3E5AB]">
+                  {profile?.verificationType === 'gold' ? 'نخبة' : profile?.verificationType === 'blue' ? 'موثق' : 'مستكشف'}
                 </p>
-                <p className="text-[8px] text-muted-foreground mt-1 italic">تفاعلك اليومي يرفع من رتبتك داخل المنصة.</p>
+                <p className="text-[8px] text-[#F3E5AB]/40 mt-1">مستوى التفاعل المجتمعي</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Verification Section */}
+          {/* Verification Section - Featured Box */}
           <section className="w-full text-right space-y-6 pt-6">
-            <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
+            <div className="flex items-center gap-3 text-[#FBBF24] border-r-4 border-[#FBBF24] pr-3">
               <BadgeCheck size={18} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">توثيق الحساب بالشارة الزرقاء</h3>
+              <h3 className="font-bold text-md uppercase tracking-tighter">فتح أقفال التميز (التوثيق)</h3>
             </div>
             
-            <Card className="border-none shadow-sm rounded-none bg-primary/5 overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="bg-white p-4 rounded-full shadow-sm">
-                    <BadgeCheck size={48} className="text-blue-500" />
+            <Card className="bg-gradient-to-br from-[#78350F] to-[#451A03] border-[#B45309] shadow-2xl rounded-none overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 blur-3xl" />
+              <CardContent className="p-8 relative z-10">
+                <div className="flex flex-col items-center gap-6">
+                  <div className="bg-[#2D1606] p-5 rounded-full border-2 border-[#B45309] shadow-inner">
+                    <BadgeCheck size={56} className="text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]" />
                   </div>
                   <div className="space-y-2">
-                    <h4 className="text-lg font-bold text-primary">اشتراك التوثيق (3 أشهر)</h4>
-                    <p className="text-[10px] text-muted-foreground max-w-xs mx-auto">احصل على الشارة الزرقاء، أولوية في الظهور، وإمكانية رفع صور أكثر ومساحة كتابة أكبر.</p>
+                    <h4 className="text-xl font-bold text-[#FBBF24]">صك التوثيق الأزرق</h4>
+                    <p className="text-[10px] text-[#F3E5AB]/60 max-w-xs mx-auto">صلاحية لمدة 90 يوماً تشمل: أولوية الظهور، زيادة عدد الصور، ودعم أكبر لمساحة الكتابة.</p>
                   </div>
-                  <div className="flex items-center gap-2 py-4">
-                    <span className="text-2xl font-bold text-primary">500</span>
-                    <TimgadCoin size={24} />
+                  <div className="flex items-center gap-3 py-2 px-6 bg-[#2D1606]/50 rounded-full border border-[#B45309]/30">
+                    <span className="text-2xl font-bold text-[#FBBF24]">500</span>
+                    <TimgadCoin size={28} />
                   </div>
                   <Button 
-                    className="w-full rounded-full font-bold h-11 gap-2"
+                    className="w-full rounded-none font-bold h-12 gap-2 bg-[#FBBF24] text-[#451A03] hover:bg-[#F3E5AB] transition-all text-sm uppercase tracking-wider"
                     onClick={handleBuyVerification}
                     disabled={isVerifying || profile?.verificationType === 'blue' || profile?.verificationType === 'gold'}
                   >
                     {isVerifying ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
-                    {profile?.verificationType === 'none' ? 'وثق حسابي الآن' : 'أنت موثق بالفعل'}
+                    {profile?.verificationType === 'none' ? 'شراء التوثيق الآن' : 'أنت من النخبة الموثقة'}
                   </Button>
-                  <p className="text-[8px] text-muted-foreground italic">سيتم خصم المبلغ من رصيدك الحالي فوراً.</p>
+                  <p className="text-[8px] text-[#F3E5AB]/40 italic">سيتم سحب العملات من خزانتك فور تأكيد العملية.</p>
                 </div>
               </CardContent>
             </Card>
@@ -166,35 +172,35 @@ export default function WalletPage() {
 
           {/* Coin Packages Section */}
           <section className="w-full text-right space-y-6 pt-6">
-            <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
+            <div className="flex items-center gap-3 text-[#FBBF24] border-r-4 border-[#FBBF24] pr-3">
               <Package size={18} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">باقات نقاط تيمقاد</h3>
+              <h3 className="font-bold text-md uppercase tracking-tighter">باقات الكنوز الذهبية</h3>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               {[
-                { amount: "100", price: "1$", label: "باقة البداية", color: "bg-blue-500/10 text-blue-600" },
-                { amount: "500", price: "4$", label: "باقة النشاط", color: "bg-green-500/10 text-green-600" },
-                { amount: "1000", price: "7$", label: "باقة التميز", color: "bg-purple-500/10 text-purple-600" },
-                { amount: "5000", price: "30$", label: "باقة الريادة", color: "bg-amber-500/10 text-amber-600" }
+                { amount: "100", price: "1$", label: "حقيبة البداية", color: "bg-blue-500/20 text-blue-300" },
+                { amount: "500", price: "4$", label: "صندوق النشاط", color: "bg-green-500/20 text-green-300" },
+                { amount: "1000", price: "7$", label: "خزانة التميز", color: "bg-purple-500/20 text-purple-300" },
+                { amount: "5000", price: "30$", label: "كنز الريادة", color: "bg-amber-500/20 text-[#FBBF24]" }
               ].map((pkg, i) => (
                 <motion.div key={i} whileHover={{ y: -5 }} whileTap={{ scale: 0.95 }}>
                   <Card 
-                    className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/50 transition-all cursor-pointer group border-b-2 border-transparent hover:border-primary overflow-hidden"
+                    className="bg-[#451A03] border-[#B45309]/30 hover:border-[#FBBF24] transition-all cursor-pointer group rounded-none overflow-hidden"
                     onClick={handlePackageClick}
                   >
                     <CardContent className="p-6 flex flex-col items-center gap-3 relative">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${pkg.color}`}>
-                        <TimgadCoin size={24} />
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${pkg.color} border border-current/20`}>
+                        <TimgadCoin size={28} />
                       </div>
                       <div className="text-center">
-                        <p className="text-xl font-bold text-primary">{pkg.amount} Coin</p>
-                        <p className="text-[14px] font-bold text-accent mb-1">{pkg.price}</p>
-                        <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">{pkg.label}</p>
+                        <p className="text-xl font-bold text-[#FBBF24]">{pkg.amount} ذهبية</p>
+                        <p className="text-xs font-bold text-white/80 mb-1 opacity-80">{pkg.price}</p>
+                        <p className="text-[8px] text-[#F3E5AB]/40 uppercase font-bold tracking-[0.1em]">{pkg.label}</p>
                       </div>
-                      <div className="w-full h-[1px] bg-muted/30 my-1" />
-                      <Button variant="ghost" className="h-7 text-[9px] font-bold rounded-full w-full hover:bg-primary hover:text-white transition-colors">
-                        طلب الباقة
+                      <div className="w-full h-[1px] bg-[#B45309]/20 my-1" />
+                      <Button variant="ghost" className="h-7 text-[9px] font-bold rounded-none w-full text-[#FBBF24] hover:bg-[#FBBF24] hover:text-[#451A03] transition-colors border border-[#B45309]/30">
+                        طلب الكنز
                       </Button>
                     </CardContent>
                   </Card>
@@ -203,91 +209,39 @@ export default function WalletPage() {
             </div>
           </section>
 
-          {/* Legal Compliance Section */}
+          {/* Legal Compliance Section - Dark Wooden Box */}
           <section className="w-full text-right space-y-6 pt-10">
-            <div className="flex items-center gap-3 text-destructive border-r-4 border-destructive pr-3">
+            <div className="flex items-center gap-3 text-red-400 border-r-4 border-red-400 pr-3">
               <Scale size={18} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">الإيضاح القانوني والامتثال التشريعي</h3>
+              <h3 className="font-bold text-md uppercase tracking-tighter">الميثاق القانوني والتشريعي</h3>
             </div>
             
-            <div className="bg-destructive/5 p-6 space-y-5 border border-destructive/10">
+            <div className="bg-[#2D1606] p-6 space-y-5 border border-red-900/30 shadow-inner">
               <div className="flex items-start gap-3">
-                <AlertCircle size={16} className="text-destructive mt-1 shrink-0" />
+                <AlertCircle size={16} className="text-red-400 mt-1 shrink-0" />
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-destructive">طبيعة الوحدات الرقمية</h4>
-                  <p className="text-[10px] text-foreground/80 leading-relaxed">
-                    تُعرف "عملة تيمقاد" (TIMGAD COIN) بأنها **وحدات حسابية افتراضية داخلية (Internal Virtual Points)**. هي ليست عملة نقدية، ولا صكاً مالياً، ولا تمتلك أي قيمة مادية خارج بيئة منصة تيمقاد الرقمية.
+                  <h4 className="text-xs font-bold text-red-400">طبيعة الوحدات الذهبية</h4>
+                  <p className="text-[10px] text-[#F3E5AB]/60 leading-relaxed">
+                    تُعد "عملة تيمقاد" وحدات مكافأة داخلية مغلقة النظام. ليست عملة مالية ولا يمكن صرفها أو تحويلها لأي عملة نقدية حقيقية خارج المنصة.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <Gavel size={16} className="text-destructive mt-1 shrink-0" />
+                <Gavel size={16} className="text-red-400 mt-1 shrink-0" />
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-destructive">الالتزام بالقانون الجزائري (المادة 117)</h4>
-                  <p className="text-[10px] text-foreground/80 leading-relaxed italic">
-                    "يمنع منعاً باتاً شراء أو بيع أو استخدام أو حيازة العملة الافتراضية بأي وسيلة كانت." 
-                    <br />— **قانون المالية لسنة 2018 (القانون رقم 17-11 المؤرخ في 27 ديسمبر 2017)**.
-                  </p>
-                  <p className="text-[10px] text-foreground/80 leading-relaxed">
-                    بموجب هذا التشريع الصارم، توضح إدارة تيمقاد أن هذه الوحدات **لا تندرج تحت فئة "العملات الرقمية" أو "الافتراضية" المحظورة**؛ كونها نقاطاً تحفيزية مغلقة النظام، ولا يمكن بأي حال من الأحوال تحويلها إلى عملات ورقية (دينار جزائري أو غيره)، ولا يمكن سحبها أو تداولها خارج المنصة كأداة دفع.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <ShieldCheck size={16} className="text-primary mt-1 shrink-0" />
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-primary">سياسة الاستخدام العادل</h4>
-                  <p className="text-[10px] text-foreground/80 leading-relaxed">
-                    تخضع كافة عمليات كسب النقاط لرقابة صارمة لضمان عدم استغلال المنصة في أي نشاط مخالف للأنظمة النقدية والمصرفية المعمول بها في الجمهورية الجزائرية الديمقراطية الشعبية. تيمقاد تلتزم بالشفافية الكاملة مع السلطات التنظيمية والمالية.
+                  <h4 className="text-xs font-bold text-red-400">الالتزام بالقانون الجزائري</h4>
+                  <p className="text-[10px] text-[#F3E5AB]/60 leading-relaxed italic border-r border-red-900/50 pr-2">
+                    تؤكد إدارة تيمقاد التزامها التام بقانون المالية لسنة 2018 المادة 117؛ حيث أن هذه الوحدات هي "نقاط ولاء" (Loyalty Points) ولا تندرج تحت مسمى العملات الرقمية المشفرة المحظورة.
                   </p>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Info Section */}
-          <section className="w-full text-right space-y-6 pt-6">
-            <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
-              <Info size={18} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">كيفية عمل نظام المكافآت</h3>
-            </div>
-            
-            <div className="grid gap-4">
-              {[
-                { 
-                  icon: <Star size={14} />, 
-                  title: "المساهمة المعرفية", 
-                  desc: "تُمنح النقاط بناءً على جودة المنشورات الأصلية التي تثري المحتوى العربي وتلقى قبولاً من المجتمع." 
-                },
-                { 
-                  icon: <ShieldCheck size={14} />, 
-                  title: "امتيازات التوثيق", 
-                  desc: "الحسابات الموثقة تمتلك معامل ضرب (Multiplier) يرفع من رصيد نقاطهم كتقدير لمصداقيتهم." 
-                },
-                { 
-                  icon: <Sparkles size={14} />, 
-                  title: "دعم المبدعين داخلياً", 
-                  desc: "ستتمكن قريباً من إهداء هذه النقاط للمنشورات التي تعجبك كنوع من التصفيق الرقمي داخل التطبيق." 
-                }
-              ].map((item, i) => (
-                <div key={i} className="bg-secondary/30 p-4 flex gap-4 items-start border border-transparent hover:border-primary/10 transition-colors">
-                  <div className="h-8 w-8 bg-white shadow-sm flex items-center justify-center shrink-0 text-primary">
-                    {item.icon}
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-primary">{item.title}</h4>
-                    <p className="text-[10px] text-muted-foreground leading-relaxed">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <footer className="pt-16 pb-10 opacity-40">
-            <p className="text-[9px] font-bold tracking-[0.2em] uppercase text-primary">Timgad Digital Compliance Division</p>
-            <p className="text-[8px] text-muted-foreground mt-1">Regulatory & Legal Framework • 2024-2025</p>
+          <footer className="pt-16 pb-10 opacity-30 text-center">
+            <p className="text-[9px] font-bold tracking-[0.3em] uppercase text-[#FBBF24]">Timgad Vault Control</p>
+            <p className="text-[8px] text-[#F3E5AB] mt-1">Institutional Compliance • 2024-2025</p>
           </footer>
         </div>
       </main>
