@@ -78,6 +78,11 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow write: if isOwner(userId);
       }
+
+      match /supporters/{targetUserId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn();
+      }
     }
 
     match /groups/{groupId} {
@@ -91,13 +96,19 @@ service cloud.firestore {
       }
     }
 
+    match /support_chats/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+      match /messages/{msgId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
     match /reports/{reportId} {
       allow read: if isAdmin();
       allow create: if isSignedIn();
       allow delete: if isAdmin();
     }
 
-    // بيانات الخزنة والجرة الجماعية
     match /vault/{docId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn();

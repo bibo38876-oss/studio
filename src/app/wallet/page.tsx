@@ -29,22 +29,19 @@ export default function WalletPage() {
 
   const { data: profile } = useDoc(userRef);
 
-  const handlePackageClick = () => {
-    toast({
-      title: "قريباً في خزانة تيمقاد",
-      description: "نظام شحن الكنوز قيد التدقيق القانوني حالياً.",
-    });
+  const handlePackageClick = (label: string, amount: string) => {
+    // التوجه لدردشة الدعم مع مراسلة الإدارة تلقائياً
+    router.push(`/support?package=${encodeURIComponent(label)}&amount=${amount}`);
   };
 
   const handleBuyVerification = async () => {
     if (!firestore || !user || !profile) return;
     
-    // Bypass check for infinite admin
     if (!isInfiniteAdmin && (profile.coins || 0) < 500) {
       toast({
         variant: "destructive",
         title: "الكنز لا يكفي",
-        description: "تحتاج إلى 500 عملة لتوثيق حسابك. اجمع المزيد من المكافآت أو الدعم.",
+        description: "تحتاج إلى 500 عملة لتوثيق حسابك. يمكنك شراء باقة عملات من الأسفل.",
       });
       return;
     }
@@ -54,7 +51,6 @@ export default function WalletPage() {
       const expiryDate = new Date();
       expiryDate.setMonth(expiryDate.getMonth() + 3);
 
-      // Bypass deduction for infinite admin
       if (!isInfiniteAdmin) {
         updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
           coins: increment(-500),
@@ -83,11 +79,9 @@ export default function WalletPage() {
     <div className="min-h-screen bg-[#2D1606] text-[#F3E5AB]">
       <Navbar />
 
-      {/* Background patterns for a wooden texture feel */}
       <div className="fixed inset-0 pointer-events-none opacity-10 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]" />
 
       <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0 relative z-10">
-        {/* Header - Wooden theme */}
         <div className="bg-[#451A03]/80 backdrop-blur-md sticky top-8 z-30 py-4 border-b border-[#B45309]/30 flex items-center gap-4 mb-10 shadow-2xl">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full text-[#FBBF24] hover:bg-[#78350F]">
             <ChevronRight size={20} />
@@ -99,7 +93,6 @@ export default function WalletPage() {
         </div>
 
         <div className="flex flex-col items-center gap-10 text-center">
-          {/* Large Coin Section with glowing effect */}
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -119,7 +112,6 @@ export default function WalletPage() {
             </p>
           </div>
 
-          {/* Stats Grid - Wooden Dark Style */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
             <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-[#FBBF24]">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
@@ -146,7 +138,6 @@ export default function WalletPage() {
             </Card>
           </div>
 
-          {/* Verification Section - Featured Box */}
           <section className="w-full text-right space-y-6 pt-6">
             <div className="flex items-center gap-3 text-[#FBBF24] border-r-4 border-[#FBBF24] pr-3">
               <BadgeCheck size={18} />
@@ -182,7 +173,6 @@ export default function WalletPage() {
             </Card>
           </section>
 
-          {/* Coin Packages Section */}
           <section className="w-full text-right space-y-6 pt-6">
             <div className="flex items-center gap-3 text-[#FBBF24] border-r-4 border-[#FBBF24] pr-3">
               <Package size={18} />
@@ -199,7 +189,7 @@ export default function WalletPage() {
                 <motion.div key={i} whileHover={{ y: -5 }} whileTap={{ scale: 0.95 }}>
                   <Card 
                     className="bg-[#451A03] border-[#B45309]/30 hover:border-[#FBBF24] transition-all cursor-pointer group rounded-none overflow-hidden"
-                    onClick={handlePackageClick}
+                    onClick={() => handlePackageClick(pkg.label, pkg.amount)}
                   >
                     <CardContent className="p-6 flex flex-col items-center gap-3 relative">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${pkg.color} border border-current/20`}>
@@ -221,7 +211,6 @@ export default function WalletPage() {
             </div>
           </section>
 
-          {/* Legal Compliance Section - Dark Wooden Box */}
           <section className="w-full text-right space-y-6 pt-10">
             <div className="flex items-center gap-3 text-red-400 border-r-4 border-red-400 pr-3">
               <Scale size={18} />
