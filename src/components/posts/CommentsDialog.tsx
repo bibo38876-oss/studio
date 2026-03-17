@@ -8,7 +8,7 @@ import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment,
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, Users, Sparkles, ImageIcon } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, Users, Sparkles, ImageIcon, Rocket } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,7 @@ import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import Link from 'next/link';
 import { Progress } from "@/components/ui/progress";
 import { cn } from '@/lib/utils';
+import TimgadLogo from '@/components/ui/Logo';
 
 interface CommentsDialogProps {
   postId: string;
@@ -315,7 +316,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                   </CarouselContent>
                 </Carousel>
 
-                {/* مؤشر الصور المتعددة */}
                 {countSlides > 1 && (
                   <div className="absolute top-4 left-4 z-10 flex flex-col items-center gap-1.5">
                     <div className="bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-xl">
@@ -339,6 +339,27 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
             )}
           </div>
         )}
+
+        {/* مساحة إعلانية مخصصة تظهر أسفل المنشور وقبل التعليقات */}
+        <div className="px-4 py-4 bg-background">
+          <div className="bg-primary/5 border border-dashed border-primary/20 rounded-2xl p-4 flex items-center justify-between group hover:bg-primary/10 transition-all cursor-pointer shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-primary rounded-full flex items-center justify-center text-white shadow-md">
+                <TimgadLogo size={20} variant="white" />
+              </div>
+              <div className="flex flex-col text-right">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Rocket size={10} className="text-accent animate-pulse" />
+                  <span className="text-[9px] font-bold text-primary uppercase tracking-[0.2em]">محتوى مروج • Sponsored</span>
+                </div>
+                <p className="text-[11px] font-bold text-foreground/80">احصل على توثيق تيمقاد الملكي وتمتع بمزايا النخبة الآن!</p>
+              </div>
+            </div>
+            <div className="h-8 w-8 bg-background rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <ChevronRight size={16} />
+            </div>
+          </div>
+        </div>
 
         <div className="p-4 space-y-5">
           <div className="flex items-center gap-2 mb-2 border-b pb-2">

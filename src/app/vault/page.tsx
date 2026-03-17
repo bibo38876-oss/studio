@@ -158,7 +158,6 @@ export default function VaultPage() {
       <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]" />
       
       <main className="relative z-10 flex flex-col items-center gap-8 py-20 w-full max-w-2xl px-4">
-        {/* Coin Throw Animation Area */}
         <div className="relative w-full flex justify-center">
           <AnimatePresence>
             {showCoins && (
