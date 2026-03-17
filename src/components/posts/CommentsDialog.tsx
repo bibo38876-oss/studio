@@ -143,14 +143,13 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           </div>
         </div>
 
-        {/* Ad Slot - Positioned correctly after post content */}
         <div className="p-4">
           <div className="bg-primary/5 border border-dashed border-primary/20 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <TimgadLogo size={24} className="text-primary" />
               <div className="flex flex-col text-right">
                 <div className="flex items-center gap-1.5"><Rocket size={10} className="text-accent" /><span className="text-[9px] font-bold text-primary">مروج • Ad</span></div>
-                <p className="text-[11px] font-bold text-primary/80 leading-tight">وثق حسابك الآن واحصل على ميزات النخبة في تيمقاد!</p>
+                <p className="text-[11px] font-bold text-primary/80 leading-tight">شحن رصيدك عبر PayPal متاح الآن لتفعيل ميزات النخبة!</p>
               </div>
             </div>
             <ChevronRight size={16} className="text-primary/30" />
