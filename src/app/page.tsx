@@ -58,7 +58,7 @@ export default function Home() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user?.uid]);
 
-  const { data: profile } = useDoc(userProfileRef);
+  const { data: profile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   useEffect(() => {
     if (!firestore || !user?.uid || !profile) return;
@@ -102,10 +102,11 @@ export default function Home() {
   const { data: promotedPosts } = useCollection(promotedQuery);
 
   const followingPostsQuery = useMemoFirebase(() => {
+    // ننتظر تحميل الملف الشخصي أولاً والتأكد من وجود متابعات
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
       collection(firestore, 'posts'), 
-      where('authorId', 'in', profile.followingIds.slice(0, 10)),
+      where('authorId', 'in', profile.followingIds.slice(0, 30)),
       orderBy('createdAt', 'desc'),
       limit(limitFollowing)
     );
@@ -114,14 +115,14 @@ export default function Home() {
   const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
   const recommendedPosts = useMemo(() => {
-    if (!postsPool || !profile) return [];
+    if (!postsPool) return [];
 
     const basePosts = [...postsPool].map(post => {
       let score = 0;
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
       score += (post.viewsCount || 0) * 0.1;
-      if (profile.followingIds?.includes(post.authorId)) score += 50;
+      if (profile?.followingIds?.includes(post.authorId)) score += 50;
       
       const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : (post.createdAt ? new Date(post.createdAt) : new Date());
       const postAgeMs = Date.now() - postDate.getTime();
@@ -152,7 +153,7 @@ export default function Home() {
         if (entries[0].isIntersecting) {
           if (activeTab === 'for-you' && !isPoolLoading) {
             setLimitForYou(prev => prev + 10);
-          } else if (activeTab === 'following' && !isFollowingLoading) {
+          } else if (activeTab === 'following' && !isFollowingLoading && followingPostsQuery) {
             setLimitFollowing(prev => prev + 10);
           }
         }
@@ -164,7 +165,7 @@ export default function Home() {
     if (currentRef) observer.observe(currentRef);
 
     return () => observer.disconnect();
-  }, [activeTab, isPoolLoading, isFollowingLoading]);
+  }, [activeTab, isPoolLoading, isFollowingLoading, followingPostsQuery]);
 
   if (isUserLoading || !user) {
     return (
@@ -267,7 +268,11 @@ export default function Home() {
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className="flex flex-col"
                   >
-                    {!profile?.followingIds || profile.followingIds.length === 0 ? (
+                    {isProfileLoading ? (
+                      <div className="flex justify-center py-20">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : !profile?.followingIds || profile.followingIds.length === 0 ? (
                       <div className="text-center py-24 bg-card px-8 border-b">
                         <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
                         <p className="text-primary font-bold text-xs mb-1">ابدأ بمتابعة الآخرين</p>
@@ -277,13 +282,19 @@ export default function Home() {
                       <div className="flex flex-col items-center justify-center py-20 gap-4">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
-                    ) : (
+                    ) : followingPosts && followingPosts.length > 0 ? (
                       <>
-                        {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)}
+                        {followingPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)}
                         <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">
                           {isFollowingLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
                         </div>
                       </>
+                    ) : (
+                      <div className="text-center py-24 bg-card px-8 border-b">
+                        <Sparkles size={40} className="mx-auto text-muted-foreground/30 mb-4" />
+                        <p className="text-primary font-bold text-xs mb-1">لا توجد منشورات جديدة</p>
+                        <p className="text-muted-foreground text-[10px]">الأشخاص الذين تتابعهم لم ينشروا شيئاً مؤخراً.</p>
+                      </div>
                     )}
                   </motion.div>
                 </TabsContent>

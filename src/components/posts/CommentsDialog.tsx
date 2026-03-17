@@ -179,28 +179,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     }
   };
 
-  const handleVote = async (optionIndex: number) => {
-    if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user || !displayPost.poll || userVote || isVoteLoading) return;
-
-    try {
-      await runTransaction(firestore, async (transaction) => {
-        const postDoc = await transaction.get(postLiveRef!);
-        if (!postDoc.exists()) return;
-        
-        const currentPoll = postDoc.data().poll;
-        currentPoll.options[optionIndex].votes += 1;
-        currentPoll.totalVotes += 1;
-        
-        transaction.update(postLiveRef!, { poll: currentPoll });
-        transaction.set(userVoteRef!, { optionIndex, votedAt: serverTimestamp() });
-      });
-      toast({ description: "تم تسجيل تصويتك بنجاح." });
-    } catch (e) {
-      toast({ variant: "destructive", description: "فشل في تسجيل التصويت." });
-    }
-  };
-
   const renderContent = (content: string) => {
     if (!content) return null;
     return content.split(/(\s+)/).map((part, i) => {
