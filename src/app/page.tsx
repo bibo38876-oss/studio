@@ -102,7 +102,6 @@ export default function Home() {
   const { data: promotedPosts } = useCollection(promotedQuery);
 
   const followingPostsQuery = useMemoFirebase(() => {
-    // ننتظر تحميل الملف الشخصي أولاً والتأكد من وجود متابعات
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
       collection(firestore, 'posts'), 
@@ -234,15 +233,16 @@ export default function Home() {
               </TabsTrigger>
             </TabsList>
 
-            <AnimatePresence mode="wait">
-              {activeTab === 'for-you' ? (
-                <TabsContent value="for-you" key="for-you" className="mt-0 outline-none min-h-[60vh]">
+            <div className="relative overflow-hidden min-h-[60vh]">
+              <AnimatePresence mode="wait">
+                {activeTab === 'for-you' ? (
                   <motion.div 
+                    key="for-you"
                     initial={{ opacity: 0, x: 10 }} 
                     animate={{ opacity: 1, x: 0 }} 
                     exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="flex flex-col"
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="w-full"
                   >
                     {isPoolLoading && limitForYou === 10 ? (
                       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -258,31 +258,30 @@ export default function Home() {
                       </>
                     )}
                   </motion.div>
-                </TabsContent>
-              ) : (
-                <TabsContent value="following" key="following" className="mt-0 outline-none min-h-[60vh]">
+                ) : (
                   <motion.div 
+                    key="following"
                     initial={{ opacity: 0, x: 10 }} 
                     animate={{ opacity: 1, x: 0 }} 
                     exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="flex flex-col"
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="w-full"
                   >
                     {isProfileLoading ? (
                       <div className="flex justify-center py-20">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
-                    ) : !profile?.followingIds || profile.followingIds.length === 0 ? (
+                    ) : (!profile?.followingIds || profile.followingIds.length === 0) ? (
                       <div className="text-center py-24 bg-card px-8 border-b">
                         <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
                         <p className="text-primary font-bold text-xs mb-1">ابدأ بمتابعة الآخرين</p>
                         <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
                       </div>
-                    ) : isFollowingLoading && limitFollowing === 10 ? (
+                    ) : (isFollowingLoading && limitFollowing === 10) ? (
                       <div className="flex flex-col items-center justify-center py-20 gap-4">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
-                    ) : followingPosts && followingPosts.length > 0 ? (
+                    ) : (followingPosts && followingPosts.length > 0) ? (
                       <>
                         {followingPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)}
                         <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">
@@ -297,9 +296,9 @@ export default function Home() {
                       </div>
                     )}
                   </motion.div>
-                </TabsContent>
-              )}
-            </AnimatePresence>
+                )}
+              </AnimatePresence>
+            </div>
           </Tabs>
         </div>
 

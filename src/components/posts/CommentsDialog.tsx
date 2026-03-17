@@ -294,7 +294,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           </div>
         )}
 
-        {/* Ad Slot - تظهر هنا قبل التعليقات */}
         <div className="px-4 py-4">
           <div className="bg-primary/5 border border-dashed border-primary/20 rounded-2xl p-4 flex items-center justify-between group hover:bg-primary/10 transition-all cursor-pointer">
             <div className="flex items-center gap-3">
