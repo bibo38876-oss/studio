@@ -25,12 +25,6 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "
 import CommentsDialog from "./CommentsDialog";
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import TimgadCoin from '@/components/ui/TimgadCoin';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from 'framer-motion';
@@ -69,9 +63,6 @@ export default function PostCard({ post }: { post: PostData }) {
   const [isPromoteOpen, setIsPromoteOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSupportAnim, setShowSupportAnim] = useState(false);
-  const [api, setApi] = useState<CarouselApi>();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [countSlides, setCountSlides] = useState(0);
   
   const cardRef = useRef<HTMLDivElement>(null);
   const viewedRef = useRef(false);
@@ -121,15 +112,6 @@ export default function PostCard({ post }: { post: PostData }) {
     return doc(firestore, 'posts', displayPost.id, 'pollVotes', user.uid);
   }, [firestore, displayPost.id, user?.uid]);
   const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
-
-  useEffect(() => {
-    if (!api) return;
-    setCountSlides(api.scrollSnapList().length);
-    setCurrentSlide(api.selectedScrollSnap() + 1);
-    api.on("select", () => {
-      setCurrentSlide(api.selectedScrollSnap() + 1);
-    });
-  }, [api]);
 
   useEffect(() => {
     if (!firestore || !displayPost.id || !user?.uid) return;
@@ -572,45 +554,22 @@ export default function PostCard({ post }: { post: PostData }) {
             )}
             
             {displayPost.mediaUrls && displayPost.mediaUrls.length > 0 && (
-              <div className="w-full mt-2 rounded-2xl overflow-hidden border border-muted/10 shadow-sm relative group/carousel">
-                <Carousel 
-                  setApi={setApi}
-                  className="w-full" 
-                  opts={{ direction: 'rtl', align: 'start', loop: false }}
-                >
-                  <CarouselContent className="-ml-0">
-                    {displayPost.mediaUrls.map((url: string, index: number) => (
-                      <CarouselItem key={index} className="pl-0">
-                        <div className="aspect-video w-full bg-black/5 flex items-center justify-center overflow-hidden">
-                          <img 
-                            src={url} 
-                            alt={`Post media ${index + 1}`} 
-                            className="w-full h-full object-cover" 
-                            loading="lazy" 
-                          />
-                        </div>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                </Carousel>
+              <div className="w-full mt-2 rounded-2xl overflow-hidden border border-muted/10 shadow-sm relative group/media">
+                <div className="w-full bg-black/5 flex items-center justify-center overflow-hidden">
+                  <img 
+                    src={displayPost.mediaUrls[0]} 
+                    alt="Post first media" 
+                    className="w-full h-auto block" 
+                    loading="lazy" 
+                  />
+                </div>
 
-                {/* مؤشر الصور المتعددة */}
-                {countSlides > 1 && (
-                  <div className="absolute top-3 left-3 z-10 flex flex-col items-center gap-1.5">
-                    <div className="bg-black/60 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-lg">
+                {/* مؤشر وجود صور إضافية */}
+                {displayPost.mediaUrls.length > 1 && (
+                  <div className="absolute top-3 left-3 z-10">
+                    <div className="bg-black/60 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
                       <ImageIcon size={10} />
-                      <span>{currentSlide} / {countSlides}</span>
-                    </div>
-                    <div className="flex gap-1">
-                      {Array.from({ length: countSlides }).map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={cn(
-                            "h-1 rounded-full transition-all duration-300 shadow-sm",
-                            currentSlide === i + 1 ? "w-3 bg-primary" : "w-1 bg-white/40"
-                          )} 
-                        />
-                      ))}
+                      <span>1 / {displayPost.mediaUrls.length}</span>
                     </div>
                   </div>
                 )}

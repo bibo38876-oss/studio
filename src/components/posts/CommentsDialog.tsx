@@ -302,7 +302,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                   <CarouselContent className="-ml-0">
                     {allMedia.map((url: string, index: number) => (
                       <CarouselItem key={index} className="pl-0">
-                        <div className="relative w-full flex items-center justify-center bg-black/5 min-h-[300px]">
+                        <div className="relative w-full flex items-center justify-center bg-black/5">
                           <img 
                             src={url} 
                             alt={`Post detail ${index + 1}`} 
