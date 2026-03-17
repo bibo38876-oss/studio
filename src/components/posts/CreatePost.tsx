@@ -11,44 +11,11 @@ import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase,
 import { collection, serverTimestamp, doc, increment } from 'firebase/firestore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import { uploadImageToCloudinary } from '@/lib/cloudinary';
 
 interface CreatePostProps {
   onSuccess?: () => void;
 }
-
-const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = reject;
-    };
-    reader.onerror = reject;
-  });
-};
 
 export default function CreatePost({ onSuccess }: CreatePostProps) {
   const [content, setContent] = useState('');
@@ -76,29 +43,22 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const charLimit = isVerified ? 1500 : 400;
   const imageLimit = isVerified ? 3 : 1;
 
-  // حساب حالة الاستطلاع وتكلفته
-  const checkPollStatus = () => {
+  const pollStatus = (() => {
     if (!showPoll) return { cost: 0, isFree: true };
-    
     if (isVerified) {
       const lastPollDate = profile?.lastPollCreatedAt ? new Date(profile.lastPollCreatedAt).getTime() : 0;
       const now = new Date().getTime();
       const hoursPassed = (now - lastPollDate) / (1000 * 60 * 60);
-      
-      if (hoursPassed >= 24) {
-        return { cost: 0, isFree: true };
-      }
+      if (hoursPassed >= 24) return { cost: 0, isFree: true };
       return { cost: 2, isFree: false };
     }
-    
     return { cost: 3, isFree: false };
-  };
-
-  const pollStatus = checkPollStatus();
+  })();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    
     if (mediaUrls.length + files.length > imageLimit) {
       toast({ 
         variant: "destructive", 
@@ -108,16 +68,22 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
       });
       return;
     }
+
     setIsUploading(true);
-    const newMediaUrls: string[] = [...mediaUrls];
     try {
+      const newUrls = [...mediaUrls];
       for (let i = 0; i < files.length; i++) {
-        const compressedData = await compressImage(files[i], 1200, 1200, 0.7);
-        newMediaUrls.push(compressedData);
+        const url = await uploadImageToCloudinary(files[i]);
+        newUrls.push(url);
       }
-      setMediaUrls(newMediaUrls);
-    } catch (error) {
-      toast({ variant: "destructive", description: "فشل في معالجة بعض الصور." });
+      setMediaUrls(newUrls);
+      toast({ description: "تم رفع الصور بنجاح إلى سحابة تيمقاد." });
+    } catch (error: any) {
+      toast({ 
+        variant: "destructive", 
+        title: "خطأ في الرفع", 
+        description: error.message || "فشل رفع الصور، يرجى المحاولة لاحقاً." 
+      });
     } finally {
       setIsUploading(false);
     }
@@ -143,7 +109,6 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     }
     if (!db || !user) return;
 
-    // منطق الاستطلاع والعملات
     if (showPoll) {
       if (!pollStatus.isFree) {
         if ((profile?.coins || 0) < pollStatus.cost) {
@@ -155,7 +120,6 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
           return;
         }
       }
-
       if (!pollQuestion.trim() || pollOptions.some(opt => !opt.trim())) {
         toast({ variant: "destructive", description: "يرجى إكمال بيانات الاستطلاع." });
         return;
@@ -187,13 +151,11 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       };
 
-      // خصم العملات إذا كان مدفوعاً
       if (!pollStatus.isFree) {
         updateDocumentNonBlocking(doc(db, 'users', user.uid), {
           coins: increment(-pollStatus.cost)
         });
       } else if (isVerified) {
-        // تحديث وقت الاستطلاع المجاني للموثقين فقط
         updateDocumentNonBlocking(doc(db, 'users', user.uid), {
           lastPollCreatedAt: new Date().toISOString()
         });
@@ -284,9 +246,6 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
                 </Button>
               )}
             </div>
-            {!pollStatus.isFree && (
-              <p className="text-[8px] text-muted-foreground italic text-center">سيتم خصم {pollStatus.cost} عملات من رصيدك عند النشر.</p>
-            )}
           </div>
         )}
 
@@ -303,7 +262,12 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
           </div>
         )}
 
-        {isUploading && <div className="flex items-center justify-center py-4 gap-2 text-[10px] text-muted-foreground"><Loader2 size={12} className="animate-spin" /> جاري التحضير...</div>}
+        {isUploading && (
+          <div className="flex items-center justify-center py-4 gap-2 text-[10px] text-muted-foreground bg-primary/5 border border-dashed animate-pulse">
+            <Loader2 size={12} className="animate-spin text-primary" /> 
+            جاري رفع الملفات إلى سحابة تيمقاد...
+          </div>
+        )}
       </div>
 
       <div className="border-t bg-background p-2 pb-safe">

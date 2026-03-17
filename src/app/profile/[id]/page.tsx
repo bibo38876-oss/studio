@@ -23,40 +23,7 @@ import TimgadCoin from '@/components/ui/TimgadCoin';
 import Link from 'next/link';
 import { ar } from 'date-fns/locale';
 import { formatDistanceToNow } from 'date-fns';
-
-const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = reject;
-    };
-    reader.onerror = reject;
-  });
-};
+import { uploadImageToCloudinary } from '@/lib/cloudinary';
 
 export default function ProfilePage() {
   const params = useParams();
@@ -146,18 +113,26 @@ export default function ProfilePage() {
   
   const verificationType: VerificationType = profile?.verificationType || 'none';
 
+  useEffect(() => {
+    if (profile) {
+      setEditName(profile.username || '');
+      setEditBio(profile.bio || '');
+      setEditProfilePic(profile.profilePictureUrl || null);
+      setEditBanner(profile.bannerUrl || null);
+    }
+  }, [profile]);
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
       setIsSaving(true);
-      const maxWidth = type === 'banner' ? 1200 : 400;
-      const maxHeight = type === 'banner' ? 600 : 400;
-      const compressedData = await compressImage(file, maxWidth, maxHeight, 0.7);
-      if (type === 'profile') setEditProfilePic(compressedData);
-      else setEditBanner(compressedData);
+      const url = await uploadImageToCloudinary(file);
+      if (type === 'profile') setEditProfilePic(url);
+      else setEditBanner(url);
+      toast({ description: "تم رفع الصورة بنجاح." });
     } catch (error) {
-      toast({ variant: "destructive", description: "فشل في معالجة الصورة." });
+      toast({ variant: "destructive", description: "فشل في رفع الصورة." });
     } finally {
       setIsSaving(false);
     }
@@ -356,15 +331,19 @@ export default function ProfilePage() {
                           <div className="space-y-2"><label className="text-[10px] font-bold text-muted-foreground uppercase">صورة البنر</label>
                             <div className="h-24 bg-secondary/30 relative cursor-pointer group overflow-hidden" onClick={() => bannerInputRef.current?.click()}>
                               {editBanner ? <img src={editBanner} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-muted-foreground/40"><ImageIcon size={24} /></div>}
-                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Camera className="text-white" size={20} /></div>
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                {isSaving ? <Loader2 className="text-white animate-spin" /> : <Camera className="text-white" size={20} />}
+                              </div>
                             </div><input type="file" hidden ref={bannerInputRef} onChange={(e) => handleImageChange(e, 'banner')} accept="image/*" />
                           </div>
                           <div className="space-y-2"><label className="text-[10px] font-bold text-muted-foreground uppercase">الصورة الشخصية</label>
                             <div className="flex items-center gap-4">
                               <div className="h-16 w-16 rounded-full bg-secondary/30 relative cursor-pointer group overflow-hidden shrink-0" onClick={() => profilePicInputRef.current?.click()}>
                                 {editProfilePic ? <img src={editProfilePic} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-muted-foreground/40 font-bold">{editName?.[0] || 'ت'}</div>}
-                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Camera className="text-white" size={16} /></div>
-                              </div><p className="text-[9px] text-muted-foreground">تغيير صورة ملفك في تيمقاد.</p>
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  {isSaving ? <Loader2 className="text-white animate-spin" /> : <Camera className="text-white" size={16} />}
+                                </div>
+                              </div><p className="text-[9px] text-muted-foreground">تغيير صورة ملفك في تيمقاد عبر سحابة Cloudinary.</p>
                             </div><input type="file" hidden ref={profilePicInputRef} onChange={(e) => handleImageChange(e, 'profile')} accept="image/*" />
                           </div>
                         </div>
