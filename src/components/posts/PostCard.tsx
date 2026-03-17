@@ -97,44 +97,81 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     }
   };
 
+  const renderContentWithHashtags = (text: string) => {
+    if (!text) return null;
+    const parts = text.split(/(#[^\s#]+)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('#')) {
+        return (
+          <span key={i} className="text-blue-500 font-medium hover:underline cursor-pointer">
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <>
       <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-all" onClick={() => setIsCommentsOpen(true)}>
-        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
-          <div className="flex items-center gap-2">
-            <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleLike(e); }} className={cn("h-8 flex items-center gap-1.5 px-3 rounded-full", likeData ? "text-red-500 bg-red-50" : "text-muted-foreground")}>
-              <Heart size={18} className={likeData ? "fill-current" : ""} />
-              <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
-            </motion.button>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleBookmark(e); }} className={cn("h-8 flex items-center gap-1.5 px-3 rounded-full", bookmarkData ? "text-accent bg-accent/5" : "text-muted-foreground")}>
-              <Bookmark size={18} className={bookmarkData ? "fill-current" : ""} />
-              <span className="text-[11px] font-bold">{post.bookmarksCount || 0}</span>
-            </motion.button>
-          </div>
+        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-end space-y-0 text-right">
           <Link href={`/profile/${post.authorId}`} className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col text-right">
-              <div className="flex items-center gap-1 leading-tight">
-                <VerifiedBadge type={post.authorVerificationType || 'none'} size={12} />
+              <div className="flex items-center gap-1.5 leading-tight justify-end">
+                <VerifiedBadge type={post.authorVerificationType || 'none'} size={13} />
                 <span className="text-sm font-bold text-primary">{post.authorName}</span>
               </div>
               <span className="text-[9px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
             </div>
-            <Avatar className="h-9 w-9 border border-primary/10"><AvatarImage src={post.authorAvatar} /><AvatarFallback>{post.authorName?.[0]}</AvatarFallback></Avatar>
+            <Avatar className="h-10 w-10 border border-primary/10">
+              <AvatarImage src={post.authorAvatar} />
+              <AvatarFallback className="font-bold">{post.authorName?.[0]}</AvatarFallback>
+            </Avatar>
           </Link>
         </CardHeader>
+
         <CardContent className="px-4 py-1 text-right">
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap mb-2">
+            {renderContentWithHashtags(post.content)}
+          </div>
           {post.mediaUrls && post.mediaUrls.length > 0 && (
-            <div className="mt-3 rounded-xl overflow-hidden border">
-              <img src={post.mediaUrls[0]} alt="Post" className="w-full h-auto" />
+            <div className="mt-3 rounded-xl overflow-hidden border bg-muted/5">
+              <img src={post.mediaUrls[0]} alt="Post" className="w-full h-auto object-cover max-h-[500px]" />
             </div>
           )}
         </CardContent>
-        <CardFooter className="p-4 py-2 border-t border-muted/5 flex justify-between">
-          <div className="flex items-center gap-4 text-muted-foreground">
-            <div className="flex items-center gap-1"><MessageCircle size={16} /><span className="text-[10px] font-bold">{post.commentsCount || 0}</span></div>
-            <div className="flex items-center gap-1"><BarChart3 size={16} /><span className="text-[10px] font-bold">{post.viewsCount || 0}</span></div>
+
+        <CardFooter className="p-4 py-3 border-t border-muted/5 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <motion.button 
+              whileTap={{ scale: 0.9 }} 
+              onClick={(e) => { e.stopPropagation(); handleLike(e); }} 
+              className={cn("flex items-center gap-1.5 transition-colors", likeData ? "text-red-500" : "text-muted-foreground hover:text-red-500")}
+            >
+              <Heart size={18} className={likeData ? "fill-current" : ""} />
+              <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
+            </motion.button>
+
+            <div className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors">
+              <MessageCircle size={18} />
+              <span className="text-[11px] font-bold">{post.commentsCount || 0}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <BarChart3 size={18} />
+              <span className="text-[11px] font-bold">{post.viewsCount || 0}</span>
+            </div>
           </div>
+
+          <motion.button 
+            whileTap={{ scale: 0.9 }} 
+            onClick={(e) => { e.stopPropagation(); handleBookmark(e); }} 
+            className={cn("flex items-center gap-1.5 transition-colors", bookmarkData ? "text-blue-500" : "text-muted-foreground hover:text-blue-500")}
+          >
+            <Bookmark size={18} className={bookmarkData ? "fill-current" : ""} />
+            <span className="text-[11px] font-bold">{post.bookmarksCount || 0}</span>
+          </motion.button>
         </CardFooter>
       </Card>
 
