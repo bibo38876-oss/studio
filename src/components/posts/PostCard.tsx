@@ -80,7 +80,8 @@ export default function PostCard({ post }: { post: PostData }) {
   }, [firestore, post.id]);
 
   const { data: centralPost } = useDoc(postRef);
-  const displayPost = centralPost || post;
+  // نفضل استخدام البيانات الممررة من القائمة لضمان استقرار الأداء، ونحدث فقط العدادات من الـ Live Doc
+  const displayPost = { ...post, ...centralPost };
 
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !displayPost.authorId) return null;
@@ -114,14 +115,17 @@ export default function PostCard({ post }: { post: PostData }) {
   const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
 
   useEffect(() => {
-    if (!firestore || !displayPost.id || !user?.uid) return;
+    if (!firestore || !displayPost.id || !user?.uid || isOwner) return;
+    
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
+          // عد المشاهدات العادية
           if (!viewedRef.current) {
             viewedRef.current = true;
             updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { viewsCount: increment(1) });
           }
+          // خصم من المشاهدات المروجة
           if (displayPost.promoted && (displayPost.impressions_left || 0) > 0 && !promotedViewedRef.current) {
             promotedViewedRef.current = true;
             updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), { 
@@ -134,7 +138,7 @@ export default function PostCard({ post }: { post: PostData }) {
     );
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
-  }, [firestore, displayPost.id, displayPost.promoted, displayPost.impressions_left, user?.uid]);
+  }, [firestore, displayPost.id, displayPost.promoted, displayPost.impressions_left, user?.uid, isOwner]);
 
   const handleFollow = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -533,7 +537,7 @@ export default function PostCard({ post }: { post: PostData }) {
                           <Button 
                             variant="outline" 
                             className="w-full h-auto min-h-[44px] justify-between py-2 px-4 text-[12px] rounded-xl hover:bg-primary/5 hover:border-primary/30 font-bold group transition-all" 
-                            onClick={() => handleVote(i)}
+                            onClick={(e) => { e.stopPropagation(); handleVote(i); }}
                           >
                             <div className="flex items-center gap-3">
                               {option.imageUrl && (
@@ -564,7 +568,6 @@ export default function PostCard({ post }: { post: PostData }) {
                   />
                 </div>
 
-                {/* مؤشر وجود صور إضافية */}
                 {displayPost.mediaUrls.length > 1 && (
                   <div className="absolute top-3 left-3 z-10">
                     <div className="bg-black/60 backdrop-blur-md text-white text-[9px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
@@ -613,7 +616,7 @@ export default function PostCard({ post }: { post: PostData }) {
       </motion.div>
 
       <Dialog open={isPromoteOpen} onOpenChange={setIsPromoteOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[400px]" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle className="text-sm font-bold flex items-center gap-2">
               <Rocket className="text-accent" size={18} /> ترويج المنشور بالعملات
@@ -639,9 +642,9 @@ export default function PostCard({ post }: { post: PostData }) {
                 key={i} 
                 variant="outline" 
                 className="w-full h-16 justify-between px-6 rounded-none hover:bg-primary/5 group border-muted/20"
-                onClick={() => handlePromote(tier.impressions, tier.coins)}
+                onClick={(e) => { e.stopPropagation(); handlePromote(tier.impressions, tier.coins); }}
               >
-                <div className="flex flex-col items-start">
+                <div className="flex flex-col items-start text-right">
                   <span className="text-xs font-bold text-primary">{tier.label}</span>
                   <span className="text-[10px] text-muted-foreground">{tier.impressions.toLocaleString()} مشاهدة مستهدفة</span>
                 </div>
