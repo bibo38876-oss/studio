@@ -2,31 +2,21 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, UserPlus, UserCheck, UserRoundPlus, Rocket, Coffee, Sparkles, ImageIcon } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, increment, serverTimestamp, arrayUnion, arrayRemove, updateDoc, collection } from 'firebase/firestore';
+import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import CommentsDialog from "./CommentsDialog";
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
-import TimgadCoin from '@/components/ui/TimgadCoin';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface PostData {
   id: string;
@@ -42,8 +32,6 @@ interface PostData {
   bookmarksCount?: number;
   viewsCount?: number;
   authorVerificationType?: VerificationType;
-  promoted?: boolean;
-  impressions_left?: number;
 }
 
 export default function PostCard({ post, currentUserProfile }: { post: PostData, currentUserProfile?: any }) {
@@ -51,7 +39,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   const router = useRouter();
   const { toast } = useToast();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const [isPromoteOpen, setIsPromoteOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const viewedRef = useRef(false);
   
@@ -110,8 +97,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     }
   };
 
-  const isFollowingUser = currentUserProfile?.followingIds?.includes(post.authorId);
-
   return (
     <>
       <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-all" onClick={() => setIsCommentsOpen(true)}>
@@ -134,7 +119,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
               </div>
               <span className="text-[9px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
             </div>
-            <Avatar className="h-9 w-9"><AvatarImage src={post.authorAvatar} /><AvatarFallback>{post.authorName?.[0]}</AvatarFallback></Avatar>
+            <Avatar className="h-9 w-9 border border-primary/10"><AvatarImage src={post.authorAvatar} /><AvatarFallback>{post.authorName?.[0]}</AvatarFallback></Avatar>
           </Link>
         </CardHeader>
         <CardContent className="px-4 py-1 text-right">

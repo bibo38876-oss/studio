@@ -70,10 +70,6 @@ service cloud.firestore {
         allow write: if isOwner(userId);
       }
 
-      match /groupInvites/{inviteId} {
-        allow read, write: if isOwner(userId) || isSignedIn();
-      }
-
       match /supportedPeople/{targetUserId} {
         allow read: if isSignedIn();
         allow write: if isOwner(userId);

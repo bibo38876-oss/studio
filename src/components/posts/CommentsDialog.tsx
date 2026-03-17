@@ -91,25 +91,34 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
       <div className="flex-1 overflow-y-auto pb-20">
         <div className="p-4 border-b bg-muted/5">
           <div className="flex gap-3 mb-4">
-            <Avatar className="h-10 w-10"><AvatarImage src={post.authorAvatar} /><AvatarFallback>{post.authorName?.[0]}</AvatarFallback></Avatar>
+            <Avatar className="h-10 w-10 border border-primary/10"><AvatarImage src={post.authorAvatar} /><AvatarFallback>{post.authorName?.[0]}</AvatarFallback></Avatar>
             <div className="flex flex-col">
-              <div className="flex items-center gap-1"><VerifiedBadge type={post.authorVerificationType || 'none'} size={12} /><span className="text-xs font-bold text-primary">{post.authorName}</span></div>
+              <div className="flex items-center gap-1 leading-tight"><VerifiedBadge type={post.authorVerificationType || 'none'} size={12} /><span className="text-xs font-bold text-primary">{post.authorName}</span></div>
               <span className="text-[10px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
             </div>
           </div>
-          <p className="text-sm leading-relaxed mb-4">{post.content}</p>
+          <p className="text-sm leading-relaxed mb-4 whitespace-pre-wrap">{post.content}</p>
           {post.mediaUrls && post.mediaUrls.length > 0 && <img src={post.mediaUrls[0]} alt="Media" className="w-full rounded-xl border mb-4" />}
           
-          <div className="flex justify-between items-center py-2 border-t">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" className={cn("gap-1.5", likeData && "text-red-500")} onClick={handleLike}><Heart size={18} className={likeData ? "fill-current" : ""} /> <span className="text-xs font-bold">{post.likesCount || 0}</span></Button>
-              <Button variant="ghost" size="sm" className={cn("gap-1.5", bookmarkData && "text-accent")} onClick={handleBookmark}><Bookmark size={18} className={bookmarkData ? "fill-current" : ""} /> <span className="text-xs font-bold">{post.bookmarksCount || 0}</span></Button>
+          <div className="flex justify-between items-center py-2 border-t border-muted/10">
+            <div className="flex items-center gap-2">
+              <motion.button whileTap={{ scale: 0.9 }} onClick={handleLike} className={cn("h-8 flex items-center gap-1.5 px-3 rounded-full", likeData ? "text-red-500 bg-red-50" : "text-muted-foreground")}>
+                <Heart size={18} className={likeData ? "fill-current" : ""} />
+                <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.9 }} onClick={handleBookmark} className={cn("h-8 flex items-center gap-1.5 px-3 rounded-full", bookmarkData ? "text-accent bg-accent/5" : "text-muted-foreground")}>
+                <Bookmark size={18} className={bookmarkData ? "fill-current" : ""} />
+                <span className="text-[11px] font-bold">{post.bookmarksCount || 0}</span>
+              </motion.button>
             </div>
-            <div className="flex items-center gap-1 text-muted-foreground"><BarChart3 size={18} /><span className="text-xs font-bold">{post.viewsCount || 0}</span></div>
+            <div className="flex items-center gap-1.5 text-muted-foreground px-3">
+              <BarChart3 size={18} />
+              <span className="text-[11px] font-bold">{post.viewsCount || 0}</span>
+            </div>
           </div>
         </div>
 
-        {/* Ad Slot */}
+        {/* Ad Slot - فاصب احترافي بين المنشور والتعليقات */}
         <div className="p-4">
           <div className="bg-primary/5 border border-dashed border-primary/20 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -119,25 +128,36 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <p className="text-[11px] font-bold">وثق حسابك الآن واحصل على ميزات النخبة في تيمقاد!</p>
               </div>
             </div>
-            <ChevronRight size={16} />
+            <ChevronRight size={16} className="text-primary/30" />
           </div>
         </div>
 
         <div className="p-4 space-y-4">
-          <div className="flex items-center gap-2 border-b pb-2"><MessageSquareText size={14} /><span className="text-[10px] font-bold">التعليقات</span></div>
-          {isLoading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div> : comments?.map((c: any) => (
-            <div key={c.id} className="flex gap-3">
-              <Avatar className="h-8 w-8"><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
-              <div className="flex-1 bg-secondary/20 p-2 rounded-lg"><span className="text-[10px] font-bold block mb-1">{c.authorName}</span><p className="text-xs">{c.content}</p></div>
+          <div className="flex items-center gap-2 border-b border-muted/10 pb-2"><MessageSquareText size={14} className="text-primary" /><span className="text-[10px] font-bold uppercase tracking-widest text-primary">التعليقات</span></div>
+          {isLoading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div> : comments && comments.length > 0 ? comments.map((c: any) => (
+            <div key={c.id} className="flex gap-3 animate-in fade-in slide-in-from-bottom-1 duration-300">
+              <Avatar className="h-8 w-8 border"><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
+              <div className="flex-1 bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right">
+                <span className="text-[10px] font-bold block mb-1 text-primary">{c.authorName}</span>
+                <p className="text-xs leading-relaxed">{c.content}</p>
+              </div>
             </div>
-          )) || <p className="text-center text-[10px] text-muted-foreground py-10">لا توجد تعليقات بعد.</p>}
+          )) : <div className="text-center py-10 opacity-40"><p className="text-[10px] font-bold">لا توجد تعليقات بعد.</p></div>}
         </div>
       </div>
 
       <div className="p-3 border-t bg-background sticky bottom-0">
         <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-10">
-          <Input placeholder="اكتب تعليقاً..." className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddComment()} />
-          <Button variant="ghost" size="icon" onClick={handleAddComment} disabled={!commentText.trim()}><Send size={16} className="text-primary" /></Button>
+          <Input 
+            placeholder="اكتب تعليقاً..." 
+            className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs text-right h-full p-0" 
+            value={commentText} 
+            onChange={(e) => setCommentText(e.target.value)} 
+            onKeyDown={(e) => e.key === 'Enter' && handleAddComment()} 
+          />
+          <Button variant="ghost" size="icon" onClick={handleAddComment} disabled={!commentText.trim()} className="h-8 w-8 rounded-full text-primary">
+            <Send size={16} />
+          </Button>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, Bell } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,8 +23,6 @@ function WoodenChestIcon({ size = 16, className }: { size?: number; className?: 
 }
 
 export default function Navbar() {
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
@@ -45,7 +43,12 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-2">
-          <motion.div whileTap={{ scale: 0.9 }} onClick={() => toast({ title: "قريباً جداً! 🏺", description: "ميزة جرة تيمقاد في مراحل التطوير الأخيرة." })} className="h-8 w-8 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full relative">
+          {/* أيقونة الجرة معطلة برمجياً وتظهر رسالة قريباً */}
+          <motion.div 
+            whileTap={{ scale: 0.9 }} 
+            onClick={() => toast({ title: "قريباً جداً! 🏺", description: "ميزة جرة تيمقاد الملكية في مراحل التطوير الأخيرة." })} 
+            className="h-8 w-8 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full relative"
+          >
             <WoodenChestIcon size={18} />
           </motion.div>
           <Link href="/notifications">
