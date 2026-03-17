@@ -13,7 +13,6 @@ import { motion } from 'framer-motion';
 
 /**
  * WoodenChestIcon - A professional SVG representing a treasure chest.
- * Redesigned with more details, better colors, and smaller size for a slim look.
  */
 function WoodenChestIcon({ size = 16, className }: { size?: number; className?: string }) {
   return (
@@ -25,24 +24,13 @@ function WoodenChestIcon({ size = 16, className }: { size?: number; className?: 
       xmlns="http://www.w3.org/2000/svg" 
       className={className}
     >
-      {/* Body of the chest */}
       <rect x="3" y="10" width="18" height="10" rx="1" fill="#78350F" stroke="#451A03" strokeWidth="1.2" />
-      
-      {/* Curved Lid */}
       <path d="M3 10V7C3 5.34315 4.34315 4 6 4H18C19.6569 4 21 5.34315 21 7V10H3Z" fill="#92400E" stroke="#451A03" strokeWidth="1.2" />
-      
-      {/* Decorative Bands */}
       <rect x="6" y="4" width="2" height="16" fill="#451A03" fillOpacity="0.4" />
       <rect x="16" y="4" width="2" height="16" fill="#451A03" fillOpacity="0.4" />
-      
-      {/* Front Lock Plate (Gold) */}
       <rect x="9" y="9" width="6" height="4" rx="1" fill="#FBBF24" stroke="#B45309" strokeWidth="0.8" />
-      
-      {/* Keyhole */}
       <circle cx="12" cy="11" r="0.8" fill="#451A03" />
       <rect x="11.6" y="11" width="0.8" height="1.5" rx="0.2" fill="#451A03" />
-      
-      {/* Lid Top Detail */}
       <path d="M10 4C10 3.44772 10.4477 3 11 3H13C13.5523 3 14 3.44772 14 4" stroke="#451A03" strokeWidth="1" strokeLinecap="round" />
     </svg>
   );
@@ -86,10 +74,7 @@ export default function Navbar() {
         <div className="flex-1 flex justify-center transition-all duration-300">
           <form onSubmit={handleSearch} className="relative w-full max-w-sm group">
             <button type="submit" className="absolute end-2.5 top-1/2 -translate-y-1/2 transition-colors">
-              <Search 
-                size={12} 
-                className={`${isSearchFocused ? 'text-primary' : 'text-muted-foreground'}`} 
-              />
+              <Search size={12} className={`${isSearchFocused ? 'text-primary' : 'text-muted-foreground'}`} />
             </button>
             <input 
               placeholder="بحث عن أشخاص أو وسم..." 
@@ -110,10 +95,7 @@ export default function Navbar() {
               className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full transition-colors relative"
               title="خزانة تيمقاد"
             >
-              <motion.div
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              >
+              <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
                 <WoodenChestIcon size={16} />
               </motion.div>
               <div className="absolute inset-0 bg-yellow-500/10 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>

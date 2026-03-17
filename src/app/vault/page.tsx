@@ -37,28 +37,24 @@ export default function VaultPage() {
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
   const isInfiniteAdmin = user?.email === ADMIN_EMAIL;
 
-  // بيانات المستخدم
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user?.uid]);
   const { data: profile } = useDoc(userRef);
 
-  // بيانات الجرة
   const jarRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'vault', 'current_jar');
   }, [firestore]);
   const { data: jarData, isLoading: isJarLoading } = useDoc(jarRef);
 
-  // هل شارك؟
   const participationRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'vault', 'current_jar', 'participants', user.uid);
   }, [firestore, user?.uid]);
   const { data: hasParticipated } = useDoc(participationRef);
 
-  // حساب الوقت بتوقيت الجزائر (UTC+1)
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();

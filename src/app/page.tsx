@@ -215,7 +215,7 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
+          <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="w-full bg-background/80 backdrop-blur-md border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-8 z-40">
               <TabsTrigger 
                 value="for-you" 
@@ -237,10 +237,10 @@ export default function Home() {
               {activeTab === 'for-you' ? (
                 <TabsContent value="for-you" key="for-you" className="mt-0 outline-none min-h-[60vh]">
                   <motion.div 
-                    initial={{ opacity: 0, y: 10 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    initial={{ opacity: 0, x: 10 }} 
+                    animate={{ opacity: 1, x: 0 }} 
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                     className="flex flex-col"
                   >
                     {isPoolLoading && limitForYou === 10 ? (
@@ -261,10 +261,10 @@ export default function Home() {
               ) : (
                 <TabsContent value="following" key="following" className="mt-0 outline-none min-h-[60vh]">
                   <motion.div 
-                    initial={{ opacity: 0, y: 10 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    initial={{ opacity: 0, x: 10 }} 
+                    animate={{ opacity: 1, x: 0 }} 
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                     className="flex flex-col"
                   >
                     {!profile?.followingIds || profile.followingIds.length === 0 ? (
