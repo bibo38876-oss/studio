@@ -43,6 +43,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const charLimit = isVerified ? 1500 : 400;
   const imageLimit = isVerified ? 3 : 1;
 
+  // منطق تسعير الاستطلاعات
   const pollStatus = (() => {
     if (!showPoll) return { cost: 0, isFree: true };
     if (isVerified) {

@@ -1,10 +1,11 @@
+
 'use client';
 /**
  * @fileOverview Cloudinary upload utility for Timgad application.
  */
 
 const CLOUD_NAME = 'df4ogwkyn';
-const UPLOAD_PRESET = 'ml_default'; // استخدام الإعداد الافتراضي لـ Cloudinary
+const UPLOAD_PRESET = 'ml_default'; // استخدام الإعداد الافتراضي لـ Cloudinary لضمان عمل الرفع
 
 /**
  * Uploads a file to Cloudinary and returns the secure URL.

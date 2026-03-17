@@ -105,9 +105,10 @@ export default function VaultPage() {
         return;
       }
 
+      // حساب "الأورا" (الهيبة) بناءً على عدد المتابعين وبعض الحظ
       const scoredParticipants = participants.map((p: any) => ({
         ...p,
-        auraScore: ((p.followerCount || 0) * 2) + (p.likesCount || 0) + (Math.random() * 50)
+        auraScore: ((p.followerCount || 0) * 2) + (Math.random() * 50)
       })).sort((a, b) => b.auraScore - a.auraScore);
 
       const top10 = scoredParticipants.slice(0, 10);
@@ -124,7 +125,7 @@ export default function VaultPage() {
           coins: increment(prize)
         });
 
-        // إرسال تنبيه لحظي للفائز
+        // إرسال تنبيه للفائز
         addDocumentNonBlocking(collection(firestore, 'users', winner.userId, 'notifications'), {
           type: 'vault_win',
           message: `🏺 لقد انكسرت الجرة وحصلت على حصتك من الكنز! لقد نلت ${prize} عملة تيمقاد.`,
@@ -279,7 +280,7 @@ export default function VaultPage() {
                     <h3 className="text-[10px] font-bold uppercase tracking-wider">كيف تفوز بـ "أورا تيمقاد"؟</h3>
                   </div>
                   <p className="text-[9px] text-[#F3E5AB]/60 text-right leading-relaxed">
-                    يتم ترتيب المشاركين العشرة الأوائل بناءً على قوة تأثيرهم الرقمي (عدد المتابعين + التفاعل اليومي). تحتاج لـ 3 عملات للمشاركة في هذه الدورة.
+                    يتم ترتيب المشاركين العشرة الأوائل بناءً على "الأورا" (قوة التأثير) التي تعتمد على عدد المتابعين والتفاعل. تحتاج لـ 3 عملات للمشاركة في هذه الدورة.
                   </p>
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#B45309]/10">
                     <div className="text-right">
