@@ -47,6 +47,13 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
   }, [firestore, user, isAnonymous]);
   const { data: profile } = useDoc(userRef);
 
+  // جلب بيانات كاتب المنشور الحية لضمان تحديث صورته واسمه في نافذة التعليقات
+  const authorRef = useMemoFirebase(() => {
+    if (!firestore || !postAuthorId) return null;
+    return doc(firestore, 'users', postAuthorId);
+  }, [firestore, postAuthorId]);
+  const { data: authorData } = useDoc(authorRef);
+
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
     return query(
@@ -129,6 +136,11 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
   };
 
   const allMedia = post?.mediaUrls || (post?.mediaUrl ? [post.mediaUrl] : []);
+  
+  // بيانات كاتب المنشور الحية
+  const currentAuthorName = authorData?.username || post?.authorName || 'مستخدم تيمقاد';
+  const currentAuthorAvatar = authorData?.profilePictureUrl || post?.authorAvatar;
+  const currentVerificationType = authorData?.verificationType || post?.authorVerificationType || 'none';
 
   const handleBack = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -158,13 +170,13 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           <div className="pb-4 border-b bg-muted/5">
             <div className="flex gap-3 p-4">
               <Avatar className="h-10 w-10 border border-muted/20 rounded-full">
-                <AvatarImage src={post.authorAvatar} alt={post.authorName} />
-                <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
+                <AvatarImage src={currentAuthorAvatar} alt={currentAuthorName} />
+                <AvatarFallback>{currentAuthorName?.[0]}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col justify-center">
                 <div className="flex items-center gap-1.5 leading-tight justify-end">
-                  <VerifiedBadge type={post.email === 'adelbenmaza8@gmail.com' ? 'blue' : (post.authorVerificationType || 'none')} />
-                  <span className="text-xs font-bold text-primary">{post.authorName}</span>
+                  <VerifiedBadge type={currentVerificationType === 'blue' || post.email === 'adelbenmaza8@gmail.com' ? 'blue' : currentVerificationType} />
+                  <span className="text-xs font-bold text-primary">{currentAuthorName}</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground">@{post.email?.split('@')[0] || 'مستخدم'}</span>
               </div>
@@ -294,4 +306,3 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     </div>
   );
 }
-

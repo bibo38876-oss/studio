@@ -83,16 +83,18 @@ export default function PostCard({ post }: { post: PostData }) {
   const { data: centralPost } = useDoc(postRef);
   const displayPost = centralPost || post;
 
+  // جلب بيانات الكاتب الحية لضمان تحديث الصورة والاسم في البطاقة
   const authorRef = useMemoFirebase(() => {
-    if (!firestore || !displayPost.authorId || !user?.uid) return null;
+    if (!firestore || !displayPost.authorId) return null;
     return doc(firestore, 'users', displayPost.authorId);
-  }, [firestore, displayPost.authorId, user?.uid]);
+  }, [firestore, displayPost.authorId]);
   const { data: authorData } = useDoc(authorRef);
 
   const currentUserProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user?.uid]);
+
   const { data: currentUserProfile } = useDoc(currentUserProfileRef);
 
   const likeRef = useMemoFirebase(() => {
@@ -175,12 +177,10 @@ export default function PostCard({ post }: { post: PostData }) {
       return;
     }
 
-    // خصم العملات من المستخدم
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
       coins: increment(-cost)
     });
 
-    // تفعيل الترويج للمنشور
     updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), {
       promoted: true,
       impressions_left: increment(impressions)
@@ -209,25 +209,22 @@ export default function PostCard({ post }: { post: PostData }) {
     setShowSupportAnim(true);
     setTimeout(() => setShowSupportAnim(false), 2000);
 
-    // خصم العملات من الداعم
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
       coins: increment(-amount)
     });
 
-    // إضافة العملات لصاحب المنشور
     updateDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId), {
       coins: increment(amount)
     });
 
-    // تسجيل الدعم في سجلات الداعم
     const supportedUserRef = doc(firestore, 'users', user.uid, 'supportedPeople', displayPost.authorId);
     setDocumentNonBlocking(supportedUserRef, {
       userId: displayPost.authorId,
-      username: displayPost.authorName,
-      avatar: displayPost.authorAvatar,
+      username: authorData?.username || displayPost.authorName,
+      avatar: authorData?.profilePictureUrl || displayPost.authorAvatar,
       totalAmount: increment(amount),
       lastSupportedAt: serverTimestamp(),
-      verificationType: displayPost.authorVerificationType || 'none'
+      verificationType: authorData?.verificationType || displayPost.authorVerificationType || 'none'
     }, { merge: true });
 
     toast({
@@ -336,8 +333,11 @@ export default function PostCard({ post }: { post: PostData }) {
     );
   };
 
-  const verificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
-  const isVerified = verificationType !== 'none';
+  // بيانات المؤلف المباشرة لتحديث الصورة والاسم
+  const currentAuthorName = authorData?.username || displayPost.authorName || 'مستخدم تيمقاد';
+  const currentAuthorAvatar = authorData?.profilePictureUrl || displayPost.authorAvatar;
+  const currentVerificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
+  const isVerified = currentVerificationType !== 'none';
   const isFollowing = currentUserProfile?.followingIds?.includes(displayPost.authorId);
   const isFollowingMe = currentUserProfile?.followerIds?.includes(displayPost.authorId);
 
@@ -412,7 +412,7 @@ export default function PostCard({ post }: { post: PostData }) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="center" className="min-w-[160px] p-2">
-                      <DropdownMenuLabel className="text-[10px] font-bold text-primary text-center pb-2 uppercase tracking-tighter">ادعم محتوى {displayPost.authorName}</DropdownMenuLabel>
+                      <DropdownMenuLabel className="text-[10px] font-bold text-primary text-center pb-2 uppercase tracking-tighter">ادعم محتوى {currentAuthorName}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       {[1, 5, 10, 30, 50].map((amount) => (
                         <DropdownMenuItem 
@@ -462,14 +462,14 @@ export default function PostCard({ post }: { post: PostData }) {
             <Link href={`/profile/${displayPost.authorId}`} className="flex flex-row gap-3 group items-center" onClick={(e) => e.stopPropagation()}>
               <div className="flex flex-col text-right">
                 <div className="flex items-center gap-1.5 leading-tight justify-end">
-                  <VerifiedBadge type={verificationType} size={13} />
-                  <span className="text-sm font-bold text-primary group-hover:underline">{displayPost.authorName || 'مستخدم تيمقاد'}</span>
+                  <VerifiedBadge type={currentVerificationType} size={13} />
+                  <span className="text-sm font-bold text-primary group-hover:underline">{currentAuthorName}</span>
                 </div>
                 <span className="text-[9px] text-muted-foreground">{displayPost.createdAt?.toDate ? formatDistanceToNow(displayPost.createdAt.toDate(), { addSuffix: true, locale: ar }) : 'الآن'}</span>
               </div>
               <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5">
-                <AvatarImage src={displayPost.authorAvatar} />
-                <AvatarFallback className="text-[10px] font-bold">{displayPost.authorName?.[0]}</AvatarFallback>
+                <AvatarImage src={currentAuthorAvatar} />
+                <AvatarFallback className="text-[10px] font-bold">{currentAuthorName?.[0]}</AvatarFallback>
               </Avatar>
             </Link>
           </CardHeader>
@@ -559,7 +559,6 @@ export default function PostCard({ post }: { post: PostData }) {
         </Card>
       </motion.div>
 
-      {/* نافذة الترويج المحدثة للعملات */}
       <Dialog open={isPromoteOpen} onOpenChange={setIsPromoteOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
