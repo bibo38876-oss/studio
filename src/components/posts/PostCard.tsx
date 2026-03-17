@@ -46,6 +46,7 @@ interface PostData {
   likesCount?: number;
   commentsCount?: number;
   repostsCount?: number;
+  bookmarksCount?: number;
   viewsCount?: number;
   reportsCount?: number;
   hashtags?: string[];
@@ -88,7 +89,6 @@ export default function PostCard({ post, currentUserProfile: propProfile }: { po
   }, [firestore, displayPost.authorId]);
   const { data: authorData } = useDoc(authorRef);
 
-  // If propProfile is provided, we don't need to fetch it locally
   const currentUserProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || propProfile) return null;
     return doc(firestore, 'users', user.uid);
@@ -315,9 +315,11 @@ export default function PostCard({ post, currentUserProfile: propProfile }: { po
 
     if (bookmarkData) {
       deleteDocumentNonBlocking(bookmarkRef!);
+      updateDocumentNonBlocking(postRef!, { bookmarksCount: increment(-1) });
       toast({ description: "تمت إزالة المنشور من المحفوظات." });
     } else {
       setDocumentNonBlocking(bookmarkRef!, { ...displayPost, createdAt: serverTimestamp() }, { merge: true });
+      updateDocumentNonBlocking(postRef!, { bookmarksCount: increment(1) });
       toast({ description: "تم حفظ المنشور بنجاح." });
     }
   };
@@ -364,7 +366,6 @@ export default function PostCard({ post, currentUserProfile: propProfile }: { po
   const currentVerificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
   const isVerified = currentVerificationType !== 'none';
   
-  // Stable calculation of following state to prevent flicker
   const isFollowingUser = currentUserProfile?.followingIds?.includes(displayPost.authorId);
   const isFollowingMe = currentUserProfile?.followerIds?.includes(displayPost.authorId);
 
@@ -612,6 +613,7 @@ export default function PostCard({ post, currentUserProfile: propProfile }: { po
                 >
                   <Bookmark size={18} className={cn(bookmarkData ? "fill-current" : "")} />
                 </motion.div>
+                <span className="text-[11px] font-bold">{displayPost.bookmarksCount || 0}</span>
               </Button>
             </motion.div>
 

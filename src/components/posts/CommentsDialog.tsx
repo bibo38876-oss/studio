@@ -4,11 +4,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment, runTransaction } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment, runTransaction, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, Users, Sparkles, ImageIcon, Rocket } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, Users, Sparkles, ImageIcon, Rocket, Heart, Bookmark } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,7 @@ import Link from 'next/link';
 import { Progress } from "@/components/ui/progress";
 import { cn } from '@/lib/utils';
 import TimgadLogo from '@/components/ui/Logo';
+import { motion } from 'framer-motion';
 
 interface CommentsDialogProps {
   postId: string;
@@ -67,6 +68,18 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
   }, [firestore, postId]);
   const { data: livePost } = useDoc(postLiveRef);
   const displayPost = livePost || post;
+
+  const likeRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !postId) return null;
+    return doc(firestore, 'posts', postId, 'likes', user.uid);
+  }, [firestore, postId, user?.uid]);
+  const { data: likeData } = useDoc(likeRef);
+
+  const bookmarkRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !postId) return null;
+    return doc(firestore, 'users', user.uid, 'bookmarks', postId);
+  }, [firestore, postId, user?.uid]);
+  const { data: bookmarkData } = useDoc(bookmarkRef);
 
   const userVoteRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !postId) return null;
@@ -132,6 +145,48 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     }
   };
 
+  const handleLike = () => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !user || !postId) return;
+
+    if (likeData) {
+      deleteDocumentNonBlocking(likeRef!);
+      updateDocumentNonBlocking(postLiveRef!, { likesCount: increment(-1) });
+      deleteDocumentNonBlocking(doc(firestore, 'users', user.uid, 'likedPosts', postId));
+    } else {
+      setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
+      updateDocumentNonBlocking(postLiveRef!, { likesCount: increment(1) });
+      setDocumentNonBlocking(doc(firestore, 'users', user.uid, 'likedPosts', postId), { ...displayPost, likedAt: serverTimestamp() }, { merge: true });
+      
+      if (user.uid !== postAuthorId) {
+        setDocumentNonBlocking(doc(firestore, 'users', postAuthorId, 'notifications', `${user.uid}_like_${postId}`), {
+          type: 'like',
+          fromUserId: user.uid,
+          fromUsername: profile?.username || user.displayName || 'مستكشف تيمقاد',
+          fromAvatar: profile?.profilePictureUrl || '',
+          postId: postId,
+          createdAt: serverTimestamp(),
+          read: false
+        }, { merge: true });
+      }
+    }
+  };
+
+  const handleBookmark = () => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !user || !postId) return;
+
+    if (bookmarkData) {
+      deleteDocumentNonBlocking(bookmarkRef!);
+      updateDocumentNonBlocking(postLiveRef!, { bookmarksCount: increment(-1) });
+      toast({ description: "تمت إزالة المنشور من المحفوظات." });
+    } else {
+      setDocumentNonBlocking(bookmarkRef!, { ...displayPost, createdAt: serverTimestamp() }, { merge: true });
+      updateDocumentNonBlocking(postLiveRef!, { bookmarksCount: increment(1) });
+      toast({ description: "تم حفظ المنشور بنجاح." });
+    }
+  };
+
   const handleVote = async (optionIndex: number) => {
     if (isAnonymous) { router.push('/login'); return; }
     if (!firestore || !user || !displayPost.poll || userVote || isVoteLoading) return;
@@ -163,10 +218,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     toast({ description: "تم حذف التعليق." });
   };
 
-  const handleReportComment = () => {
-    toast({ title: "شكراً لك", description: "تم استلام البلاغ عن هذا التعليق." });
-  };
-
   const renderContent = (content: string) => {
     if (!content) return null;
     return content.split(/(\s+)/).map((part, i) => {
@@ -192,19 +243,13 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
   const currentAuthorAvatar = authorData?.profilePictureUrl || displayPost?.authorAvatar;
   const currentVerificationType = authorData?.verificationType || displayPost?.authorVerificationType || 'none';
 
-  const handleBack = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onClose();
-  };
-
   return (
     <div className="flex flex-col h-full bg-background animate-in slide-in-from-left-2 duration-300">
       <div className="flex items-center gap-3 p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-50 h-10">
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={handleBack}
+          onClick={onClose}
           className="h-8 w-8 rounded-full hover:bg-secondary transition-colors"
         >
           <ChevronRight size={20} />
@@ -337,10 +382,29 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 )}
               </div>
             )}
+
+            {/* Interaction Bar in Dialog */}
+            <div className="flex justify-between items-center px-4 mt-4 py-2 border-t border-muted/10">
+              <motion.div whileTap={{ scale: 0.9 }}>
+                <Button variant="ghost" size="sm" className={cn("h-8 gap-1.5 rounded-full px-3 transition-all", likeData ? "text-red-500 bg-red-50/50" : "text-muted-foreground")} onClick={handleLike}>
+                  <Heart size={18} className={cn(likeData ? "fill-current" : "")} />
+                  <span className="text-[11px] font-bold">{displayPost.likesCount || 0}</span>
+                </Button>
+              </motion.div>
+              <motion.div whileTap={{ scale: 0.9 }}>
+                <Button variant="ghost" size="sm" className={cn("h-8 gap-1.5 rounded-full px-3 transition-all", bookmarkData ? "text-accent bg-accent/5" : "text-muted-foreground")} onClick={handleBookmark}>
+                  <Bookmark size={18} className={cn(bookmarkData ? "fill-current" : "")} />
+                  <span className="text-[11px] font-bold">{displayPost.bookmarksCount || 0}</span>
+                </Button>
+              </motion.div>
+              <div className="flex items-center gap-1.5 text-muted-foreground px-3">
+                <BarChart3 size={18} />
+                <span className="text-[11px] font-bold">{displayPost.viewsCount || 0}</span>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Ad Slot - Correctly placed between post and comments */}
         <div className="px-4 py-4 bg-background">
           <div className="bg-primary/5 border border-dashed border-primary/20 rounded-2xl p-4 flex items-center justify-between group hover:bg-primary/10 transition-all cursor-pointer shadow-sm">
             <div className="flex items-center gap-3">
@@ -401,7 +465,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                               حذف التعليق
                             </DropdownMenuItem>
                           ) : (
-                            <DropdownMenuItem onClick={handleReportComment} className="gap-2 cursor-pointer">
+                            <DropdownMenuItem onClick={() => toast({description: "تم الإبلاغ"})} className="gap-2 cursor-pointer">
                               <AlertTriangle size={12} />
                               إبلاغ
                             </DropdownMenuItem>
