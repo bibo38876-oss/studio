@@ -12,9 +12,10 @@ import TimgadLogo from '@/components/ui/Logo';
 import { motion } from 'framer-motion';
 
 /**
- * WoodenChestIcon - A custom SVG representing a wooden chest for rewards.
+ * WoodenChestIcon - A professional SVG representing a treasure chest.
+ * Redesigned with more details, better colors, and larger size.
  */
-function WoodenChestIcon({ size = 16, className }: { size?: number; className?: string }) {
+function WoodenChestIcon({ size = 20, className }: { size?: number; className?: string }) {
   return (
     <svg 
       width={size} 
@@ -24,10 +25,25 @@ function WoodenChestIcon({ size = 16, className }: { size?: number; className?: 
       xmlns="http://www.w3.org/2000/svg" 
       className={className}
     >
-      <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" fill="#8B4513" stroke="#5D2E0C" strokeWidth="1.5" />
-      <path d="M3 9V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3H3Z" fill="#A0522D" stroke="#5D2E0C" strokeWidth="1.5" />
-      <path d="M10 9v2h4V9" stroke="#DAA520" strokeWidth="1.5" />
-      <rect x="11" y="8" width="2" height="3" fill="#DAA520" />
+      {/* Body of the chest */}
+      <rect x="3" y="10" width="18" height="10" rx="1" fill="#78350F" stroke="#451A03" strokeWidth="1.2" />
+      
+      {/* Curved Lid */}
+      <path d="M3 10V7C3 5.34315 4.34315 4 6 4H18C19.6569 4 21 5.34315 21 7V10H3Z" fill="#92400E" stroke="#451A03" strokeWidth="1.2" />
+      
+      {/* Decorative Bands */}
+      <rect x="6" y="4" width="2" height="16" fill="#451A03" fillOpacity="0.4" />
+      <rect x="16" y="4" width="2" height="16" fill="#451A03" fillOpacity="0.4" />
+      
+      {/* Front Lock Plate (Gold) */}
+      <rect x="9" y="9" width="6" height="4" rx="1" fill="#FBBF24" stroke="#B45309" strokeWidth="0.8" />
+      
+      {/* Keyhole */}
+      <circle cx="12" cy="11" r="0.8" fill="#451A03" />
+      <rect x="11.6" y="11" width="0.8" height="1.5" rx="0.2" fill="#451A03" />
+      
+      {/* Lid Top Detail */}
+      <path d="M10 4C10 3.44772 10.4477 3 11 3H13C13.5523 3 14 3.44772 14 4" stroke="#451A03" strokeWidth="1" strokeLinecap="round" />
     </svg>
   );
 }
@@ -89,10 +105,12 @@ export default function Navbar() {
         <div className={`flex items-center gap-1 transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
           <Link href="/wallet">
             <motion.div
-              whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
-              className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full"
+              whileHover={{ scale: 1.15, rotate: [-2, 2, -2, 0] }}
+              whileTap={{ scale: 0.9 }}
+              className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full transition-colors"
+              title="محفظة المكافآت"
             >
-              <WoodenChestIcon size={18} />
+              <WoodenChestIcon size={22} />
             </motion.div>
           </Link>
           
