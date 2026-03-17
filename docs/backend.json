@@ -71,30 +71,6 @@
         "impressions_left": { "type": "number" }
       },
       "required": ["id", "authorId", "content", "createdAt"]
-    },
-    "VaultJar": {
-      "title": "VaultJar",
-      "type": "object",
-      "description": "Daily collective coin jar competition. Resets daily at 20:05 DZ time.",
-      "properties": {
-        "totalCoins": { "type": "number" },
-        "status": { "type": "string", "enum": ["active", "broken"] },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "lastWinners": { "type": "array", "description": "Top 10 winners based on Timgad Aura score." }
-      }
     }
-  },
-  "auth": {
-    "providers": ["password"]
-  },
-  "firestore": {
-    "structure": [
-      { "path": "users/{userId}", "definition": { "entityName": "User" } },
-      { "path": "posts/{postId}", "definition": { "entityName": "Post" } },
-      { "path": "vault/current_jar", "definition": { "entityName": "VaultJar" } },
-      { "path": "vault/current_jar/participants/{userId}", "description": "Users who contributed a coin." },
-      { "path": "vault_history/{historyId}", "description": "Records of previous broken jars." },
-      { "path": "support_chats/{userId}/messages/{messageId}", "description": "Messages between a user and management for purchases and help." }
-    ]
   }
 }
