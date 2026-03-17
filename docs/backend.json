@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -45,11 +44,12 @@
           "properties": {
             "question": { "type": "string" },
             "options": {
-              "array": "array",
+              "type": "array",
               "items": {
                 "type": "object",
                 "properties": {
                   "text": { "type": "string" },
+                  "imageUrl": { "type": "string", "format": "uri" },
                   "votes": { "type": "number", "default": 0 }
                 }
               }

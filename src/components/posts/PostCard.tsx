@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus, Rocket, Coffee, Sparkles } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus, Rocket, Coffee, Sparkles, ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ interface PostData {
   mediaUrls?: string[];
   poll?: {
     question: string;
-    options: { text: string; votes: number }[];
+    options: { text: string; imageUrl?: string; votes: number }[];
     totalVotes: number;
     expiresAt: string;
   };
@@ -234,7 +234,6 @@ export default function PostCard({ post }: { post: PostData }) {
       read: false
     });
 
-    // تسجيل في قائمة "الأشخاص الذين دعمتهم" (للداعم)
     const supportedUserRef = doc(firestore, 'users', user.uid, 'supportedPeople', displayPost.authorId);
     setDocumentNonBlocking(supportedUserRef, {
       userId: displayPost.authorId,
@@ -245,7 +244,6 @@ export default function PostCard({ post }: { post: PostData }) {
       verificationType: authorData?.verificationType || displayPost.authorVerificationType || 'none'
     }, { merge: true });
 
-    // تسجيل في قائمة "الداعمون لي" (للمستلم)
     const supporterRef = doc(firestore, 'users', displayPost.authorId, 'supporters', user.uid);
     setDocumentNonBlocking(supporterRef, {
       userId: user.uid,
@@ -506,28 +504,47 @@ export default function PostCard({ post }: { post: PostData }) {
             {displayPost.content && renderContent(displayPost.content)}
 
             {displayPost.poll && (
-              <div className="bg-secondary/10 p-4 border border-primary/5 space-y-4 rounded-sm" onClick={(e) => e.stopPropagation()}>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-primary">{displayPost.poll.question}</span>
-                  {userVote && <CheckCircle2 size={14} className="text-accent" />}
+              <div className="bg-secondary/10 p-4 border border-primary/5 space-y-4 rounded-xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-bold text-primary">{displayPost.poll.question}</span>
+                  {userVote && <CheckCircle2 size={16} className="text-accent animate-in zoom-in" />}
                 </div>
                 <div className="space-y-3">
                   {displayPost.poll.options.map((option, i) => {
                     const percentage = displayPost.poll!.totalVotes > 0 ? Math.round((option.votes / displayPost.poll!.totalVotes) * 100) : 0;
                     const isSelected = userVote?.optionIndex === i;
                     return (
-                      <div key={i} className="relative group">
+                      <div key={i} className="relative overflow-hidden">
                         {userVote ? (
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-[10px] mb-1 px-1">
-                              <span className={cn("font-bold", isSelected ? "text-primary" : "text-muted-foreground")}>{option.text}</span>
-                              <span className="font-bold">{percentage}%</span>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-[11px] mb-1 px-1">
+                              <div className="flex items-center gap-2">
+                                {option.imageUrl && (
+                                  <div className="h-8 w-8 rounded-lg overflow-hidden border border-primary/10">
+                                    <img src={option.imageUrl} className="w-full h-full object-cover" alt="Option" />
+                                  </div>
+                                )}
+                                <span className={cn("font-bold", isSelected ? "text-primary underline" : "text-muted-foreground")}>{option.text}</span>
+                              </div>
+                              <span className="font-bold text-primary">{percentage}%</span>
                             </div>
-                            <Progress value={percentage} className={cn("h-6 rounded-none bg-secondary", isSelected ? "bg-primary/20" : "")} />
+                            <Progress value={percentage} className={cn("h-8 rounded-lg bg-secondary", isSelected ? "bg-primary/20" : "")} />
                           </div>
                         ) : (
-                          <Button variant="outline" className="w-full h-9 justify-start text-[11px] rounded-none hover:bg-primary/5 hover:border-primary/30 font-medium" onClick={() => handleVote(i)}>
-                            {option.text}
+                          <Button 
+                            variant="outline" 
+                            className="w-full h-auto min-h-[44px] justify-between py-2 px-4 text-[12px] rounded-xl hover:bg-primary/5 hover:border-primary/30 font-bold group transition-all" 
+                            onClick={() => handleVote(i)}
+                          >
+                            <div className="flex items-center gap-3">
+                              {option.imageUrl && (
+                                <div className="h-10 w-10 rounded-lg overflow-hidden border border-primary/10 shadow-sm group-hover:scale-105 transition-transform">
+                                  <img src={option.imageUrl} className="w-full h-full object-cover" alt="Option" />
+                                </div>
+                              )}
+                              <span>{option.text}</span>
+                            </div>
+                            <Sparkles size={12} className="opacity-0 group-hover:opacity-100 text-primary transition-opacity" />
                           </Button>
                         )}
                       </div>
@@ -538,7 +555,7 @@ export default function PostCard({ post }: { post: PostData }) {
             )}
             
             {displayPost.mediaUrls && displayPost.mediaUrls.length > 0 && (
-              <div className="w-full mt-2 rounded-lg overflow-hidden border border-muted/10">
+              <div className="w-full mt-2 rounded-2xl overflow-hidden border border-muted/10 shadow-sm">
                 <Carousel className="w-full" opts={{ direction: 'rtl' }}>
                   <CarouselContent className="-ml-0">
                     {displayPost.mediaUrls.map((url: string, index: number) => (
@@ -552,36 +569,36 @@ export default function PostCard({ post }: { post: PostData }) {
             )}
           </CardContent>
 
-          <CardFooter className="px-4 py-1 flex flex-row justify-between items-center h-9">
+          <CardFooter className="px-4 py-1 flex flex-row justify-between items-center h-10">
             <motion.div whileTap={{ scale: 0.9 }}>
-              <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2 transition-all", likeData ? "text-red-500" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }} disabled={isLikeLoading}>
+              <Button variant="ghost" size="sm" className={cn("h-8 gap-1.5 rounded-full px-3 transition-all", likeData ? "text-red-500 bg-red-50/50" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleLike(); }} disabled={isLikeLoading}>
                 <motion.div
                   animate={likeData ? { scale: [1, 1.4, 1.1], rotate: [0, 15, -15, 0] } : { scale: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Heart size={16} className={cn(likeData ? "fill-current" : "")} />
+                  <Heart size={18} className={cn(likeData ? "fill-current" : "")} />
                 </motion.div>
-                <span className="text-[10px] font-bold">{displayPost.likesCount || 0}</span>
+                <span className="text-[11px] font-bold">{displayPost.likesCount || 0}</span>
               </Button>
             </motion.div>
 
-            <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
-              <MessageCircle size={16} /><span className="text-[10px] font-bold">{displayPost.commentsCount || 0}</span>
+            <Button variant="ghost" size="sm" className="h-8 text-muted-foreground gap-1.5 rounded-full px-3" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
+              <MessageCircle size={18} /><span className="text-[11px] font-bold">{displayPost.commentsCount || 0}</span>
             </Button>
 
             <motion.div whileTap={{ scale: 0.9 }}>
-              <Button variant="ghost" size="sm" className={cn("h-7 gap-1.5 rounded-full px-2 transition-all", bookmarkData ? "text-accent" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleBookmark(); }} disabled={isBookmarkLoading}>
+              <Button variant="ghost" size="sm" className={cn("h-8 gap-1.5 rounded-full px-3 transition-all", bookmarkData ? "text-accent bg-accent/5" : "text-muted-foreground")} onClick={(e) => { e.stopPropagation(); handleBookmark(); }} disabled={isBookmarkLoading}>
                 <motion.div
                   animate={bookmarkData ? { scale: [1, 1.2, 1] } : { scale: 1 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Bookmark size={16} className={cn(bookmarkData ? "fill-current" : "")} />
+                  <Bookmark size={18} className={cn(bookmarkData ? "fill-current" : "")} />
                 </motion.div>
               </Button>
             </motion.div>
 
-            <Button variant="ghost" size="sm" className="h-7 text-muted-foreground gap-1.5 rounded-full px-2" onClick={(e) => e.stopPropagation()}>
-              <BarChart3 size={16} /><span className="text-[10px] font-bold">{displayPost.viewsCount || 0}</span>
+            <Button variant="ghost" size="sm" className="h-8 text-muted-foreground gap-1.5 rounded-full px-3" onClick={(e) => e.stopPropagation()}>
+              <BarChart3 size={18} /><span className="text-[11px] font-bold">{displayPost.viewsCount || 0}</span>
             </Button>
           </CardFooter>
         </Card>
