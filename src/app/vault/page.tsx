@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { cn } from '@/lib/utils';
 
 export default function VaultPage() {
   const router = useRouter();
