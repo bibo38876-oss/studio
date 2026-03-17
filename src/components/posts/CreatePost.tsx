@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useRef } from 'react';
-import { Image as ImageIcon, X, Hash, Trash2, Loader2, BarChart2, PlusCircle, MinusCircle, Info } from 'lucide-react';
+import { Image as ImageIcon, X, Hash, Trash2, Loader2, BarChart2, PlusCircle, MinusCircle, Info, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -156,7 +156,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
           <X size={18} />
         </Button>
         <div className="flex flex-col items-center">
-          <span className="font-bold text-[11px] text-primary uppercase tracking-wider">منشور جديد</span>
+          <span className="font-bold text-[11px] text-primary uppercase tracking-wider text-center">منشور جديد</span>
           <span className={cn("text-[8px] font-bold", content.length > charLimit * 0.9 ? "text-destructive" : "text-muted-foreground")}>
             {content.length} / {charLimit}
           </span>
@@ -180,7 +180,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
           <div className="flex-1 pt-1">
             <Textarea 
               placeholder="ماذا يدور في ذهنك يا بطل تيمقاد؟" 
-              className="min-h-[120px] resize-none border-none p-0 text-sm focus-visible:ring-0 placeholder:text-muted-foreground/50 leading-relaxed" 
+              className="min-h-[100px] resize-none border-none p-0 text-sm focus-visible:ring-0 placeholder:text-muted-foreground/50 leading-relaxed text-right" 
               value={content} 
               onChange={(e) => setContent(e.target.value)} 
               autoFocus 
@@ -188,60 +188,70 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
           </div>
         </div>
 
-        {/* Dynamic Poll Section */}
+        {/* Professional Poll UI */}
         <AnimatePresence>
           {showPoll && (
             <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0, opacity: 0, scale: 0.95 }}
+              animate={{ height: 'auto', opacity: 1, scale: 1 }}
+              exit={{ height: 0, opacity: 0, scale: 0.95 }}
               className="overflow-hidden"
             >
-              <div className="bg-primary/5 rounded-xl border border-primary/10 overflow-hidden shadow-inner">
-                <div className="bg-primary/10 p-3 flex justify-between items-center border-b border-primary/10">
+              <div className="bg-gradient-to-br from-secondary/40 to-background border-2 border-primary/10 rounded-2xl overflow-hidden shadow-md">
+                {/* Poll Header */}
+                <div className="bg-primary/10 p-3 flex justify-between items-center border-b border-primary/5">
                   <div className="flex items-center gap-2">
-                    <BarChart2 size={14} className="text-primary" />
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">استطلاع رأي تيمقاد</span>
+                    <div className="bg-primary text-white p-1 rounded-lg">
+                      <BarChart2 size={14} />
+                    </div>
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest">استطلاع تيمقاد</span>
                   </div>
-                  <Badge variant={pollStatus.isFree ? "secondary" : "default"} className="text-[8px] h-5 rounded-full px-2 bg-primary/20 text-primary border-none">
+                  <Badge variant={pollStatus.isFree ? "secondary" : "default"} className="text-[8px] h-5 rounded-full px-2 bg-primary/20 text-primary border-none font-bold">
                     {pollStatus.label}
                   </Badge>
                 </div>
                 
-                <div className="p-4 space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-muted-foreground mr-1">السؤال</label>
+                <div className="p-5 space-y-6">
+                  {/* Enhanced Question Box */}
+                  <div className="relative group">
+                    <div className="absolute right-0 top-0 h-full w-1 bg-primary/20 rounded-full group-focus-within:bg-primary transition-colors" />
                     <Input 
-                      placeholder="عن ماذا تود أن تسأل؟" 
-                      className="h-10 text-xs bg-background border-none shadow-sm rounded-lg" 
+                      placeholder="اطرح تساؤلك هنا..." 
+                      className="h-12 text-sm bg-transparent border-none focus-visible:ring-0 font-bold placeholder:text-muted-foreground/30 text-right pr-4" 
                       value={pollQuestion} 
                       onChange={(e) => setPollQuestion(e.target.value)} 
                     />
+                    <HelpCircle className="absolute left-2 top-1/2 -translate-y-1/2 text-primary/10 w-8 h-8 pointer-events-none" />
                   </div>
 
+                  {/* Enhanced Options */}
                   <div className="space-y-3">
-                    <label className="text-[9px] font-bold text-muted-foreground mr-1">الخيارات</label>
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">خيارات الإجابة</label>
+                      <span className="text-[8px] text-muted-foreground opacity-50">{pollOptions.length}/4 خيارات</span>
+                    </div>
+                    
                     {pollOptions.map((option, i) => (
-                      <div key={i} className="flex gap-2 items-center group">
-                        <div className="flex-1 relative">
+                      <div key={i} className="flex gap-2 items-center animate-in slide-in-from-right-2 duration-300">
+                        <div className="flex-1 relative flex items-center bg-secondary/30 rounded-xl border border-transparent focus-within:border-primary/20 transition-all">
+                          <span className="absolute right-3 text-[10px] font-bold text-primary/40 italic">
+                            {i + 1}
+                          </span>
                           <Input 
                             placeholder={`الخيار ${i + 1}`} 
-                            className="h-9 text-[11px] bg-background border-none shadow-sm pr-8 rounded-lg" 
+                            className="h-10 text-[11px] bg-transparent border-none focus-visible:ring-0 pr-8 text-right" 
                             value={option} 
                             onChange={(e) => updateOption(i, e.target.value)} 
                           />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-primary/30">
-                            {i + 1}
-                          </span>
                         </div>
                         {pollOptions.length > 2 && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-destructive/50 hover:text-destructive hover:bg-destructive/5 rounded-full"
+                            className="h-10 w-10 text-destructive/40 hover:text-destructive hover:bg-destructive/5 rounded-xl"
                             onClick={() => removeOption(i)}
                           >
-                            <MinusCircle size={16} />
+                            <Trash2 size={16} />
                           </Button>
                         )}
                       </div>
@@ -252,7 +262,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="w-full h-9 border-2 border-dashed border-primary/10 text-primary hover:bg-primary/5 rounded-lg text-[10px] font-bold gap-2"
+                      className="w-full h-10 border-2 border-dashed border-primary/10 text-primary hover:bg-primary/5 hover:border-primary/20 rounded-xl text-[10px] font-bold gap-2 transition-all"
                       onClick={addOption}
                     >
                       <PlusCircle size={14} />
@@ -261,10 +271,10 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
                   )}
                 </div>
                 
-                <div className="bg-secondary/30 p-2 text-center border-t border-primary/5">
-                  <p className="text-[8px] text-muted-foreground flex items-center justify-center gap-1">
+                <div className="bg-primary/5 p-2 text-center border-t border-primary/5">
+                  <p className="text-[8px] text-muted-foreground flex items-center justify-center gap-1 font-medium italic">
                     <Info size={10} />
-                    ينتهي الاستطلاع تلقائياً بعد 24 ساعة من نشره.
+                    مدة الاستطلاع 24 ساعة لضمان ذروة التفاعل.
                   </p>
                 </div>
               </div>
