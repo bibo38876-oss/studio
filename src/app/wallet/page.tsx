@@ -19,6 +19,9 @@ export default function WalletPage() {
   const { firestore, user } = useFirebase();
   const [isVerifying, setIsVerifying] = useState(false);
 
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
+  const isInfiniteAdmin = user?.email === ADMIN_EMAIL;
+
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
@@ -36,7 +39,8 @@ export default function WalletPage() {
   const handleBuyVerification = async () => {
     if (!firestore || !user || !profile) return;
     
-    if ((profile.coins || 0) < 500) {
+    // Bypass check for infinite admin
+    if (!isInfiniteAdmin && (profile.coins || 0) < 500) {
       toast({
         variant: "destructive",
         title: "الكنز لا يكفي",
@@ -50,11 +54,19 @@ export default function WalletPage() {
       const expiryDate = new Date();
       expiryDate.setMonth(expiryDate.getMonth() + 3);
 
-      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
-        coins: increment(-500),
-        verificationType: 'blue',
-        verificationExpiresAt: expiryDate.toISOString()
-      });
+      // Bypass deduction for infinite admin
+      if (!isInfiniteAdmin) {
+        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+          coins: increment(-500),
+          verificationType: 'blue',
+          verificationExpiresAt: expiryDate.toISOString()
+        });
+      } else {
+        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+          verificationType: 'blue',
+          verificationExpiresAt: expiryDate.toISOString()
+        });
+      }
 
       toast({
         title: "تم نيل التوثيق!",
@@ -81,7 +93,7 @@ export default function WalletPage() {
             <ChevronRight size={20} />
           </Button>
           <div className="flex flex-col text-right">
-            <h1 className="text-sm font-bold text-[#FBBF24] uppercase tracking-tighter">خزانة تيمقاد الملكية</h1>
+            <h1 className="text-sm font-bold text-[#FBBF24] uppercase tracking-tighter">خزانة تيمقاد الملكية {isInfiniteAdmin && '∞'}</h1>
             <span className="text-[8px] text-[#FBBF24]/60 uppercase tracking-[0.2em] font-medium">Ancient Rewards & Treasure Vault</span>
           </div>
         </div>
@@ -115,7 +127,7 @@ export default function WalletPage() {
                 <Coins size={14} className="text-[#FBBF24]" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
-                <p className="text-3xl font-bold text-[#FBBF24] drop-shadow-sm">{profile?.coins || 0}</p>
+                <p className="text-3xl font-bold text-[#FBBF24] drop-shadow-sm">{isInfiniteAdmin ? '∞' : (profile?.coins || 0)}</p>
                 <p className="text-[8px] text-[#F3E5AB]/40 mt-1">عملات ذهبية افتراضية</p>
               </CardContent>
             </Card>
@@ -153,7 +165,7 @@ export default function WalletPage() {
                     <p className="text-[10px] text-[#F3E5AB]/60 max-w-xs mx-auto">صلاحية لمدة 90 يوماً تشمل: أولوية الظهور، زيادة عدد الصور، ودعم أكبر لمساحة الكتابة.</p>
                   </div>
                   <div className="flex items-center gap-3 py-2 px-6 bg-[#2D1606]/50 rounded-full border border-[#B45309]/30">
-                    <span className="text-2xl font-bold text-[#FBBF24]">500</span>
+                    <span className="text-2xl font-bold text-[#FBBF24]">{isInfiniteAdmin ? '0' : '500'}</span>
                     <TimgadCoin size={28} />
                   </div>
                   <Button 

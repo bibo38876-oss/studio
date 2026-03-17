@@ -111,6 +111,7 @@ export default function ProfilePage() {
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
   const isFollowingMe = (profile?.followingIds || []).includes(currentUser?.uid);
   
+  const isInfiniteAdmin = profile?.email === ADMIN_EMAIL;
   const verificationType: VerificationType = profile?.verificationType || 'none';
 
   useEffect(() => {
@@ -259,7 +260,7 @@ export default function ProfilePage() {
                   >
                     <div className="flex flex-col items-end">
                       <span className="text-[8px] text-muted-foreground uppercase font-bold tracking-tighter">رصيدي الحالي</span>
-                      <span className="text-xs font-bold text-primary">{profile.coins || 0}</span>
+                      <span className="text-xs font-bold text-primary">{isInfiniteAdmin ? '∞' : (profile.coins || 0)}</span>
                     </div>
                     <TimgadCoin size={24} className="group-hover:scale-110 transition-transform" />
                   </Button>

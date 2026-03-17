@@ -24,6 +24,9 @@ export default function VaultPage() {
   const [isContributing, setIsContributing] = useState(false);
   const [timeLeft, setTimeLeft] = useState<string>('');
 
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
+  const isInfiniteAdmin = user?.email === ADMIN_EMAIL;
+
   // بيانات المستخدم
   const userRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -145,15 +148,24 @@ export default function VaultPage() {
     if (!firestore || !user || !profile || !jarData) return;
     if (jarData.status !== 'active') return toast({ variant: "destructive", description: "الجرة منكسرة، ننتظر الدورة القادمة 20:05." });
     if (hasParticipated) return toast({ variant: "destructive", description: "لقد شاركت بالفعل في هذه الجرة." });
-    if ((profile.coins || 0) < 3) return toast({ variant: "destructive", title: "الرصيد لا يكفي", description: "تحتاج لـ 3 عملات للمشاركة." });
+    
+    // Bypass coin check for infinite admin
+    if (!isInfiniteAdmin && (profile.coins || 0) < 3) {
+      return toast({ variant: "destructive", title: "الرصيد لا يكفي", description: "تحتاج لـ 3 عملات للمشاركة." });
+    }
 
     setIsContributing(true);
     try {
-      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-3) });
+      // Bypass deduction for infinite admin
+      if (!isInfiniteAdmin) {
+        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-3) });
+      }
+      
       await setDoc(doc(firestore, 'vault', 'current_jar', 'participants', user.uid), {
         userId: user.uid, username: profile.username, avatar: profile.profilePictureUrl,
         verificationType: profile.verificationType || 'none', followerCount: profile.followerIds?.length || 0, joinedAt: serverTimestamp()
       });
+      
       updateDocumentNonBlocking(doc(firestore, 'vault', 'current_jar'), { totalCoins: increment(3) });
       toast({ title: "مساهمة مباركة!", description: "أصبحت جزءاً من كنز تيمقاد اليوم." });
     } catch (error) { toast({ variant: "destructive", description: "فشل الوصول للخزنة." }); }
@@ -196,7 +208,7 @@ export default function VaultPage() {
             <div className="flex flex-col items-center gap-6 w-full max-w-sm">
               <Button className={`w-full rounded-full h-16 font-bold text-md gap-3 transition-all ${hasParticipated ? 'bg-black/20 text-[#FBBF24]/40' : 'bg-[#B45309] text-white hover:bg-[#D97706]'}`} onClick={handleContribute} disabled={isContributing || !!hasParticipated}>
                 {isContributing ? <Loader2 className="animate-spin" /> : hasParticipated ? <Shield size={20} /> : <Plus size={20} />}
-                {hasParticipated ? "أنت مشارك في السحب" : "المشاركة بـ 3 عملات تيمقاد"}
+                {hasParticipated ? "أنت مشارك في السحب" : isInfiniteAdmin ? "مشاركة إدارية (مجانية)" : "المشاركة بـ 3 عملات تيمقاد"}
               </Button>
               <Card className="bg-black/20 border-[#B45309]/20 w-full rounded-none">
                 <CardContent className="p-4 space-y-3">

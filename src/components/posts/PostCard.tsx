@@ -72,6 +72,9 @@ export default function PostCard({ post }: { post: PostData }) {
   const viewedRef = useRef(false);
   const promotedViewedRef = useRef(false);
   
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
+  const isInfiniteAdmin = user?.email === ADMIN_EMAIL;
+
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
 
@@ -168,7 +171,8 @@ export default function PostCard({ post }: { post: PostData }) {
   const handlePromote = (impressions: number, cost: number) => {
     if (!firestore || !displayPost.id || !user?.uid || !currentUserProfile) return;
 
-    if ((currentUserProfile.coins || 0) < cost) {
+    // Bypass check for infinite admin
+    if (!isInfiniteAdmin && (currentUserProfile.coins || 0) < cost) {
       toast({
         variant: "destructive",
         title: "رصيد غير كافٍ",
@@ -177,9 +181,12 @@ export default function PostCard({ post }: { post: PostData }) {
       return;
     }
 
-    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
-      coins: increment(-cost)
-    });
+    // Bypass deduction for infinite admin
+    if (!isInfiniteAdmin) {
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+        coins: increment(-cost)
+      });
+    }
 
     updateDocumentNonBlocking(doc(firestore, 'posts', displayPost.id), {
       promoted: true,
@@ -189,7 +196,7 @@ export default function PostCard({ post }: { post: PostData }) {
     setIsPromoteOpen(false);
     toast({ 
       title: "تم الترويج بنجاح!", 
-      description: `لقد دفعت ${cost} عملة مقابل ${impressions} مشاهدة مستهدفة في مجتمع تيمقاد.` 
+      description: isInfiniteAdmin ? `تم ترويج المنشور بميزة الإشراف الإداري.` : `لقد دفعت ${cost} عملة مقابل ${impressions} مشاهدة مستهدفة في مجتمع تيمقاد.` 
     });
   };
 
@@ -197,7 +204,8 @@ export default function PostCard({ post }: { post: PostData }) {
     if (isAnonymous) { router.push('/login'); return; }
     if (!firestore || !user || !currentUserProfile) return;
 
-    if ((currentUserProfile.coins || 0) < amount) {
+    // Bypass check for infinite admin
+    if (!isInfiniteAdmin && (currentUserProfile.coins || 0) < amount) {
       toast({
         variant: "destructive",
         title: "رصيد غير كافٍ",
@@ -209,9 +217,12 @@ export default function PostCard({ post }: { post: PostData }) {
     setShowSupportAnim(true);
     setTimeout(() => setShowSupportAnim(false), 2000);
 
-    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
-      coins: increment(-amount)
-    });
+    // Bypass deduction for infinite admin
+    if (!isInfiniteAdmin) {
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+        coins: increment(-amount)
+      });
+    }
 
     updateDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId), {
       coins: increment(amount)
@@ -570,7 +581,7 @@ export default function PostCard({ post }: { post: PostData }) {
             <div className="flex items-center justify-between bg-primary/5 p-3 border border-primary/10 rounded-sm mb-4">
               <div className="flex flex-col text-right">
                 <span className="text-[8px] text-muted-foreground uppercase font-bold">رصيدك المتاح</span>
-                <span className="text-sm font-bold text-primary">{currentUserProfile?.coins || 0} عملة</span>
+                <span className="text-sm font-bold text-primary">{isInfiniteAdmin ? '∞' : `${currentUserProfile?.coins || 0} عملة`}</span>
               </div>
               <TimgadCoin size={32} />
             </div>
@@ -593,7 +604,7 @@ export default function PostCard({ post }: { post: PostData }) {
                   <span className="text-[10px] text-muted-foreground">{tier.impressions.toLocaleString()} مشاهدة مستهدفة</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-accent group-hover:scale-110 transition-transform">{tier.coins}</span>
+                  <span className="text-sm font-bold text-accent group-hover:scale-110 transition-transform">{isInfiniteAdmin ? 'مجاني' : tier.coins}</span>
                   <TimgadCoin size={20} />
                 </div>
               </Button>

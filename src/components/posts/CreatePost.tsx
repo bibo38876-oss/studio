@@ -29,6 +29,9 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const { user } = useUser();
   const db = useFirestore();
 
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
+  const isInfiniteAdmin = user?.email === ADMIN_EMAIL;
+
   const userRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
@@ -36,7 +39,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
   const { data: profile } = useDoc(userRef);
 
-  const isAdmin = profile?.email === 'adelbenmaza8@gmail.com';
+  const isAdmin = profile?.email === ADMIN_EMAIL;
   const isVerified = profile?.verificationType === 'blue' || profile?.verificationType === 'gold' || isAdmin;
   
   const charLimit = isVerified ? 1500 : 400;
@@ -44,6 +47,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
   const pollStatus = (() => {
     if (!showPoll) return { cost: 0, isFree: true };
+    if (isInfiniteAdmin) return { cost: 0, isFree: true };
     if (isVerified) {
       const lastPollDate = profile?.lastPollCreatedAt ? new Date(profile.lastPollCreatedAt).getTime() : 0;
       const now = new Date().getTime();
@@ -80,7 +84,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     if (!db || !user) return;
 
     if (showPoll) {
-      if (!pollStatus.isFree && (profile?.coins || 0) < pollStatus.cost) {
+      if (!isInfiniteAdmin && !pollStatus.isFree && (profile?.coins || 0) < pollStatus.cost) {
         return toast({ variant: "destructive", title: "الرصيد لا يكفي", description: `تحتاج إلى ${pollStatus.cost} عملات.` });
       }
       if (!pollQuestion.trim() || pollOptions.some(opt => !opt.trim())) return toast({ variant: "destructive", description: "أكمل بيانات الاستطلاع." });
@@ -96,8 +100,12 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
     if (showPoll) {
       postData.poll = { question: pollQuestion.trim(), options: pollOptions.map(opt => ({ text: opt.trim(), votes: 0 })), totalVotes: 0, expiresAt: new Date(Date.now() + 86400000).toISOString() };
-      if (!pollStatus.isFree) updateDocumentNonBlocking(doc(db, 'users', user.uid), { coins: increment(-pollStatus.cost) });
-      else if (isVerified) updateDocumentNonBlocking(doc(db, 'users', user.uid), { lastPollCreatedAt: new Date().toISOString() });
+      
+      // Skip deduction for infinite admin
+      if (!isInfiniteAdmin) {
+        if (!pollStatus.isFree) updateDocumentNonBlocking(doc(db, 'users', user.uid), { coins: increment(-pollStatus.cost) });
+        else if (isVerified) updateDocumentNonBlocking(doc(db, 'users', user.uid), { lastPollCreatedAt: new Date().toISOString() });
+      }
     }
 
     addDocumentNonBlocking(collection(db, 'posts'), postData);
@@ -119,7 +127,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         </div>
         {showPoll && (
           <div className="bg-primary/5 p-4 border border-primary/10 space-y-3">
-            <div className="flex justify-between items-center"><span className="text-[10px] font-bold">{pollStatus.isFree ? 'استطلاع مجاني' : `التكلفة: ${pollStatus.cost} عملات`}</span><Button variant="ghost" size="icon" onClick={() => setShowPoll(false)}><X size={12} /></Button></div>
+            <div className="flex justify-between items-center"><span className="text-[10px] font-bold">{pollStatus.isFree ? 'استطلاع مجاني' : isInfiniteAdmin ? 'إشراف إداري' : `التكلفة: ${pollStatus.cost} عملات`}</span><Button variant="ghost" size="icon" onClick={() => setShowPoll(false)}><X size={12} /></Button></div>
             <Input placeholder="سؤال الاستطلاع..." className="h-8 text-xs bg-background" value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} />
             {pollOptions.map((option, i) => (
               <div key={i} className="flex gap-2"><Input placeholder={`خيار ${i + 1}`} className="h-8 text-[11px] bg-background" value={option} onChange={(e) => { const n = [...pollOptions]; n[i] = e.target.value; setPollOptions(n); }} /></div>
