@@ -25,7 +25,7 @@ export default function AboutPage() {
         </div>
 
         <div className="space-y-12 text-right">
-          {/* قسم نحن - التعريف بالمنصة */}
+          {/* قسم نحن الجديد */}
           <section className="space-y-6">
             <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
               <Info size={20} />
@@ -43,13 +43,13 @@ export default function AboutPage() {
                 نسعى من خلال تيمقاد إلى المساهمة في بناء مجتمع رقمي عربي قوي يعزز حضور المحتوى العربي على الإنترنت ويمنح المستخدمين مساحة حرة للتعبير والتواصل.
               </p>
               <div className="pt-4 border-t border-primary/10 flex items-center justify-between">
-                <span className="text-[10px] font-bold text-primary">تطوير مستقل: Adel Benmaza</span>
+                <span className="text-[10px] font-bold text-primary">تم تطوير هذه المنصة بشكل مستقل من طرف مواطن جزائري: Adel Benmaza</span>
                 <Globe size={14} className="text-primary/40" />
               </div>
             </div>
           </section>
 
-          {/* دليل تيمقاد الشامل */}
+          {/* دليل تيمقاد الشامل - المحتوى السابق */}
           <section className="space-y-8 py-6">
             <div className="flex items-center gap-3 text-primary border-r-4 border-accent pr-3">
               <Zap size={20} className="text-accent" />
