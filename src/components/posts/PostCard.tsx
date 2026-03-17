@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus, Rocket, Coffee, Sparkles, ImageIcon } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Bookmark, Trash2, AlertTriangle, Link as LinkIcon, BarChart3, CheckCircle2, UserPlus, UserCheck, UserRoundPlus, Rocket, Coffee, Sparkles, ImageIcon, Users } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -507,7 +507,10 @@ export default function PostCard({ post }: { post: PostData }) {
               <div className="bg-secondary/10 p-4 border border-primary/5 space-y-4 rounded-xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-bold text-primary">{displayPost.poll.question}</span>
-                  {userVote && <CheckCircle2 size={16} className="text-accent animate-in zoom-in" />}
+                  <div className="flex items-center gap-1.5 bg-background/50 px-2 py-0.5 rounded-full border border-primary/10">
+                    <Users size={10} className="text-primary" />
+                    <span className="text-[9px] font-bold text-primary">{displayPost.poll.totalVotes || 0} صوت</span>
+                  </div>
                 </div>
                 <div className="space-y-3">
                   {displayPost.poll.options.map((option, i) => {

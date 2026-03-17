@@ -4,11 +4,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment, runTransaction } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, Users, Sparkles } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import Link from 'next/link';
+import { Progress } from "@/components/ui/progress";
+import { cn } from '@/lib/utils';
 
 interface CommentsDialogProps {
   postId: string;
@@ -53,6 +55,20 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     return doc(firestore, 'users', postAuthorId);
   }, [firestore, postAuthorId]);
   const { data: authorData } = useDoc(authorRef);
+
+  // جلب بيانات المنشور الحية (خاصة الاستطلاع)
+  const postLiveRef = useMemoFirebase(() => {
+    if (!firestore || !postId) return null;
+    return doc(firestore, 'posts', postId);
+  }, [firestore, postId]);
+  const { data: livePost } = useDoc(postLiveRef);
+  const displayPost = livePost || post;
+
+  const userVoteRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !postId) return null;
+    return doc(firestore, 'posts', postId, 'pollVotes', user.uid);
+  }, [firestore, postId, user?.uid]);
+  const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
 
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
@@ -103,6 +119,28 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     }
   };
 
+  const handleVote = async (optionIndex: number) => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !user || !displayPost.poll || userVote || isVoteLoading) return;
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const postDoc = await transaction.get(postLiveRef!);
+        if (!postDoc.exists()) return;
+        
+        const currentPoll = postDoc.data().poll;
+        currentPoll.options[optionIndex].votes += 1;
+        currentPoll.totalVotes += 1;
+        
+        transaction.update(postLiveRef!, { poll: currentPoll });
+        transaction.set(userVoteRef!, { optionIndex, votedAt: serverTimestamp() });
+      });
+      toast({ description: "تم تسجيل تصويتك بنجاح." });
+    } catch (e) {
+      toast({ variant: "destructive", description: "فشل في تسجيل التصويت." });
+    }
+  };
+
   const handleDeleteComment = (commentId: string) => {
     if (!firestore) return;
     deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId));
@@ -135,12 +173,12 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     });
   };
 
-  const allMedia = post?.mediaUrls || (post?.mediaUrl ? [post.mediaUrl] : []);
+  const allMedia = displayPost?.mediaUrls || (displayPost?.mediaUrl ? [displayPost.mediaUrl] : []);
   
   // بيانات كاتب المنشور الحية
-  const currentAuthorName = authorData?.username || post?.authorName || 'مستخدم تيمقاد';
-  const currentAuthorAvatar = authorData?.profilePictureUrl || post?.authorAvatar;
-  const currentVerificationType = authorData?.verificationType || post?.authorVerificationType || 'none';
+  const currentAuthorName = authorData?.username || displayPost?.authorName || 'مستخدم تيمقاد';
+  const currentAuthorAvatar = authorData?.profilePictureUrl || displayPost?.authorAvatar;
+  const currentVerificationType = authorData?.verificationType || displayPost?.authorVerificationType || 'none';
 
   const handleBack = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -160,13 +198,13 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           <ChevronRight size={20} />
         </Button>
         <div className="flex flex-col">
-          <span className="text-[11px] font-bold text-primary leading-tight">المنشور</span>
-          <span className="text-[8px] text-muted-foreground">عرض التفاصيل والتعليقات</span>
+          <span className="text-[11px] font-bold text-primary leading-tight">تفاصيل المنشور</span>
+          <span className="text-[8px] text-muted-foreground">التفاعل والتعليقات</span>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-20 scroll-smooth">
-        {post && (
+        {displayPost && (
           <div className="pb-4 border-b bg-muted/5">
             <div className="flex gap-3 p-4">
               <Avatar className="h-10 w-10 border border-muted/20 rounded-full">
@@ -175,17 +213,75 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
               </Avatar>
               <div className="flex flex-col justify-center">
                 <div className="flex items-center gap-1.5 leading-tight justify-end">
-                  <VerifiedBadge type={currentVerificationType === 'blue' || post.email === 'adelbenmaza8@gmail.com' ? 'blue' : currentVerificationType} />
+                  <VerifiedBadge type={currentVerificationType === 'blue' || displayPost.email === 'adelbenmaza8@gmail.com' ? 'blue' : currentVerificationType} />
                   <span className="text-xs font-bold text-primary">{currentAuthorName}</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground">@{post.email?.split('@')[0] || 'مستخدم'}</span>
+                <span className="text-[10px] text-muted-foreground">@{displayPost.email?.split('@')[0] || 'مستخدم'}</span>
               </div>
             </div>
-            {post.content && (
+            {displayPost.content && (
               <p className="px-4 pb-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight text-right">
-                {renderContent(post.content)}
+                {renderContent(displayPost.content)}
               </p>
             )}
+
+            {/* عرض الاستطلاع في التفاصيل */}
+            {displayPost.poll && (
+              <div className="px-4 mb-4">
+                <div className="bg-secondary/10 p-4 border border-primary/5 space-y-4 rounded-xl">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-bold text-primary">{displayPost.poll.question}</span>
+                    <div className="flex items-center gap-1.5 bg-background/50 px-2 py-0.5 rounded-full border border-primary/10">
+                      <Users size={10} className="text-primary" />
+                      <span className="text-[9px] font-bold text-primary">{displayPost.poll.totalVotes || 0} صوت</span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {displayPost.poll.options.map((option: any, i: number) => {
+                      const percentage = displayPost.poll!.totalVotes > 0 ? Math.round((option.votes / displayPost.poll!.totalVotes) * 100) : 0;
+                      const isSelected = userVote?.optionIndex === i;
+                      return (
+                        <div key={i} className="relative overflow-hidden">
+                          {userVote ? (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-[11px] mb-1 px-1">
+                                <div className="flex items-center gap-2">
+                                  {option.imageUrl && (
+                                    <div className="h-8 w-8 rounded-lg overflow-hidden border border-primary/10">
+                                      <img src={option.imageUrl} className="w-full h-full object-cover" alt="Option" />
+                                    </div>
+                                  )}
+                                  <span className={cn("font-bold", isSelected ? "text-primary underline" : "text-muted-foreground")}>{option.text}</span>
+                                </div>
+                                <span className="font-bold text-primary">{percentage}%</span>
+                              </div>
+                              <Progress value={percentage} className={cn("h-8 rounded-lg bg-secondary", isSelected ? "bg-primary/20" : "")} />
+                            </div>
+                          ) : (
+                            <Button 
+                              variant="outline" 
+                              className="w-full h-auto min-h-[44px] justify-between py-2 px-4 text-[12px] rounded-xl hover:bg-primary/5 hover:border-primary/30 font-bold group transition-all" 
+                              onClick={() => handleVote(i)}
+                            >
+                              <div className="flex items-center gap-3">
+                                {option.imageUrl && (
+                                  <div className="h-10 w-10 rounded-lg overflow-hidden border border-primary/10 shadow-sm group-hover:scale-105 transition-transform">
+                                    <img src={option.imageUrl} className="w-full h-full object-cover" alt="Option" />
+                                  </div>
+                                )}
+                                <span>{option.text}</span>
+                              </div>
+                              <Sparkles size={12} className="opacity-0 group-hover:opacity-100 text-primary transition-opacity" />
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {allMedia.length > 0 && (
               <div className="w-full bg-black/5">
                 <Carousel className="w-full">
