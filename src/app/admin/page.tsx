@@ -69,7 +69,6 @@ export default function AdminPage() {
   const { data: reportedPosts, isLoading: isReportedLoading } = useCollection(reportedPostsQuery);
   const { data: vaultHistory, isLoading: isHistoryLoading } = useCollection(vaultHistoryQuery);
 
-  // حساب الإحصائيات المتقدمة
   const stats = useMemo(() => {
     if (!users || !posts || !vaultHistory) return { totalUsers: 0, totalPosts: 0, totalFees: 0, totalCoins: 0 };
     
@@ -97,31 +96,41 @@ export default function AdminPage() {
     toast({ description: "تم تحديث حالة التوثيق." });
   };
 
-  const handleAdjustCoins = (userId: string, currentCoins: number) => {
+  const handleAdjustCoins = (userId: string) => {
     const amount = parseInt(coinAmount[userId] || '0');
-    if (isNaN(amount) || amount === 0) return;
+    if (isNaN(amount) || amount === 0) {
+      toast({ variant: "destructive", description: "يرجى إدخال مبلغ صحيح (موجب للإضافة، سالب للسحب)." });
+      return;
+    }
 
-    updateDocumentNonBlocking(doc(firestore!, 'users', userId), {
+    if (!firestore || !isAdminUser) return;
+
+    // الخصم أو الإضافة اليدوية من الإدارة
+    updateDocumentNonBlocking(doc(firestore, 'users', userId), {
       coins: increment(amount)
     });
 
-    addDocumentNonBlocking(collection(firestore!, 'users', userId, 'notifications'), {
+    // إرسال إشعار للمستخدم بالتعديل اليدوي
+    addDocumentNonBlocking(collection(firestore, 'users', userId, 'notifications'), {
       type: 'system',
       message: amount > 0 
-        ? `تم منحك ${amount} عملة تيمقاد من قبل الإدارة.` 
-        : `تم سحب ${Math.abs(amount)} عملة تيمقاد من رصيدك من قبل الإدارة.`,
+        ? `🎁 قامت الإدارة بمنحك ${amount} عملة تيمقاد إضافية.` 
+        : `⚠️ قامت الإدارة بسحب ${Math.abs(amount)} عملة تيمقاد من رصيدك.`,
       createdAt: serverTimestamp(),
       read: false
     });
 
     setCoinAmount(prev => ({ ...prev, [userId]: '' }));
-    toast({ description: "تم تحديث رصيد المستخدم." });
+    toast({ 
+      title: "تم تحديث الرصيد", 
+      description: `تم ${amount > 0 ? 'منح' : 'سحب'} ${Math.abs(amount)} عملة للمستخدم.` 
+    });
   };
 
   const handleDeleteViolatingPost = (post: any) => {
     if (!firestore || !isAdminUser) return;
     deleteDocumentNonBlocking(doc(firestore, 'posts', post.id));
-    toast({ title: "تم الحذف", description: "تم حذف المنشور المخالف." });
+    toast({ title: "تم الحذف", description: "تم حذف المنشور المخالف بنجاح." });
   };
 
   if (isUserLoading || !isAdminUser) {
@@ -141,13 +150,13 @@ export default function AdminPage() {
             </div>
             <div className="text-right">
               <h1 className="text-xl font-bold text-white uppercase tracking-tighter">مركز قيادة تيمقاد</h1>
-              <p className="text-[10px] text-white/60 font-medium uppercase tracking-[0.2em]">Institutional Command Center</p>
+              <p className="text-[10px] text-white/60 font-medium uppercase tracking-[0.2em]">Manual & Auto Coin Control Center</p>
             </div>
           </div>
           <div className="flex flex-col items-end relative z-10">
-            <span className="text-[10px] text-white/60 font-bold">حالة النظام</span>
+            <span className="text-[10px] text-white/60 font-bold">نظام العملات</span>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-white">متصل وآمن</span>
+              <span className="text-xs font-bold text-white">آلي ومراقب</span>
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_#4ade80]" />
             </div>
           </div>
@@ -159,7 +168,7 @@ export default function AdminPage() {
               <BarChart3 size={14} /> الإحصائيات
             </TabsTrigger>
             <TabsTrigger value="users" className="flex-1 text-[11px] font-bold gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-              <Users size={14} /> الأعضاء
+              <Users size={14} /> إدارة الأعضاء
             </TabsTrigger>
             <TabsTrigger value="moderation" className="flex-1 text-[11px] font-bold gap-2 data-[state=active]:bg-primary data-[state=active]:text-white">
               <AlertTriangle size={14} /> الرقابة
@@ -230,7 +239,7 @@ export default function AdminPage() {
               </Card>
 
               <Card className="border-none shadow-sm rounded-none">
-                <CardHeader><CardTitle className="text-sm font-bold">أحدث المنشورات المبلغ عنها</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-sm font-bold">أحدث البلاغات</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   {reportedPosts?.slice(0, 5).map((post: any) => (
                     <div key={post.id} className="flex items-center justify-between p-2 bg-red-50 border-r-2 border-r-red-500">
@@ -286,7 +295,7 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[8px] font-bold text-muted-foreground uppercase">حالة التوثيق</label>
                         <Select 
@@ -297,26 +306,26 @@ export default function AdminPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">بدون توثيق</SelectItem>
-                            <SelectItem value="blue">أزرق (مستكشف)</SelectItem>
-                            <SelectItem value="gold">ذهبي (إعلامي)</SelectItem>
+                            <SelectItem value="none">مستكشف (عادي)</SelectItem>
+                            <SelectItem value="blue">أزرق (موثق)</SelectItem>
+                            <SelectItem value="gold">ذهبي (إعلامي/إدارة)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-muted-foreground uppercase">تعديل العملات</label>
+                        <label className="text-[8px] font-bold text-muted-foreground uppercase">تعديل العملات (+/-)</label>
                         <div className="flex gap-1">
                           <Input 
                             type="number" 
-                            placeholder="+/-" 
+                            placeholder="+/- مبلغ" 
                             className="h-8 text-[10px] rounded-none bg-secondary/50 border-none text-center"
                             value={coinAmount[user.id] || ''}
                             onChange={(e) => setCoinAmount(prev => ({ ...prev, [user.id]: e.target.value }))}
                           />
                           <Button 
                             size="sm" 
-                            className="h-8 w-8 p-0 rounded-none"
-                            onClick={() => handleAdjustCoins(user.id, user.coins || 0)}
+                            className="h-8 w-8 p-0 rounded-none bg-accent hover:bg-accent/90"
+                            onClick={() => handleAdjustCoins(user.id)}
                           >
                             <CheckCircle2 size={12} />
                           </Button>
@@ -334,7 +343,7 @@ export default function AdminPage() {
               <AlertTriangle className="text-destructive shrink-0" />
               <div className="text-right">
                 <h3 className="text-xs font-bold text-destructive">البلاغات المعلقة</h3>
-                <p className="text-[10px] text-muted-foreground">منشورات تم التبليغ عنها من قبل المجتمع وتحتاج لقرار نهائي.</p>
+                <p className="text-[10px] text-muted-foreground">قرارات الحذف اليدوي للمنشورات المخالفة.</p>
               </div>
             </div>
 
@@ -374,7 +383,7 @@ export default function AdminPage() {
             ) : (
               <div className="text-center py-20 border-2 border-dashed">
                 <CheckCircle2 size={40} className="mx-auto text-muted-foreground/20 mb-3" />
-                <p className="text-xs text-muted-foreground font-bold">المجتمع نظيف؛ لا توجد بلاغات.</p>
+                <p className="text-xs text-muted-foreground font-bold">لا توجد بلاغات حالياً.</p>
               </div>
             )}
           </TabsContent>
@@ -384,7 +393,7 @@ export default function AdminPage() {
               <History className="text-accent shrink-0" />
               <div className="text-right">
                 <h3 className="text-xs font-bold text-accent">سجلات جرة تيمقاد</h3>
-                <p className="text-[10px] text-muted-foreground">أرشيف الكنوز الموزعة ورسوم المنصة المحصلة.</p>
+                <p className="text-[10px] text-muted-foreground">أرشيف الكنوز الموزعة ورسوم المنصة المحصلة يدوياً.</p>
               </div>
             </div>
 
