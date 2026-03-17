@@ -235,7 +235,7 @@ export default function Home() {
 
             <AnimatePresence mode="wait">
               {activeTab === 'for-you' ? (
-                <TabsContent value="for-you" key="for-you" className="mt-0 outline-none">
+                <TabsContent value="for-you" key="for-you" className="mt-0 outline-none min-h-[60vh]">
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }} 
                     animate={{ opacity: 1, y: 0 }} 
@@ -250,7 +250,7 @@ export default function Home() {
                       </div>
                     ) : (
                       <>
-                        {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
+                        {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)}
                         <div ref={loadMoreForYouRef} className="py-10 flex justify-center">
                           {isPoolLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
                         </div>
@@ -259,7 +259,7 @@ export default function Home() {
                   </motion.div>
                 </TabsContent>
               ) : (
-                <TabsContent value="following" key="following" className="mt-0 outline-none">
+                <TabsContent value="following" key="following" className="mt-0 outline-none min-h-[60vh]">
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }} 
                     animate={{ opacity: 1, y: 0 }} 
@@ -279,7 +279,7 @@ export default function Home() {
                       </div>
                     ) : (
                       <>
-                        {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
+                        {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)}
                         <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">
                           {isFollowingLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
                         </div>

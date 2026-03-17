@@ -55,7 +55,7 @@ interface PostData {
   impressions_left?: number;
 }
 
-export default function PostCard({ post }: { post: PostData }) {
+export default function PostCard({ post, currentUserProfile: propProfile }: { post: PostData, currentUserProfile?: any }) {
   const { user, firestore, isUserLoading } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
@@ -88,12 +88,14 @@ export default function PostCard({ post }: { post: PostData }) {
   }, [firestore, displayPost.authorId]);
   const { data: authorData } = useDoc(authorRef);
 
+  // If propProfile is provided, we don't need to fetch it locally
   const currentUserProfileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user?.uid || propProfile) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user?.uid]);
+  }, [firestore, user?.uid, propProfile]);
 
-  const { data: currentUserProfile } = useDoc(currentUserProfileRef);
+  const { data: localProfile } = useDoc(currentUserProfileRef);
+  const currentUserProfile = propProfile || localProfile;
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !displayPost.id) return null;
@@ -361,6 +363,8 @@ export default function PostCard({ post }: { post: PostData }) {
   const currentAuthorAvatar = authorData?.profilePictureUrl || displayPost.authorAvatar;
   const currentVerificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
   const isVerified = currentVerificationType !== 'none';
+  
+  // Stable calculation of following state to prevent flicker
   const isFollowingUser = currentUserProfile?.followingIds?.includes(displayPost.authorId);
   const isFollowingMe = currentUserProfile?.followerIds?.includes(displayPost.authorId);
 
@@ -455,9 +459,10 @@ export default function PostCard({ post }: { post: PostData }) {
                   </DropdownMenu>
                 )}
 
-                {!isOwner && !isUserLoading && (
+                {!isOwner && !isUserLoading && currentUserProfile && (
                   <motion.button 
                     whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     className={cn(
                       "h-6 px-3 text-[9px] font-bold rounded-full transition-all flex items-center gap-1.5",
                       isFollowingUser ? "border border-primary/20 text-primary hover:bg-primary/5" : "bg-primary text-white hover:bg-primary/90"
