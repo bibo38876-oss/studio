@@ -13,9 +13,9 @@ import { motion } from 'framer-motion';
 
 /**
  * WoodenChestIcon - A professional SVG representing a treasure chest.
- * Redesigned with more details, better colors, and larger size.
+ * Redesigned with more details, better colors, and smaller size for a slim look.
  */
-function WoodenChestIcon({ size = 20, className }: { size?: number; className?: string }) {
+function WoodenChestIcon({ size = 16, className }: { size?: number; className?: string }) {
   return (
     <svg 
       width={size} 
@@ -105,12 +105,12 @@ export default function Navbar() {
         <div className={`flex items-center gap-1 transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
           <Link href="/vault">
             <motion.div
-              whileHover={{ scale: 1.15, rotate: [-2, 2, -2, 0] }}
+              whileHover={{ scale: 1.1, rotate: [-2, 2, -2, 0] }}
               whileTap={{ scale: 0.9 }}
               className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full transition-colors"
               title="خزانة تيمقاد"
             >
-              <WoodenChestIcon size={22} />
+              <WoodenChestIcon size={16} />
             </motion.div>
           </Link>
           
