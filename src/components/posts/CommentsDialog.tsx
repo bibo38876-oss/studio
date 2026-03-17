@@ -86,7 +86,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     const parts = text.split(/(#[^\s#]+)/g);
     return parts.map((part, i) => {
       if (part.startsWith('#')) {
-        return <span key={i} className="text-blue-500 font-bold">{part}</span>;
+        return <span key={i} className="text-accent font-bold">{part}</span>;
       }
       return part;
     });
@@ -104,7 +104,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           <div className="flex gap-3 mb-4 justify-end">
             <div className="flex flex-col text-right">
               <div className="flex items-center gap-1.5 leading-tight justify-end">
-                <VerifiedBadge type={post.authorVerificationType || 'none'} size={12} />
+                <VerifiedBadge type={post.authorVerificationType || 'none'} size={14} />
                 <span className="text-xs font-bold text-primary">{post.authorName}</span>
               </div>
               <span className="text-[10px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
@@ -112,7 +112,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
             <Avatar className="h-10 w-10 border border-primary/10"><AvatarImage src={post.authorAvatar} /><AvatarFallback>{post.authorName?.[0]}</AvatarFallback></Avatar>
           </div>
           
-          <div className="text-sm leading-relaxed mb-4 whitespace-pre-wrap text-right">
+          <div className="text-sm leading-relaxed mb-4 whitespace-pre-wrap text-right font-medium">
             {renderContentWithHashtags(post.content)}
           </div>
           
@@ -143,14 +143,14 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           </div>
         </div>
 
-        {/* Ad Slot */}
+        {/* Ad Slot - Positioned correctly after post content */}
         <div className="p-4">
           <div className="bg-primary/5 border border-dashed border-primary/20 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <TimgadLogo size={24} className="text-primary" />
               <div className="flex flex-col text-right">
                 <div className="flex items-center gap-1.5"><Rocket size={10} className="text-accent" /><span className="text-[9px] font-bold text-primary">مروج • Ad</span></div>
-                <p className="text-[11px] font-bold">وثق حسابك الآن واحصل على ميزات النخبة في تيمقاد!</p>
+                <p className="text-[11px] font-bold text-primary/80 leading-tight">وثق حسابك الآن واحصل على ميزات النخبة في تيمقاد!</p>
               </div>
             </div>
             <ChevronRight size={16} className="text-primary/30" />

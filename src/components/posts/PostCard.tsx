@@ -103,7 +103,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     return parts.map((part, i) => {
       if (part.startsWith('#')) {
         return (
-          <span key={i} className="text-blue-500 font-medium hover:underline cursor-pointer">
+          <span key={i} className="text-accent font-bold hover:underline cursor-pointer">
             {part}
           </span>
         );
@@ -119,7 +119,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
           <Link href={`/profile/${post.authorId}`} className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col text-right">
               <div className="flex items-center gap-1.5 leading-tight justify-end">
-                <VerifiedBadge type={post.authorVerificationType || 'none'} size={13} />
+                <VerifiedBadge type={post.authorVerificationType || 'none'} size={14} />
                 <span className="text-sm font-bold text-primary">{post.authorName}</span>
               </div>
               <span className="text-[9px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
@@ -132,7 +132,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
         </CardHeader>
 
         <CardContent className="px-4 py-1 text-right">
-          <div className="text-sm leading-relaxed whitespace-pre-wrap mb-2">
+          <div className="text-sm leading-relaxed whitespace-pre-wrap mb-2 font-medium">
             {renderContentWithHashtags(post.content)}
           </div>
           {post.mediaUrls && post.mediaUrls.length > 0 && (

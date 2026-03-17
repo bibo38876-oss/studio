@@ -110,7 +110,7 @@ export default function GroupChatPage() {
       senderName: currentUserProfile?.username || user.displayName || 'مستخدم تواصل',
       senderAvatar: currentUserProfile?.profilePictureUrl || '',
       senderEmail: user.email,
-      senderVerificationType: user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (currentUserProfile?.verificationType || 'none'),
+      senderVerificationType: currentUserProfile?.verificationType || (user.email === 'adelbenmaza8@gmail.com' ? 'blue' : 'none'),
       createdAt: serverTimestamp(),
     });
   };
@@ -201,7 +201,10 @@ export default function GroupChatPage() {
                             <AvatarImage src={fUser.profilePictureUrl} />
                             <AvatarFallback>{fUser.username?.[0]}</AvatarFallback>
                           </Avatar>
-                          <span className="text-xs font-bold text-primary">{fUser.username}</span>
+                          <div className="flex items-center gap-1">
+                            <VerifiedBadge type={fUser.verificationType || 'none'} size={12} />
+                            <span className="text-xs font-bold text-primary">{fUser.username}</span>
+                          </div>
                         </div>
                         <Button size="sm" variant="outline" className="h-7 text-[9px] rounded-full" onClick={() => handleInviteUser(fUser)}>
                           دعوة
@@ -261,7 +264,6 @@ export default function GroupChatPage() {
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                   {!isMe && (
                     <div className="flex items-center gap-1 mb-0.5 ml-1">
-                      {/* الشارة ثم الاسم لتطابق البطاقة */}
                       <VerifiedBadge type={msg.senderVerificationType || 'none'} size={10} />
                       <span className="text-[8px] font-bold text-primary">{msg.senderName}</span>
                     </div>
