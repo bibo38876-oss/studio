@@ -3,12 +3,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment, runTransaction, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment, runTransaction } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, Users, Sparkles, ImageIcon, Rocket, Heart, Bookmark } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, MoreVertical, Trash2, AlertTriangle, Users, Sparkles, ImageIcon, Rocket, Heart, Bookmark, BarChart3 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -55,12 +55,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     return doc(firestore, 'users', user.uid);
   }, [firestore, user, isAnonymous]);
   const { data: profile } = useDoc(userRef);
-
-  const authorRef = useMemoFirebase(() => {
-    if (!firestore || !postAuthorId) return null;
-    return doc(firestore, 'users', postAuthorId);
-  }, [firestore, postAuthorId]);
-  const { data: authorData } = useDoc(authorRef);
 
   const postLiveRef = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
@@ -116,17 +110,15 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     const content = commentText.trim().substring(0, 150);
     setCommentText('');
 
-    const commentData = {
+    addDocumentNonBlocking(collection(firestore, 'posts', postId, 'comments'), {
       authorId: user.uid,
-      authorName: profile?.username || user.displayName || 'مستخدم تواصل',
+      authorName: profile?.username || user.displayName || 'مستخدم تيمقاد',
       authorAvatar: profile?.profilePictureUrl || '',
       content: content,
       createdAt: serverTimestamp(),
       authorEmail: user.email,
       authorVerificationType: user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (profile?.verificationType || 'none')
-    };
-
-    addDocumentNonBlocking(collection(firestore, 'posts', postId, 'comments'), commentData);
+    });
     
     updateDoc(doc(firestore, 'posts', postId), {
       commentsCount: increment(1)
@@ -136,7 +128,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
       setDocumentNonBlocking(doc(firestore, 'users', postAuthorId, 'notifications', `${user.uid}_comment_${Date.now()}`), {
         type: 'comment',
         fromUserId: user.uid,
-        fromUsername: profile?.username || user.displayName || 'مستخدم تواصل',
+        fromUsername: profile?.username || user.displayName || 'مستخدم تيمقاد',
         fromAvatar: profile?.profilePictureUrl || '',
         postId: postId,
         createdAt: serverTimestamp(),
@@ -209,15 +201,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     }
   };
 
-  const handleDeleteComment = (commentId: string) => {
-    if (!firestore) return;
-    deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId));
-    updateDoc(doc(firestore, 'posts', postId), {
-      commentsCount: increment(-1)
-    });
-    toast({ description: "تم حذف التعليق." });
-  };
-
   const renderContent = (content: string) => {
     if (!content) return null;
     return content.split(/(\s+)/).map((part, i) => {
@@ -238,20 +221,11 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
   };
 
   const allMedia = displayPost?.mediaUrls || (displayPost?.mediaUrl ? [displayPost.mediaUrl] : []);
-  
-  const currentAuthorName = authorData?.username || displayPost?.authorName || 'مستخدم تيمقاد';
-  const currentAuthorAvatar = authorData?.profilePictureUrl || displayPost?.authorAvatar;
-  const currentVerificationType = authorData?.verificationType || displayPost?.authorVerificationType || 'none';
 
   return (
-    <div className="flex flex-col h-full bg-background animate-in slide-in-from-left-2 duration-300">
+    <div className="flex flex-col h-full bg-background">
       <div className="flex items-center gap-3 p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-50 h-10">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onClose}
-          className="h-8 w-8 rounded-full hover:bg-secondary transition-colors"
-        >
+        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
           <ChevronRight size={20} />
         </Button>
         <div className="flex flex-col">
@@ -264,136 +238,73 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
         {displayPost && (
           <div className="pb-4 border-b bg-muted/5">
             <div className="flex gap-3 p-4">
-              <Avatar className="h-10 w-10 border border-muted/20 rounded-full">
-                <AvatarImage src={currentAuthorAvatar} alt={currentAuthorName} />
-                <AvatarFallback>{currentAuthorName?.[0]}</AvatarFallback>
+              <Avatar className="h-10 w-10 border">
+                <AvatarImage src={displayPost.authorAvatar} />
+                <AvatarFallback>{displayPost.authorName?.[0]}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col justify-center text-right">
                 <div className="flex items-center gap-1.5 leading-tight justify-end">
-                  <VerifiedBadge type={currentVerificationType === 'blue' || displayPost.email === 'adelbenmaza8@gmail.com' ? 'blue' : currentVerificationType} />
-                  <span className="text-xs font-bold text-primary">{currentAuthorName}</span>
+                  <VerifiedBadge type={displayPost.authorVerificationType || 'none'} />
+                  <span className="text-xs font-bold text-primary">{displayPost.authorName}</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground">@{displayPost.email?.split('@')[0] || 'مستخدم'}</span>
               </div>
             </div>
             {displayPost.content && (
-              <p className="px-4 pb-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap tracking-tight text-right">
+              <p className="px-4 pb-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap text-right">
                 {renderContent(displayPost.content)}
               </p>
             )}
 
             {displayPost.poll && (
               <div className="px-4 mb-4">
-                <div className="bg-secondary/10 p-4 border border-primary/5 space-y-4 rounded-xl">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-bold text-primary">{displayPost.poll.question}</span>
-                    <div className="flex items-center gap-1.5 bg-background/50 px-2 py-0.5 rounded-full border border-primary/10">
-                      <Users size={10} className="text-primary" />
-                      <span className="text-[9px] font-bold text-primary">{displayPost.poll.totalVotes || 0} صوت</span>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    {displayPost.poll.options.map((option: any, i: number) => {
-                      const percentage = displayPost.poll!.totalVotes > 0 ? Math.round((option.votes / displayPost.poll!.totalVotes) * 100) : 0;
-                      const isSelected = userVote?.optionIndex === i;
-                      return (
-                        <div key={i} className="relative overflow-hidden">
-                          {userVote ? (
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-[11px] mb-1 px-1">
-                                <div className="flex items-center gap-2">
-                                  {option.imageUrl && (
-                                    <div className="h-8 w-8 rounded-lg overflow-hidden border border-primary/10">
-                                      <img src={option.imageUrl} className="w-full h-full object-cover" alt="Option" />
-                                    </div>
-                                  )}
-                                  <span className={cn("font-bold", isSelected ? "text-primary underline" : "text-muted-foreground")}>{option.text}</span>
-                                </div>
-                                <span className="font-bold text-primary">{percentage}%</span>
-                              </div>
-                              <Progress value={percentage} className={cn("h-8 rounded-lg bg-secondary", isSelected ? "bg-primary/20" : "")} />
-                            </div>
-                          ) : (
-                            <Button 
-                              variant="outline" 
-                              className="w-full h-auto min-h-[44px] justify-between py-2 px-4 text-[12px] rounded-xl hover:bg-primary/5 hover:border-primary/30 font-bold group transition-all" 
-                              onClick={() => handleVote(i)}
-                            >
-                              <div className="flex items-center gap-3">
-                                {option.imageUrl && (
-                                  <div className="h-10 w-10 rounded-lg overflow-hidden border border-primary/10 shadow-sm group-hover:scale-105 transition-transform">
-                                    <img src={option.imageUrl} className="w-full h-full object-cover" alt="Option" />
-                                  </div>
-                                )}
-                                <span>{option.text}</span>
-                              </div>
-                              <Sparkles size={12} className="opacity-0 group-hover:opacity-100 text-primary transition-opacity" />
-                            </Button>
-                          )}
+                <div className="bg-secondary/10 p-4 border rounded-xl space-y-3">
+                  <span className="text-sm font-bold text-primary block mb-2">{displayPost.poll.question}</span>
+                  {displayPost.poll.options.map((option: any, i: number) => {
+                    const percentage = displayPost.poll!.totalVotes > 0 ? Math.round((option.votes / displayPost.poll!.totalVotes) * 100) : 0;
+                    return (
+                      <div key={i} className="space-y-1">
+                        <div className="flex justify-between text-[10px] font-bold mb-1">
+                          <span>{option.text}</span>
+                          <span>{percentage}%</span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <Progress value={percentage} className="h-2" />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {allMedia.length > 0 && (
               <div className="w-full bg-black/5 relative">
-                <Carousel 
-                  setApi={setApi}
-                  className="w-full"
-                  opts={{ direction: 'rtl', align: 'start', loop: false }}
-                >
+                <Carousel setApi={setApi} className="w-full" opts={{ direction: 'rtl' }}>
                   <CarouselContent className="-ml-0">
                     {allMedia.map((url: string, index: number) => (
                       <CarouselItem key={index} className="pl-0">
-                        <div className="relative w-full flex items-center justify-center bg-black/5">
-                          <img 
-                            src={url} 
-                            alt={`Post detail ${index + 1}`} 
-                            className="w-full h-auto block"
-                            loading="lazy"
-                          />
-                        </div>
+                        <img src={url} alt={`Post media ${index}`} className="w-full h-auto block" />
                       </CarouselItem>
                     ))}
                   </CarouselContent>
                 </Carousel>
-
                 {countSlides > 1 && (
-                  <div className="absolute top-4 left-4 z-10 flex flex-col items-center gap-1.5">
-                    <div className="bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-xl">
-                      <ImageIcon size={12} />
-                      <span>{currentSlide} / {countSlides}</span>
-                    </div>
-                    <div className="flex gap-1.5">
-                      {Array.from({ length: countSlides }).map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={cn(
-                            "h-1.5 rounded-full transition-all duration-300 shadow-sm",
-                            currentSlide === i + 1 ? "w-4 bg-primary" : "w-1.5 bg-white/40"
-                          )} 
-                        />
-                      ))}
-                    </div>
+                  <div className="absolute top-4 left-4 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                    {currentSlide} / {countSlides}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Interaction Bar in Dialog */}
             <div className="flex justify-between items-center px-4 mt-4 py-2 border-t border-muted/10">
               <motion.div whileTap={{ scale: 0.9 }}>
-                <Button variant="ghost" size="sm" className={cn("h-8 gap-1.5 rounded-full px-3 transition-all", likeData ? "text-red-500 bg-red-50/50" : "text-muted-foreground")} onClick={handleLike}>
-                  <Heart size={18} className={cn(likeData ? "fill-current" : "")} />
+                <Button variant="ghost" size="sm" className={cn("h-8 gap-1.5 rounded-full px-3", likeData ? "text-red-500 bg-red-50/50" : "text-muted-foreground")} onClick={handleLike}>
+                  <Heart size={18} className={likeData ? "fill-current" : ""} />
                   <span className="text-[11px] font-bold">{displayPost.likesCount || 0}</span>
                 </Button>
               </motion.div>
               <motion.div whileTap={{ scale: 0.9 }}>
-                <Button variant="ghost" size="sm" className={cn("h-8 gap-1.5 rounded-full px-3 transition-all", bookmarkData ? "text-accent bg-accent/5" : "text-muted-foreground")} onClick={handleBookmark}>
-                  <Bookmark size={18} className={cn(bookmarkData ? "fill-current" : "")} />
+                <Button variant="ghost" size="sm" className={cn("h-8 gap-1.5 rounded-full px-3", bookmarkData ? "text-accent bg-accent/5" : "text-muted-foreground")} onClick={handleBookmark}>
+                  <Bookmark size={18} className={bookmarkData ? "fill-current" : ""} />
                   <span className="text-[11px] font-bold">{displayPost.bookmarksCount || 0}</span>
                 </Button>
               </motion.div>
@@ -405,30 +316,29 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           </div>
         )}
 
-        <div className="px-4 py-4 bg-background">
-          <div className="bg-primary/5 border border-dashed border-primary/20 rounded-2xl p-4 flex items-center justify-between group hover:bg-primary/10 transition-all cursor-pointer shadow-sm">
+        {/* Ad Slot - تظهر هنا قبل التعليقات */}
+        <div className="px-4 py-4">
+          <div className="bg-primary/5 border border-dashed border-primary/20 rounded-2xl p-4 flex items-center justify-between group hover:bg-primary/10 transition-all cursor-pointer">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-primary rounded-full flex items-center justify-center text-white shadow-md">
+              <div className="h-10 w-10 bg-primary rounded-full flex items-center justify-center text-white">
                 <TimgadLogo size={20} variant="white" />
               </div>
               <div className="flex flex-col text-right">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <Rocket size={10} className="text-accent animate-pulse" />
-                  <span className="text-[9px] font-bold text-primary uppercase tracking-[0.2em]">محتوى مروج • Sponsored</span>
+                  <span className="text-[9px] font-bold text-primary uppercase tracking-widest">محتوى مروج • Ad</span>
                 </div>
-                <p className="text-[11px] font-bold text-foreground/80">احصل على توثيق تيمقاد الملكي وتمتع بمزايا النخبة الآن!</p>
+                <p className="text-[11px] font-bold text-foreground/80">احصل على توثيق تيمقاد الملكي الآن وتمتع بمزايا النخبة!</p>
               </div>
             </div>
-            <div className="h-8 w-8 bg-background rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-              <ChevronRight size={16} />
-            </div>
+            <ChevronRight size={16} className="text-primary group-hover:translate-x-[-4px] transition-transform" />
           </div>
         </div>
 
         <div className="p-4 space-y-5">
           <div className="flex items-center gap-2 mb-2 border-b pb-2">
             <MessageSquareText size={14} className="text-primary" />
-            <span className="text-[10px] font-bold text-primary uppercase tracking-wider">التعليقات</span>
+            <span className="text-[10px] font-bold text-primary uppercase">التعليقات</span>
           </div>
 
           {isLoading ? (
@@ -437,80 +347,47 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
             </div>
           ) : comments && comments.length > 0 ? (
             comments.map((comment: any) => (
-              <div key={comment.id} className="flex gap-3 animate-in fade-in slide-in-from-right-1 duration-300">
-                <Avatar className="h-8 w-8 border rounded-full">
-                  <AvatarImage src={comment.authorAvatar} alt={comment.authorName} />
+              <div key={comment.id} className="flex gap-3">
+                <Avatar className="h-8 w-8 border">
+                  <AvatarImage src={comment.authorAvatar} />
                   <AvatarFallback>{comment.authorName?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 justify-end">
-                      <VerifiedBadge type={comment.authorVerificationType || (comment.authorEmail === 'adelbenmaza8@gmail.com' ? 'blue' : 'none')} size={12} />
-                      <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[8px] text-muted-foreground">
-                        {comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { locale: ar }) : 'الآن'}
-                      </span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full p-0">
-                            <MoreVertical size={10} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="text-xs">
-                          {user?.uid === comment.authorId ? (
-                            <DropdownMenuItem onClick={() => handleDeleteComment(comment.id)} className="text-destructive gap-2 cursor-pointer">
-                              <Trash2 size={12} />
-                              حذف التعليق
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => toast({description: "تم الإبلاغ"})} className="gap-2 cursor-pointer">
-                              <AlertTriangle size={12} />
-                              إبلاغ
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    <span className="text-[11px] font-bold text-primary">{comment.authorName}</span>
+                    <span className="text-[8px] text-muted-foreground">
+                      {comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { locale: ar }) : 'الآن'}
+                    </span>
                   </div>
-                  <div className="text-xs text-foreground/90 leading-relaxed bg-secondary/30 p-2 rounded-none text-right">
+                  <div className="text-xs text-foreground/90 leading-relaxed bg-secondary/30 p-2 rounded-lg text-right">
                     {renderContent(comment.content)}
                   </div>
                 </div>
               </div>
             ))
           ) : (
-            <div className="text-center py-20 bg-muted/5 rounded-none border border-dashed border-muted">
-              <p className="text-muted-foreground text-[10px] font-medium italic">لا توجد تعليقات بعد. كن أول من يشارك!</p>
+            <div className="text-center py-10 opacity-40">
+              <p className="text-[10px] font-medium italic">لا توجد تعليقات بعد.</p>
             </div>
           )}
         </div>
       </div>
 
-      <div className="p-3 border-t bg-background/95 backdrop-blur-sm pb-safe sticky bottom-0 z-30">
-        <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-10 group focus-within:bg-secondary/80 transition-all">
-          <div className="flex-1 relative flex items-center">
-            <Input 
-              placeholder={isAnonymous ? "سجل الدخول للتعليق..." : "اكتب تعليقاً (150 حرفاً)..."}
-              className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0 placeholder:text-muted-foreground/50"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
-              readOnly={isAnonymous}
-              onClick={() => isAnonymous && router.push('/login')}
-              maxLength={150}
-            />
-            {commentText.length > 120 && (
-              <span className="absolute left-0 text-[8px] text-primary/50 font-bold">
-                {150 - commentText.length}
-              </span>
-            )}
-          </div>
+      <div className="p-3 border-t bg-background sticky bottom-0 z-30">
+        <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-10">
+          <Input 
+            placeholder={isAnonymous ? "سجل الدخول للتعليق..." : "اكتب تعليقاً..."}
+            className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0"
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+            readOnly={isAnonymous}
+            maxLength={150}
+          />
           <Button 
             size="icon" 
             variant="ghost" 
-            className={`h-8 w-8 rounded-full transition-all duration-300 ${commentText.trim() ? 'text-primary scale-110' : 'text-muted-foreground opacity-50'}`}
+            className={cn("h-8 w-8 rounded-full", commentText.trim() ? 'text-primary' : 'text-muted-foreground opacity-50')}
             onClick={handleAddComment}
             disabled={!commentText.trim()}
           >

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/
 import CreatePost from '@/components/posts/CreatePost';
 import { useState } from 'react';
 import { useUser } from '@/firebase';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function BottomNav() {
   const pathname = usePathname();
