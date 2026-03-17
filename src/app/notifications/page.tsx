@@ -5,12 +5,13 @@ import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useDoc } from '@/firebase';
 import { collection, query, orderBy, limit, doc, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Heart, UserPlus, MessageCircle, Repeat, CheckCircle2, Bell, UserRoundPlus, UserCheck, Trophy } from 'lucide-react';
+import { Loader2, Heart, UserPlus, MessageCircle, Repeat, CheckCircle2, Bell, UserRoundPlus, UserCheck, Trophy, Coffee, Coins } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import TimgadCoin from '@/components/ui/TimgadCoin';
 
 export default function NotificationsPage() {
   const { firestore, user } = useFirebase();
@@ -107,6 +108,7 @@ export default function NotificationsPage() {
             {notifications.map((notif: any) => {
               const isFollowing = currentUserProfile?.followingIds?.includes(notif.fromUserId);
               const isVaultWin = notif.type === 'vault_win';
+              const isSupport = notif.type === 'support';
               
               return (
                 <div 
@@ -128,6 +130,7 @@ export default function NotificationsPage() {
                     {notif.type === 'comment' && <MessageCircle size={14} className="text-accent" />}
                     {notif.type === 'repost' && <Repeat size={14} className="text-green-500" />}
                     {isVaultWin && <Trophy size={14} className="text-yellow-500 fill-yellow-500" />}
+                    {isSupport && <Coffee size={14} className="text-amber-600" />}
                   </div>
                   
                   {isVaultWin ? (
@@ -149,6 +152,13 @@ export default function NotificationsPage() {
                         <p className="text-[11px] leading-tight font-bold text-primary">مبروك! لقد فزت بكنز تيمقاد</p>
                         <p className="text-[10px] text-muted-foreground mt-1">{notif.message}</p>
                       </div>
+                    ) : isSupport ? (
+                      <Link href={notif.postId ? `/?post=${notif.postId}` : `/profile/${notif.fromUserId}`}>
+                        <p className="text-[11px] leading-tight">
+                          <span className="font-bold text-primary">{notif.fromUsername}</span>
+                          <span className="text-muted-foreground mr-1">أرسل لك <span className="text-amber-600 font-bold">{notif.amount} عملة تيمقاد</span> كدعم لمحتواك.</span>
+                        </p>
+                      </Link>
                     ) : (
                       <Link href={notif.postId ? `/?post=${notif.postId}` : `/profile/${notif.fromUserId}`}>
                         <p className="text-[11px] leading-tight">

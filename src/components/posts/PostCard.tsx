@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, increment, serverTimestamp, runTransaction, arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, runTransaction, arrayUnion, arrayRemove, updateDoc, collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -226,6 +226,18 @@ export default function PostCard({ post }: { post: PostData }) {
 
     updateDocumentNonBlocking(doc(firestore, 'users', displayPost.authorId), {
       coins: increment(amount)
+    });
+
+    // إرسال إشعار للمستلم
+    addDocumentNonBlocking(collection(firestore, 'users', displayPost.authorId, 'notifications'), {
+      type: 'support',
+      fromUserId: user.uid,
+      fromUsername: currentUserProfile?.username || user.displayName || 'مستكشف تيمقاد',
+      fromAvatar: currentUserProfile?.profilePictureUrl || '',
+      amount: amount,
+      postId: displayPost.id,
+      createdAt: serverTimestamp(),
+      read: false
     });
 
     const supportedUserRef = doc(firestore, 'users', user.uid, 'supportedPeople', displayPost.authorId);
