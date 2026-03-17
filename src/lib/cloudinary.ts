@@ -5,7 +5,7 @@
  */
 
 const CLOUD_NAME = 'df4ogwkyn';
-const UPLOAD_PRESET = 'ml_default'; // استخدام الإعداد الافتراضي لـ Cloudinary لضمان عمل الرفع
+const UPLOAD_PRESET = 'ml_default'; // الإعداد الافتراضي لضمان عمل الرفع Unsigned
 
 /**
  * Uploads a file to Cloudinary and returns the secure URL.
@@ -30,9 +30,9 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
       const errorData = await response.json();
       const errorMessage = errorData.error?.message || 'فشل رفع الصورة';
       
-      // مساعدة المستخدم في حال كان الخطأ متعلقاً بالإعدادات
+      // توجيه المستخدم في حال كان الخطأ متعلقاً بالإعدادات
       if (errorMessage.includes('Upload preset not found')) {
-        throw new Error('خطأ: لم يتم العثور على إعداد الرفع. يرجى الدخول إلى إعدادات Cloudinary وتفعيل Unsigned Upload باسم ml_default');
+        throw new Error('خطأ: لم يتم العثور على إعداد الرفع. يرجى تفعيل Unsigned Upload باسم ml_default في إعدادات Cloudinary');
       }
       
       throw new Error(errorMessage);
