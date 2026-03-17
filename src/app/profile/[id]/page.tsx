@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Bookmark, UserRoundPlus, ShieldCheck, Coffee, Sparkles, Wallet } from 'lucide-react';
+import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Bookmark, UserRoundPlus, ShieldCheck, Coffee, Sparkles, Wallet, Users } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -34,7 +34,7 @@ export default function ProfilePage() {
   const { firestore, user: currentUser, isUserLoading } = useFirebase();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
-  const [isSupportersOpen, setIsSupportersOpen] = useState(false);
+  const [isSupportHistoryOpen, setIsSupportHistoryOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
   const [editProfilePic, setEditProfilePic] = useState<string | null>(null);
@@ -97,6 +97,7 @@ export default function ProfilePage() {
 
   const { data: likedPosts, isLoading: isLikesLoading } = useCollection(likedPostsQuery);
 
+  // الأشخاص الذين دعمهم هذا العضو
   const supportedPeopleQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return query(
@@ -105,7 +106,18 @@ export default function ProfilePage() {
     );
   }, [firestore, id]);
 
-  const { data: supportedPeople, isLoading: isSupportersLoading } = useCollection(supportedPeopleQuery);
+  const { data: supportedPeople, isLoading: isSupportedPeopleLoading } = useCollection(supportedPeopleQuery);
+
+  // الأشخاص الذين دعموا هذا العضو
+  const supportersQuery = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return query(
+      collection(firestore, 'users', id, 'supporters'),
+      orderBy('lastSupportedAt', 'desc')
+    );
+  }, [firestore, id]);
+
+  const { data: supporters, isLoading: isSupportersLoading } = useCollection(supportersQuery);
 
   const isOwnProfile = currentUser?.uid === id;
   const isFollowing = (profile?.followerIds || []).includes(currentUser?.uid);
@@ -252,7 +264,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="pt-12 flex gap-2 items-center">
-                {isOwnProfile ? (
+                {isOwnProfile && (
                   <Button 
                     variant="ghost" 
                     className="h-12 border border-muted hover:bg-secondary transition-all rounded-full flex items-center gap-2 px-4 group"
@@ -264,69 +276,108 @@ export default function ProfilePage() {
                     </div>
                     <TimgadCoin size={24} className="group-hover:scale-110 transition-transform" />
                   </Button>
-                ) : (
-                  <Dialog open={isSupportersOpen} onOpenChange={setIsSupportersOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="rounded-full h-12 w-12 border border-muted hover:bg-secondary transition-all"
-                      >
-                        <Coffee size={24} className="text-primary" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle className="text-sm font-bold text-primary flex items-center gap-2">
-                          <Sparkles size={16} className="text-accent" />
-                          سجل مساهمات {profile.username}
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="py-4 space-y-4 max-h-[400px] overflow-y-auto no-scrollbar">
-                        <p className="text-[10px] text-muted-foreground text-center mb-2">قائمة بالأشخاص الذين قام {profile.username} بدعمهم في تيمقاد.</p>
-                        
+                )}
+
+                <Dialog open={isSupportHistoryOpen} onOpenChange={setIsSupportHistoryOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-full h-12 w-12 border border-muted hover:bg-secondary transition-all"
+                    >
+                      <Coffee size={24} className="text-primary" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle className="text-sm font-bold text-primary flex items-center gap-2">
+                        <Sparkles size={16} className="text-accent" />
+                        سجل تيمقاد للكرم
+                      </DialogTitle>
+                    </DialogHeader>
+                    
+                    <Tabs defaultValue="supporters" className="w-full">
+                      <TabsList className="w-full grid grid-cols-2 h-9 rounded-none bg-secondary/30 mb-4 p-1">
+                        <TabsTrigger value="supporters" className="text-[10px] font-bold gap-1.5">الأبطال الداعمون</TabsTrigger>
+                        <TabsTrigger value="supported" className="text-[10px] font-bold gap-1.5">مساهمات العضو</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="supporters" className="max-h-[400px] overflow-y-auto no-scrollbar space-y-3">
+                        <p className="text-[9px] text-muted-foreground text-center mb-2 italic">قائمة بمن قاموا بتقديم الدعم لـ {profile.username}.</p>
                         {isSupportersLoading ? (
                           <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
-                        ) : supportedPeople && supportedPeople.length > 0 ? (
-                          <div className="space-y-3">
-                            {supportedPeople.map((person: any) => (
-                              <div key={person.id} className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg border border-primary/5">
-                                <Link href={`/profile/${person.userId}`} className="flex items-center gap-3">
-                                  <Avatar className="h-10 w-10 border border-muted/20">
-                                    <AvatarImage src={person.avatar} />
-                                    <AvatarFallback>{person.username?.[0]}</AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex flex-col text-right">
-                                    <div className="flex items-center gap-1 leading-tight">
-                                      <VerifiedBadge type={person.verificationType || 'none'} size={10} />
-                                      <span className="text-xs font-bold text-primary">{person.username}</span>
-                                    </div>
-                                    <span className="text-[8px] text-muted-foreground">آخر دعم: {person.lastSupportedAt?.toDate ? formatDistanceToNow(person.lastSupportedAt.toDate(), { locale: ar }) : 'غير محدد'}</span>
+                        ) : supporters && supporters.length > 0 ? (
+                          supporters.map((person: any) => (
+                            <div key={person.id} className="flex items-center justify-between p-3 bg-card border rounded-none">
+                              <Link href={`/profile/${person.userId}`} className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9 border">
+                                  <AvatarImage src={person.avatar} />
+                                  <AvatarFallback>{person.username?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col text-right">
+                                  <div className="flex items-center gap-1">
+                                    <VerifiedBadge type={person.verificationType || 'none'} size={10} />
+                                    <span className="text-xs font-bold text-primary">{person.username}</span>
                                   </div>
-                                </Link>
-                                <div className="flex flex-col items-center gap-1">
-                                  <TimgadCoin size={20} />
-                                  <span className="text-[10px] font-bold text-accent">{person.totalAmount}</span>
+                                  <span className="text-[8px] text-muted-foreground">آخر دعم: {person.lastSupportedAt?.toDate ? formatDistanceToNow(person.lastSupportedAt.toDate(), { locale: ar }) : 'غير محدد'}</span>
                                 </div>
+                              </Link>
+                              <div className="flex items-center gap-1.5 bg-accent/5 px-2 py-1 border border-accent/10">
+                                <span className="text-[10px] font-bold text-accent">{person.totalAmount}</span>
+                                <TimgadCoin size={16} />
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))
                         ) : (
-                          <div className="text-center py-10">
-                            <Coffee size={32} className="mx-auto text-muted-foreground/20 mb-2" />
-                            <p className="text-[10px] text-muted-foreground">لم يقم هذا المستخدم بدعم أحد بعد.</p>
+                          <div className="text-center py-16 opacity-40">
+                            <Users size={32} className="mx-auto mb-2" />
+                            <p className="text-[10px]">لا يوجد داعمون مسجلون بعد.</p>
                           </div>
                         )}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                )}
+                      </TabsContent>
+
+                      <TabsContent value="supported" className="max-h-[400px] overflow-y-auto no-scrollbar space-y-3">
+                        <p className="text-[9px] text-muted-foreground text-center mb-2 italic">مبدعون قام {profile.username} بدعمهم في تيمقاد.</p>
+                        {isSupportedPeopleLoading ? (
+                          <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
+                        ) : supportedPeople && supportedPeople.length > 0 ? (
+                          supportedPeople.map((person: any) => (
+                            <div key={person.id} className="flex items-center justify-between p-3 bg-card border rounded-none">
+                              <Link href={`/profile/${person.userId}`} className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9 border">
+                                  <AvatarImage src={person.avatar} />
+                                  <AvatarFallback>{person.username?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col text-right">
+                                  <div className="flex items-center gap-1">
+                                    <VerifiedBadge type={person.verificationType || 'none'} size={10} />
+                                    <span className="text-xs font-bold text-primary">{person.username}</span>
+                                  </div>
+                                  <span className="text-[8px] text-muted-foreground">تاريخ المساهمة: {person.lastSupportedAt?.toDate ? formatDistanceToNow(person.lastSupportedAt.toDate(), { locale: ar }) : 'غير محدد'}</span>
+                                </div>
+                              </Link>
+                              <div className="flex items-center gap-1.5 bg-primary/5 px-2 py-1 border border-primary/10">
+                                <span className="text-[10px] font-bold text-primary">{person.totalAmount}</span>
+                                <TimgadCoin size={16} />
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-16 opacity-40">
+                            <Coffee size={32} className="mx-auto mb-2" />
+                            <p className="text-[10px]">لم يقم هذا العضو بدعم أحد بعد.</p>
+                          </div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
+                  </DialogContent>
+                </Dialog>
 
                 {isOwnProfile ? (
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogTrigger asChild><Button variant="outline" className="rounded-full gap-2 font-bold h-8 text-[11px] px-6">تعديل الملف</Button></DialogTrigger>
                     <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-                      <DialogHeader><DialogTitle className="text-sm font-bold">تعديل الملف الشخصي</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogHeader><DialogTitle className="text-sm font-bold">تعديل الملف الشخصي</DialogTitle></DialogHeader></DialogHeader>
                       <div className="grid gap-6 py-4">
                         <div className="space-y-4">
                           <div className="space-y-2"><label className="text-[10px] font-bold text-muted-foreground uppercase">صورة البنر</label>

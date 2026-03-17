@@ -86,7 +86,6 @@ export default function PostCard({ post }: { post: PostData }) {
   const { data: centralPost } = useDoc(postRef);
   const displayPost = centralPost || post;
 
-  // جلب بيانات الكاتب الحية لضمان تحديث الصورة والاسم في البطاقة
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !displayPost.authorId) return null;
     return doc(firestore, 'users', displayPost.authorId);
@@ -171,7 +170,6 @@ export default function PostCard({ post }: { post: PostData }) {
   const handlePromote = (impressions: number, cost: number) => {
     if (!firestore || !displayPost.id || !user?.uid || !currentUserProfile) return;
 
-    // Bypass check for infinite admin
     if (!isInfiniteAdmin && (currentUserProfile.coins || 0) < cost) {
       toast({
         variant: "destructive",
@@ -181,7 +179,6 @@ export default function PostCard({ post }: { post: PostData }) {
       return;
     }
 
-    // Bypass deduction for infinite admin
     if (!isInfiniteAdmin) {
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
         coins: increment(-cost)
@@ -204,7 +201,6 @@ export default function PostCard({ post }: { post: PostData }) {
     if (isAnonymous) { router.push('/login'); return; }
     if (!firestore || !user || !currentUserProfile) return;
 
-    // Bypass check for infinite admin
     if (!isInfiniteAdmin && (currentUserProfile.coins || 0) < amount) {
       toast({
         variant: "destructive",
@@ -217,7 +213,6 @@ export default function PostCard({ post }: { post: PostData }) {
     setShowSupportAnim(true);
     setTimeout(() => setShowSupportAnim(false), 2000);
 
-    // Bypass deduction for infinite admin
     if (!isInfiniteAdmin) {
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
         coins: increment(-amount)
@@ -228,7 +223,6 @@ export default function PostCard({ post }: { post: PostData }) {
       coins: increment(amount)
     });
 
-    // إرسال إشعار للمستلم
     addDocumentNonBlocking(collection(firestore, 'users', displayPost.authorId, 'notifications'), {
       type: 'support',
       fromUserId: user.uid,
@@ -240,6 +234,7 @@ export default function PostCard({ post }: { post: PostData }) {
       read: false
     });
 
+    // تسجيل في قائمة "الأشخاص الذين دعمتهم" (للداعم)
     const supportedUserRef = doc(firestore, 'users', user.uid, 'supportedPeople', displayPost.authorId);
     setDocumentNonBlocking(supportedUserRef, {
       userId: displayPost.authorId,
@@ -248,6 +243,17 @@ export default function PostCard({ post }: { post: PostData }) {
       totalAmount: increment(amount),
       lastSupportedAt: serverTimestamp(),
       verificationType: authorData?.verificationType || displayPost.authorVerificationType || 'none'
+    }, { merge: true });
+
+    // تسجيل في قائمة "الداعمون لي" (للمستلم)
+    const supporterRef = doc(firestore, 'users', displayPost.authorId, 'supporters', user.uid);
+    setDocumentNonBlocking(supporterRef, {
+      userId: user.uid,
+      username: currentUserProfile?.username || user.displayName || 'مستكشف تيمقاد',
+      avatar: currentUserProfile?.profilePictureUrl || '',
+      totalAmount: increment(amount),
+      lastSupportedAt: serverTimestamp(),
+      verificationType: currentUserProfile?.verificationType || 'none'
     }, { merge: true });
 
     toast({
@@ -356,7 +362,6 @@ export default function PostCard({ post }: { post: PostData }) {
     );
   };
 
-  // بيانات المؤلف المباشرة لتحديث الصورة والاسم
   const currentAuthorName = authorData?.username || displayPost.authorName || 'مستخدم تيمقاد';
   const currentAuthorAvatar = authorData?.profilePictureUrl || displayPost.authorAvatar;
   const currentVerificationType: VerificationType = authorData?.verificationType || displayPost.authorVerificationType || 'none';
