@@ -10,16 +10,18 @@ import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirebase, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, where, limit, increment } from 'firebase/firestore';
-import { Loader2, Sparkles, Users } from 'lucide-react';
+import { Loader2, Sparkles, Users, AlertCircle, ChevronLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
   const [activeTab, setActiveTab] = useState('for-you');
   const [limitForYou, setLimitForYou] = useState(10);
   const [limitFollowing, setLimitFollowing] = useState(10);
+  const [isJarBreakingSoon, setIsJarBreakingSoon] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -31,6 +33,26 @@ export default function Home() {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
+
+  // مراقبة وقت انكسار الجرة للحدث المباشر (19:55 - 20:00 بتوقيت الجزائر)
+  useEffect(() => {
+    const checkTime = () => {
+      const now = new Date();
+      const dzNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3600000));
+      const hours = dzNow.getHours();
+      const minutes = dzNow.getMinutes();
+      
+      if (hours === 19 && minutes >= 55) {
+        setIsJarBreakingSoon(true);
+      } else {
+        setIsJarBreakingSoon(false);
+      }
+    };
+
+    const interval = setInterval(checkTime, 30000); // تحقق كل 30 ثانية
+    checkTime();
+    return () => clearInterval(interval);
+  }, []);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -50,7 +72,6 @@ export default function Home() {
     const twentyFourHours = 24 * 60 * 60 * 1000;
 
     if (timeDiff >= twentyFourHours) {
-      // منح عملة واحدة للدخول اليومي وتحديث الوقت
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
         coins: increment(1),
         lastLoginAt: now.toISOString()
@@ -163,12 +184,44 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-0 md:px-4 pt-8 flex gap-6">
+      <main className="container mx-auto px-0 md:px-4 pt-8 flex flex-col md:flex-row gap-6">
         <div className="hidden md:block w-64 pt-4 h-fit sticky top-8">
           <LeftSidebar />
         </div>
 
         <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto">
+          {/* شريط حدث انكسار الجرة المباشر */}
+          <AnimatePresence>
+            {isJarBreakingSoon && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <Link href="/vault">
+                  <div className="bg-gradient-to-r from-primary to-accent p-3 flex items-center justify-between text-white relative overflow-hidden group">
+                    <motion.div 
+                      animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="absolute inset-0 bg-white/10"
+                    />
+                    <div className="flex items-center gap-3 relative z-10">
+                      <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
+                        <span className="text-lg">🏺</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold uppercase tracking-wider">حدث ذروة تيمقاد</span>
+                        <p className="text-[10px] font-medium opacity-90">جرة تيمقاد الأثرية على وشك الانكسار! انضم الآن قبل 20:00.</p>
+                      </div>
+                    </div>
+                    <ChevronLeft size={18} className="relative z-10 group-hover:translate-x-[-4px] transition-transform" />
+                  </div>
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="w-full bg-background/80 backdrop-blur-md border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-8 z-40">
               <TabsTrigger 

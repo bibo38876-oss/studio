@@ -7,7 +7,7 @@ import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Sparkles, Plus, Loader2, Trophy, History, Clock, AlertCircle, TrendingUp, Shield, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, useCollection } from '@/firebase';
+import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, useCollection, addDocumentNonBlocking } from '@/firebase';
 import { doc, increment, setDoc, serverTimestamp, collection, query, getDocs, limit, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import TimgadCoin from '@/components/ui/TimgadCoin';
@@ -23,7 +23,6 @@ export default function VaultPage() {
   const { firestore, user } = useFirebase();
   const [isContributing, setIsContributing] = useState(false);
   const [timeLeft, setTimeLeft] = useState<string>('');
-  const [nextResetIn, setNextResetIn] = useState<string>('');
 
   // بيانات المستخدم الحالي
   const userRef = useMemoFirebase(() => {
@@ -58,7 +57,6 @@ export default function VaultPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      // تحويل الوقت الحالي لـ UTC ثم إضافة ساعة واحدة ليكون توقيت الجزائر
       const dzNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3600000));
       
       const breakTime = new Date(dzNow);
@@ -68,25 +66,17 @@ export default function VaultPage() {
       resetTime.setHours(20, 5, 0, 0);
 
       if (dzNow < breakTime) {
-        // وقت الجرة نشطة
         const diff = breakTime.getTime() - dzNow.getTime();
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
         const s = Math.floor((diff % 60000) / 1000);
         setTimeLeft(`${h}:${m}:${s}`);
-        
-        if (jarData?.status === 'broken' && dzNow.getHours() < 20) {
-          // إذا كانت الحالة منكسرة والوقت لم يحن بعد (قبل الـ 8 ليلاً)
-          // هذا يعني أننا في دورة جديدة لكن لم يتم تفعيلها
-        }
       } else if (dzNow >= breakTime && dzNow < resetTime) {
-        // وقت الانكسار والاحتفال
         setTimeLeft('انكسرت الجرة!');
         if (jarData?.status === 'active') {
           handleBreakJar();
         }
       } else {
-        // بعد الساعة 20:05 - وقت البدء من جديد
         if (jarData?.status === 'broken') {
           handleResetJar();
         }
@@ -115,7 +105,6 @@ export default function VaultPage() {
         return;
       }
 
-      // خوارزمية "أورا تيمقاد": الترتيب حسب (المتابعين * 2 + الإعجابات + حظ عشوائي)
       const scoredParticipants = participants.map((p: any) => ({
         ...p,
         auraScore: ((p.followerCount || 0) * 2) + (p.likesCount || 0) + (Math.random() * 50)
@@ -124,23 +113,31 @@ export default function VaultPage() {
       const top10 = scoredParticipants.slice(0, 10);
       const totalInJar = jarData.totalCoins || 0;
       
-      // توزيع الجوائز
       const winnersWithPrizes = top10.map((winner, index) => {
         let prize = 0;
-        if (index === 0) prize = Math.floor(totalInJar * 0.20); // المركز الأول 20%
-        else if (index === 1) prize = Math.floor(totalInJar * 0.15); // الثاني 15%
-        else if (index === 2) prize = Math.floor(totalInJar * 0.10); // الثالث 10%
-        else prize = Math.floor((totalInJar * 0.25) / 7); // الباقي 25% مقسمة على 7
+        if (index === 0) prize = Math.floor(totalInJar * 0.20);
+        else if (index === 1) prize = Math.floor(totalInJar * 0.15);
+        else if (index === 2) prize = Math.floor(totalInJar * 0.10);
+        else prize = Math.floor((totalInJar * 0.25) / 7);
 
-        // إضافة العملات للفائز فعلياً
         updateDocumentNonBlocking(doc(firestore, 'users', winner.userId), {
           coins: increment(prize)
+        });
+
+        // إرسال تنبيه لحظي للفائز
+        addDocumentNonBlocking(collection(firestore, 'users', winner.userId, 'notifications'), {
+          type: 'vault_win',
+          message: `🏺 لقد انكسرت الجرة وحصلت على حصتك من الكنز! لقد نلت ${prize} عملة تيمقاد.`,
+          prize: prize,
+          createdAt: serverTimestamp(),
+          read: false,
+          fromUsername: 'نظام الخزنة',
+          fromAvatar: ''
         });
 
         return { ...winner, prize };
       });
 
-      // تسجيل في التاريخ
       const historyId = `jar_${new Date().toISOString().split('T')[0]}`;
       await setDoc(doc(firestore, 'vault_history', historyId), {
         totalCoins: totalInJar,
@@ -167,7 +164,6 @@ export default function VaultPage() {
       status: 'active',
       createdAt: new Date().toISOString(),
     });
-    // ملاحظة: في النسخة الإنتاجية يتم مسح المشاركين عبر Cloud Function
   };
 
   const handleContribute = async () => {
@@ -214,7 +210,6 @@ export default function VaultPage() {
       
       <main className="relative z-10 flex flex-col items-center gap-8 select-none py-20 w-full max-w-2xl px-4">
         
-        {/* حالة الجرة */}
         <div className="relative group">
           <AnimatePresence>
             {isContributing && (
@@ -233,7 +228,7 @@ export default function VaultPage() {
             transition={{ repeat: Infinity, duration: 5 }}
             className={`text-[200px] md:text-[280px] drop-shadow-[0_20px_60px_rgba(0,0,0,0.8)] transition-all duration-1000 ${isBroken ? 'grayscale brightness-50 opacity-40' : 'brightness-110 saturate-[0.8]'}`}
           >
-            {isBroken ? '🏺' : '🏺'}
+            🏺
           </motion.div>
           
           {isBroken && (
@@ -244,7 +239,6 @@ export default function VaultPage() {
           )}
         </div>
 
-        {/* العدادات والمعلومات */}
         <div className="flex flex-col items-center gap-6 text-center w-full">
           <div className="space-y-4">
             <div className="flex flex-col items-center gap-1">
@@ -358,7 +352,6 @@ export default function VaultPage() {
           )}
         </div>
 
-        {/* سجل البطولات السابقة */}
         {!isBroken && lastJarHistory && (
           <div className="mt-12 w-full border-t border-[#FBBF24]/5 pt-8 space-y-6">
             <div className="flex items-center justify-between px-2">

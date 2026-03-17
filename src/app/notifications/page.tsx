@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useDoc } from '@/firebase';
 import { collection, query, orderBy, limit, doc, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Heart, UserPlus, MessageCircle, Repeat, CheckCircle2, Bell, UserRoundPlus, UserCheck } from 'lucide-react';
+import { Loader2, Heart, UserPlus, MessageCircle, Repeat, CheckCircle2, Bell, UserRoundPlus, UserCheck, Trophy } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -106,6 +106,7 @@ export default function NotificationsPage() {
           <div className="divide-y divide-muted/30">
             {notifications.map((notif: any) => {
               const isFollowing = currentUserProfile?.followingIds?.includes(notif.fromUserId);
+              const isVaultWin = notif.type === 'vault_win';
               
               return (
                 <div 
@@ -126,25 +127,41 @@ export default function NotificationsPage() {
                     {notif.type === 'follow' && <UserPlus size={14} className="text-primary" />}
                     {notif.type === 'comment' && <MessageCircle size={14} className="text-accent" />}
                     {notif.type === 'repost' && <Repeat size={14} className="text-green-500" />}
+                    {isVaultWin && <Trophy size={14} className="text-yellow-500 fill-yellow-500" />}
                   </div>
-                  <Link href={`/profile/${notif.fromUserId}`}>
-                    <Avatar className="h-9 w-9 border rounded-full">
-                      <AvatarImage src={notif.fromAvatar} alt={notif.fromUsername} />
-                      <AvatarFallback className="text-[10px]">{notif.fromUsername?.[0]}</AvatarFallback>
-                    </Avatar>
-                  </Link>
-                  <div className="flex-1 flex flex-col gap-0.5">
-                    <Link href={notif.postId ? `/?post=${notif.postId}` : `/profile/${notif.fromUserId}`}>
-                      <p className="text-[11px] leading-tight">
-                        <span className="font-bold text-primary">{notif.fromUsername}</span>
-                        <span className="text-muted-foreground mr-1">
-                          {notif.type === 'like' && 'أعجب بمنشورك'}
-                          {notif.type === 'follow' && 'بدأ في متابعتك'}
-                          {notif.type === 'comment' && 'علّق على منشورك'}
-                          {notif.type === 'repost' && 'أعاد نشر محتواك'}
-                        </span>
-                      </p>
+                  
+                  {isVaultWin ? (
+                    <div className="h-9 w-9 bg-yellow-500/10 rounded-full flex items-center justify-center shrink-0 border border-yellow-500/20">
+                      <span className="text-lg">🏺</span>
+                    </div>
+                  ) : (
+                    <Link href={`/profile/${notif.fromUserId}`}>
+                      <Avatar className="h-9 w-9 border rounded-full">
+                        <AvatarImage src={notif.fromAvatar} alt={notif.fromUsername} />
+                        <AvatarFallback className="text-[10px]">{notif.fromUsername?.[0]}</AvatarFallback>
+                      </Avatar>
                     </Link>
+                  )}
+
+                  <div className="flex-1 flex flex-col gap-0.5">
+                    {isVaultWin ? (
+                      <div>
+                        <p className="text-[11px] leading-tight font-bold text-primary">مبروك! لقد فزت بكنز تيمقاد</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">{notif.message}</p>
+                      </div>
+                    ) : (
+                      <Link href={notif.postId ? `/?post=${notif.postId}` : `/profile/${notif.fromUserId}`}>
+                        <p className="text-[11px] leading-tight">
+                          <span className="font-bold text-primary">{notif.fromUsername}</span>
+                          <span className="text-muted-foreground mr-1">
+                            {notif.type === 'like' && 'أعجب بمنشورك'}
+                            {notif.type === 'follow' && 'بدأ في متابعتك'}
+                            {notif.type === 'comment' && 'علّق على منشورك'}
+                            {notif.type === 'repost' && 'أعاد نشر محتواك'}
+                          </span>
+                        </p>
+                      </Link>
+                    )}
                     <span className="text-[8px] text-muted-foreground">
                       {notif.createdAt?.toDate ? formatDistanceToNow(notif.createdAt.toDate(), { addSuffix: true, locale: ar }) : 'منذ قليل'}
                     </span>
