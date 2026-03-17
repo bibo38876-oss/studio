@@ -2,13 +2,13 @@
 "use client"
 
 import { useState, useRef } from 'react';
-import { Image as ImageIcon, X, Hash, Plus, Trash2, Loader2, AlertCircle, BarChart2 } from 'lucide-react';
+import { Image as ImageIcon, X, Hash, Plus, Trash2, Loader2, AlertCircle, BarChart2, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, increment } from 'firebase/firestore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 
@@ -76,6 +76,26 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const charLimit = isVerified ? 1500 : 400;
   const imageLimit = isVerified ? 3 : 1;
 
+  // حساب حالة الاستطلاع وتكلفته
+  const checkPollStatus = () => {
+    if (!showPoll) return { cost: 0, isFree: true };
+    
+    if (isVerified) {
+      const lastPollDate = profile?.lastPollCreatedAt ? new Date(profile.lastPollCreatedAt).getTime() : 0;
+      const now = new Date().getTime();
+      const hoursPassed = (now - lastPollDate) / (1000 * 60 * 60);
+      
+      if (hoursPassed >= 24) {
+        return { cost: 0, isFree: true };
+      }
+      return { cost: 2, isFree: false };
+    }
+    
+    return { cost: 3, isFree: false };
+  };
+
+  const pollStatus = checkPollStatus();
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -123,22 +143,14 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     }
     if (!db || !user) return;
 
-    // قيود الاستطلاع
+    // منطق الاستطلاع والعملات
     if (showPoll) {
-      if (!isVerified) {
-        toast({ variant: "destructive", description: "عذراً، ميزة الاستطلاعات متاحة للحسابات الموثقة فقط." });
-        return;
-      }
-
-      // التحقق من مرور 24 ساعة
-      if (profile?.lastPollCreatedAt) {
-        const lastDate = new Date(profile.lastPollCreatedAt).getTime();
-        const now = new Date().getTime();
-        const hoursPassed = (now - lastDate) / (1000 * 60 * 60);
-        if (hoursPassed < 24) {
+      if (!pollStatus.isFree) {
+        if ((profile?.coins || 0) < pollStatus.cost) {
           toast({ 
             variant: "destructive", 
-            description: `يمكنك إنشاء استطلاع واحد كل 24 ساعة. تبقى لك حوالي ${Math.ceil(24 - hoursPassed)} ساعة.` 
+            title: "الرصيد لا يكفي",
+            description: `تحتاج إلى ${pollStatus.cost} عملات لإنشاء هذا الاستطلاع.` 
           });
           return;
         }
@@ -172,12 +184,20 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         question: pollQuestion.trim(),
         options: pollOptions.map(opt => ({ text: opt.trim(), votes: 0 })),
         totalVotes: 0,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // ينتهي بعد 24 ساعة
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       };
-      // تحديث وقت آخر استطلاع
-      updateDocumentNonBlocking(doc(db, 'users', user.uid), {
-        lastPollCreatedAt: new Date().toISOString()
-      });
+
+      // خصم العملات إذا كان مدفوعاً
+      if (!pollStatus.isFree) {
+        updateDocumentNonBlocking(doc(db, 'users', user.uid), {
+          coins: increment(-pollStatus.cost)
+        });
+      } else if (isVerified) {
+        // تحديث وقت الاستطلاع المجاني للموثقين فقط
+        updateDocumentNonBlocking(doc(db, 'users', user.uid), {
+          lastPollCreatedAt: new Date().toISOString()
+        });
+      }
     }
 
     addDocumentNonBlocking(collection(db, 'posts'), postData);
@@ -224,9 +244,14 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         </div>
 
         {showPoll && (
-          <div className="bg-secondary/20 p-4 border border-primary/10 space-y-3 animate-in fade-in zoom-in-95">
+          <div className="bg-primary/5 p-4 border border-primary/10 space-y-3 animate-in fade-in zoom-in-95">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold text-primary">إنشاء استطلاع</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-primary">إنشاء استطلاع</span>
+                <span className="text-[8px] bg-accent/10 text-accent px-1.5 py-0.5 rounded-full font-bold">
+                  {pollStatus.isFree ? 'مجاني حالياً' : `التكلفة: ${pollStatus.cost} عملات`}
+                </span>
+              </div>
               <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setShowPoll(false)}>
                 <X size={12} />
               </Button>
@@ -259,6 +284,9 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
                 </Button>
               )}
             </div>
+            {!pollStatus.isFree && (
+              <p className="text-[8px] text-muted-foreground italic text-center">سيتم خصم {pollStatus.cost} عملات من رصيدك عند النشر.</p>
+            )}
           </div>
         )}
 
@@ -292,13 +320,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
           
           <Button 
             variant="ghost" size="sm" className={`flex-1 flex-col h-12 gap-1 ${showPoll ? 'text-primary' : 'text-muted-foreground'}`}
-            onClick={() => {
-              if (!isVerified) {
-                toast({ description: "الاستطلاعات متاحة للحسابات الموثقة فقط." });
-                return;
-              }
-              setShowPoll(!showPoll);
-            }}
+            onClick={() => setShowPoll(!showPoll)}
           >
             <BarChart2 size={18} />
             <span className="text-[8px]">استطلاع</span>
