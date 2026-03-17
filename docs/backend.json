@@ -73,11 +73,12 @@
     "VaultJar": {
       "title": "VaultJar",
       "type": "object",
+      "description": "Daily collective coin jar competition. Resets daily at 20:05 DZ time.",
       "properties": {
         "totalCoins": { "type": "number" },
         "status": { "type": "string", "enum": ["active", "broken"] },
-        "expiresAt": { "type": "string", "format": "date-time" },
-        "lastWinners": { "type": "array" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastWinners": { "type": "array", "description": "Top 10 winners based on Timgad Aura score." }
       }
     }
   },
@@ -89,8 +90,8 @@
       { "path": "users/{userId}", "definition": { "entityName": "User" } },
       { "path": "posts/{postId}", "definition": { "entityName": "Post" } },
       { "path": "vault/current_jar", "definition": { "entityName": "VaultJar" } },
-      { "path": "vault/current_jar/participants/{userId}", "description": "Users who contributed a coin to the current jar." },
-      { "path": "vault_history/{historyId}", "description": "Records of previous broken jars and their winners." }
+      { "path": "vault/current_jar/participants/{userId}", "description": "Users who contributed a coin. Stores aura-relevant stats like followerCount." },
+      { "path": "vault_history/{historyId}", "description": "Records of previous broken jars, winners, and platform fees." }
     ]
   }
 }
