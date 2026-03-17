@@ -39,23 +39,26 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // نظام مكافأة الدخول اليومي (1 عملة)
+  // نظام مكافأة الدخول اليومي (1 عملة كل 24 ساعة)
   useEffect(() => {
     if (!firestore || !user?.uid || !profile) return;
 
-    const today = new Date().toISOString().split('T')[0];
-    const lastLogin = profile.lastLoginAt ? profile.lastLoginAt.split('T')[0] : null;
+    const now = new Date();
+    const lastLoginStr = profile.lastLoginAt;
+    const lastLoginDate = lastLoginStr ? new Date(lastLoginStr) : new Date(0);
+    const timeDiff = now.getTime() - lastLoginDate.getTime();
+    const twentyFourHours = 24 * 60 * 60 * 1000;
 
-    if (lastLogin !== today) {
-      // منح عملة واحدة للدخول اليومي
+    if (timeDiff >= twentyFourHours) {
+      // منح عملة واحدة للدخول اليومي وتحديث الوقت
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
         coins: increment(1),
-        lastLoginAt: new Date().toISOString()
+        lastLoginAt: now.toISOString()
       });
       
       toast({
-        title: "مكافأة يومية!",
-        description: "لقد حصلت على عملة واحدة لتسجيل دخولك اليومي. استمر في العطاء!",
+        title: "مكافأة 24 ساعة!",
+        description: "لقد حصلت على عملة تيمقاد لولائك المستمر. عد غداً للمزيد!",
       });
     }
   }, [firestore, user?.uid, profile, toast]);

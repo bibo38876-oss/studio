@@ -9,6 +9,28 @@ import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import TimgadLogo from '@/components/ui/Logo';
+import { motion } from 'framer-motion';
+
+/**
+ * WoodenChestIcon - A custom SVG representing a wooden chest for rewards.
+ */
+function WoodenChestIcon({ size = 16, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg" 
+      className={className}
+    >
+      <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" fill="#8B4513" stroke="#5D2E0C" strokeWidth="1.5" />
+      <path d="M3 9V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3H3Z" fill="#A0522D" stroke="#5D2E0C" strokeWidth="1.5" />
+      <path d="M10 9v2h4V9" stroke="#DAA520" strokeWidth="1.5" />
+      <rect x="11" y="8" width="2" height="3" fill="#DAA520" />
+    </svg>
+  );
+}
 
 export default function Navbar() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -65,6 +87,15 @@ export default function Navbar() {
         </div>
 
         <div className={`flex items-center gap-1 transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
+          <Link href="/wallet">
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+              className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full"
+            >
+              <WoodenChestIcon size={18} />
+            </motion.div>
+          </Link>
+          
           <Link href="/notifications">
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full relative hover:bg-secondary">
               <Bell size={16} className="text-muted-foreground" />
