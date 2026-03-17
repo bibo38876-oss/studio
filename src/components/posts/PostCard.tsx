@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
@@ -399,7 +398,7 @@ export default function PostCard({ post }: { post: PostData }) {
           )}
         </AnimatePresence>
 
-        <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-colors" onClick={() => setIsCommentsOpen(true)}>
+        <Card ref={cardRef} className="border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-all duration-300" onClick={() => setIsCommentsOpen(true)}>
           {displayPost.promoted && (
             <div className="flex items-center gap-1.5 text-[9px] text-accent font-bold px-4 pt-2 group">
               <Rocket size={10} className="fill-current animate-pulse" />
@@ -410,7 +409,7 @@ export default function PostCard({ post }: { post: PostData }) {
           <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 text-right">
             <div className="flex items-center gap-2">
               <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-secondary/50"><MoreHorizontal size={14} /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="text-xs">
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/post/${displayPost.id}`); toast({ description: "تم نسخ الرابط" }); }} className="gap-2 cursor-pointer"><LinkIcon size={12} /> نسخ الرابط</DropdownMenuItem>
                   
@@ -429,13 +428,12 @@ export default function PostCard({ post }: { post: PostData }) {
                 {isVerified && !isOwner && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-all border border-primary/10"
+                      <motion.button 
+                        whileTap={{ scale: 0.9 }}
+                        className="h-7 w-7 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-all border border-primary/10 flex items-center justify-center"
                       >
                         <Coffee size={14} />
-                      </Button>
+                      </motion.button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="center" className="min-w-[160px] p-2">
                       <DropdownMenuLabel className="text-[10px] font-bold text-primary text-center pb-2 uppercase tracking-tighter">ادعم محتوى {currentAuthorName}</DropdownMenuLabel>
@@ -493,7 +491,7 @@ export default function PostCard({ post }: { post: PostData }) {
                 </div>
                 <span className="text-[9px] text-muted-foreground">{displayPost.createdAt?.toDate ? formatDistanceToNow(displayPost.createdAt.toDate(), { addSuffix: true, locale: ar }) : 'الآن'}</span>
               </div>
-              <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5">
+              <Avatar className="h-9 w-9 border border-muted/20 rounded-full bg-primary/5 group-hover:scale-105 transition-transform duration-300">
                 <AvatarImage src={currentAuthorAvatar} />
                 <AvatarFallback className="text-[10px] font-bold">{currentAuthorName?.[0]}</AvatarFallback>
               </Avatar>
@@ -558,7 +556,7 @@ export default function PostCard({ post }: { post: PostData }) {
             )}
             
             {displayPost.mediaUrls && displayPost.mediaUrls.length > 0 && (
-              <div className="w-full mt-2 rounded-2xl overflow-hidden border border-muted/10 shadow-sm relative group/media">
+              <div className="w-full mt-2 rounded-2xl overflow-hidden border border-muted/10 shadow-sm relative group/media transition-transform duration-500 hover:scale-[1.01]">
                 <div className="w-full bg-black/5 flex items-center justify-center overflow-hidden">
                   <img 
                     src={displayPost.mediaUrls[0]} 
@@ -593,7 +591,7 @@ export default function PostCard({ post }: { post: PostData }) {
               </Button>
             </motion.div>
 
-            <Button variant="ghost" size="sm" className="h-8 text-muted-foreground gap-1.5 rounded-full px-3" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
+            <Button variant="ghost" size="sm" className="h-8 text-muted-foreground gap-1.5 rounded-full px-3 hover:bg-secondary/50" onClick={(e) => { e.stopPropagation(); setIsCommentsOpen(true); }}>
               <MessageCircle size={18} /><span className="text-[11px] font-bold">{displayPost.commentsCount || 0}</span>
             </Button>
 
@@ -608,7 +606,7 @@ export default function PostCard({ post }: { post: PostData }) {
               </Button>
             </motion.div>
 
-            <Button variant="ghost" size="sm" className="h-8 text-muted-foreground gap-1.5 rounded-full px-3" onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="sm" className="h-8 text-muted-foreground gap-1.5 rounded-full px-3 hover:bg-secondary/50" onClick={(e) => e.stopPropagation()}>
               <BarChart3 size={18} /><span className="text-[11px] font-bold">{displayPost.viewsCount || 0}</span>
             </Button>
           </CardFooter>
@@ -641,7 +639,7 @@ export default function PostCard({ post }: { post: PostData }) {
               <Button 
                 key={i} 
                 variant="outline" 
-                className="w-full h-16 justify-between px-6 rounded-none hover:bg-primary/5 group border-muted/20"
+                className="w-full h-16 justify-between px-6 rounded-none hover:bg-primary/5 group border-muted/20 transition-all duration-300"
                 onClick={(e) => { e.stopPropagation(); handlePromote(tier.impressions, tier.coins); }}
               >
                 <div className="flex flex-col items-start text-right">

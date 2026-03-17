@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -77,8 +76,8 @@ export default function Navbar() {
     <nav className="fixed top-0 z-50 w-full h-8 border-b bg-background/80 backdrop-blur-md transition-all duration-300">
       <div className="container mx-auto h-full flex items-center justify-between px-4 max-w-5xl gap-4">
         <div className={`flex items-center transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
-          <Link href="/" className="flex items-center gap-1.5 text-xs font-bold text-primary font-headline tracking-tighter whitespace-nowrap">
-            <TimgadLogo size={14} className="text-primary" />
+          <Link href="/" className="flex items-center gap-1.5 text-xs font-bold text-primary font-headline tracking-tighter whitespace-nowrap group">
+            <TimgadLogo size={14} className="text-primary group-hover:scale-110 transition-transform" />
             تيمقاد <span className="text-accent text-[8px]">Timgad</span>
           </Link>
         </div>
@@ -95,7 +94,7 @@ export default function Navbar() {
               placeholder="بحث عن أشخاص أو وسم..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`h-6 w-full pe-8 ps-4 bg-secondary/50 border-none rounded-full text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/20 focus:bg-secondary transition-all ${isSearchFocused ? 'shadow-sm' : ''}`}
+              className={`h-6 w-full pe-8 ps-4 bg-secondary/50 border-none rounded-full text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/20 focus:bg-secondary transition-all ${isSearchFocused ? 'shadow-sm ring-1 ring-primary/10' : ''}`}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
             />
@@ -107,18 +106,24 @@ export default function Navbar() {
             <motion.div
               whileHover={{ scale: 1.1, rotate: [-2, 2, -2, 0] }}
               whileTap={{ scale: 0.9 }}
-              className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full transition-colors"
+              className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full transition-colors relative"
               title="خزانة تيمقاد"
             >
-              <WoodenChestIcon size={16} />
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              >
+                <WoodenChestIcon size={16} />
+              </motion.div>
+              <div className="absolute inset-0 bg-yellow-500/10 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </motion.div>
           </Link>
           
           <Link href="/notifications">
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full relative hover:bg-secondary">
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full relative hover:bg-secondary transition-all">
               <Bell size={16} className="text-muted-foreground" />
               {hasUnread && (
-                <span className="absolute top-2 start-2 w-1.5 h-1.5 bg-accent rounded-full border border-background animate-pulse"></span>
+                <span className="absolute top-2 start-2 w-1.5 h-1.5 bg-accent rounded-full border border-background animate-pulse shadow-[0_0_5px_rgba(var(--accent),0.5)]"></span>
               )}
             </Button>
           </Link>

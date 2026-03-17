@@ -23,7 +23,7 @@
     --border: 220 31% 90%;
     --input: 220 31% 90%;
     --ring: 220 31% 46%;
-    --radius: 0rem;
+    --radius: 0.75rem;
   }
   .dark {
     --background: 221 31% 10%;
@@ -56,6 +56,8 @@
     @apply bg-background text-foreground font-body;
     direction: rtl !important;
     text-align: right !important;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
   }
 }
 
@@ -67,12 +69,9 @@
   @apply rounded-none border-x-0 border-t-0;
 }
 
-.slim-nav {
-  @apply h-7;
-}
-
-.slim-bottom-nav {
-  @apply h-8;
+/* Smooth transitions for interactive elements */
+button, a, .card, .avatar {
+  @apply transition-all duration-200 ease-in-out;
 }
 
 @keyframes icon-pop {
@@ -85,13 +84,23 @@
   animation: icon-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.page-transition-enter {
-  opacity: 0;
-  transform: translateY(10px);
+/* Custom scrollbar for desktop */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
+  }
 }
 
-.page-transition-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

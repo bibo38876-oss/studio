@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -226,14 +225,14 @@ export default function Home() {
             <TabsList className="w-full bg-background/80 backdrop-blur-md border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-8 z-40">
               <TabsTrigger 
                 value="for-you" 
-                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2"
+                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2 transition-all duration-300"
               >
                 <Sparkles size={14} className={activeTab === 'for-you' ? 'text-primary' : ''} />
                 لك
               </TabsTrigger>
               <TabsTrigger 
                 value="following" 
-                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2"
+                className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none font-bold text-xs gap-2 transition-all duration-300"
               >
                 <Users size={14} className={activeTab === 'following' ? 'text-primary' : ''} />
                 أتابعهم
@@ -241,7 +240,7 @@ export default function Home() {
             </TabsList>
 
             <AnimatePresence mode="wait">
-              <TabsContent value="for-you" key="for-you" className="mt-0">
+              <TabsContent value="for-you" key="for-you" className="mt-0 outline-none">
                 {isPoolLoading && limitForYou === 10 ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -249,9 +248,10 @@ export default function Home() {
                   </div>
                 ) : (
                   <motion.div 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, y: 10 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
                     className="flex flex-col"
                   >
                     {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} />)}
@@ -263,7 +263,7 @@ export default function Home() {
                 )}
               </TabsContent>
 
-              <TabsContent value="following" key="following" className="mt-0">
+              <TabsContent value="following" key="following" className="mt-0 outline-none">
                 {!profile?.followingIds || profile.followingIds.length === 0 ? (
                   <div className="text-center py-24 bg-card px-8 border-b">
                     <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
@@ -276,9 +276,10 @@ export default function Home() {
                   </div>
                 ) : (
                   <motion.div 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, y: 10 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
                     className="flex flex-col"
                   >
                     {followingPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
