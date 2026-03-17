@@ -8,20 +8,23 @@ import { collection, query, orderBy, serverTimestamp, doc, increment } from 'fir
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Rocket } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Rocket, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { cn } from '@/lib/utils';
 import TimgadLogo from '@/components/ui/Logo';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CommentsDialog({ postId, postAuthorId, post, onClose }: { postId: string, postAuthorId: string, post: any, onClose: () => void }) {
   const [commentText, setCommentText] = useState('');
   const { firestore, user } = useFirebase();
+  const { toast } = useToast();
   const router = useRouter();
 
   const isAnonymous = !user || user.isAnonymous;
+  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
@@ -81,6 +84,13 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     }
   };
 
+  const handleDeleteComment = (commentId: string) => {
+    if (!firestore || !postId || !commentId) return;
+    deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId));
+    updateDocumentNonBlocking(doc(firestore, 'posts', postId), { commentsCount: increment(-1) });
+    toast({ description: "تم حذف التعليق بنجاح." });
+  };
+
   const renderContentWithHashtags = (text: string) => {
     if (!text) return null;
     const parts = text.split(/(#[^\s#]+)/g);
@@ -100,6 +110,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
       </div>
 
       <div className="flex-1 overflow-y-auto pb-20">
+        {/* المنشور الرئيسي */}
         <div className="p-4 border-b bg-muted/5">
           <div className="flex gap-3 mb-4 justify-end">
             <div className="flex flex-col text-right">
@@ -143,6 +154,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           </div>
         </div>
 
+        {/* مساحة إعلانية - الإعلان أسفل المنشور مباشرة */}
         <div className="p-4">
           <div className="bg-primary/5 border border-dashed border-primary/20 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -156,6 +168,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           </div>
         </div>
 
+        {/* قائمة التعليقات */}
         <div className="p-4 space-y-4">
           <div className="flex items-center gap-2 border-b border-muted/10 pb-2 justify-end">
             <span className="text-[10px] font-bold uppercase tracking-widest text-primary">التعليقات</span>
@@ -164,15 +177,33 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : comments && comments.length > 0 ? (
-            comments.map((c: any) => (
-              <div key={c.id} className="flex gap-3 animate-in fade-in slide-in-from-bottom-1 duration-300 justify-end">
-                <div className="flex-1 bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right">
-                  <span className="text-[10px] font-bold block mb-1 text-primary">{c.authorName}</span>
-                  <p className="text-xs leading-relaxed">{c.content}</p>
+            comments.map((c: any) => {
+              const canDelete = user && (user.uid === c.authorId || user.email === ADMIN_EMAIL);
+              return (
+                <div key={c.id} className="flex gap-3 animate-in fade-in slide-in-from-bottom-1 duration-300 justify-end group">
+                  <div className="flex-1 flex flex-col items-end">
+                    <div className="bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right relative w-full">
+                      <div className="flex justify-between items-start mb-1">
+                        {canDelete && (
+                          <button 
+                            onClick={() => handleDeleteComment(c.id)}
+                            className="text-destructive/40 hover:text-destructive transition-colors"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                        <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
+                      </div>
+                      <p className="text-xs leading-relaxed">{c.content}</p>
+                    </div>
+                    <span className="text-[7px] text-muted-foreground mt-1 px-1">
+                      {c.createdAt?.toDate ? formatDistanceToNow(c.createdAt.toDate(), { locale: ar }) : 'الآن'}
+                    </span>
+                  </div>
+                  <Avatar className="h-8 w-8 border shrink-0"><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
                 </div>
-                <Avatar className="h-8 w-8 border"><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="text-center py-10 opacity-40"><p className="text-[10px] font-bold">لا توجد تعليقات بعد.</p></div>
           )}

@@ -21,6 +21,7 @@ const PACKAGES = [
   { id: "pkg_4", amount: 5000, price: "30.00", label: "كنز الريادة", color: "bg-amber-500/20 text-[#FBBF24]" }
 ];
 
+// PayPal Client ID المحدث
 const PAYPAL_CLIENT_ID = "AcfcwkWDQP9gcJEUejcgGHhyChqJlyFYhMOb8N7qK6zH3QGEqSw-4Tb2xppGkefnhKyixemkJKKctnmV";
 
 export default function WalletPage() {
