@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Sparkles, Wallet, ShieldCheck, Package, BadgeCheck, Loader2, Coins, Trophy, Scale, Gavel, AlertCircle } from 'lucide-react';
+import { ChevronRight, Sparkles, ShieldCheck, Package, BadgeCheck, Loader2, Coins, Trophy, Scale, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,8 @@ const PACKAGES = [
   { id: "pkg_3", amount: 1000, price: "7.00", label: "خزانة التميز", color: "bg-purple-500/20 text-purple-300" },
   { id: "pkg_4", amount: 5000, price: "30.00", label: "كنز الريادة", color: "bg-amber-500/20 text-[#FBBF24]" }
 ];
+
+const PAYPAL_CLIENT_ID = "AcfcwkWDQP9gcJEUejcgGHhyChqJlyFYhMOb8N7qK6zH3QGEqSw-4Tb2xppGkefnhKyixemkJKKctnmV";
 
 export default function WalletPage() {
   const router = useRouter();
@@ -45,7 +47,7 @@ export default function WalletPage() {
       toast({
         variant: "destructive",
         title: "الكنز لا يكفي",
-        description: "تحتاج إلى 500 عملة لتوثيق حسابك. يمكنك شراء باقة عملات من الأسفل عبر PayPal.",
+        description: "تحتاج إلى 500 عملة لتوثيق حسابك. يمكنك شحن رصيدك عبر PayPal الآن.",
       });
       return;
     }
@@ -87,7 +89,7 @@ export default function WalletPage() {
   };
 
   return (
-    <PayPalScriptProvider options={{ "clientId": "AcfcwkWDQP9gcJEUejcgGHhyChqJlyFYhMOb8N7qK6zH3QGEqSw-4Tb2xppGkefnhKyixemkJKKctnmV", currency: "USD" }}>
+    <PayPalScriptProvider options={{ "clientId": PAYPAL_CLIENT_ID, currency: "USD" }}>
       <div className="min-h-screen bg-[#2D1606] text-[#F3E5AB]">
         <Navbar />
 

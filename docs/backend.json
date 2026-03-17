@@ -68,7 +68,8 @@
         "viewsCount": { "type": "number", "default": 0 },
         "reportsCount": { "type": "number", "default": 0 },
         "promoted": { "type": "boolean" },
-        "impressions_left": { "type": "number" }
+        "impressions_left": { "type": "number" },
+        "authorVerificationType": { "type": "string" }
       },
       "required": ["id", "authorId", "content", "createdAt"]
     }
