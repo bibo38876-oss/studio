@@ -3,7 +3,7 @@
  */
 
 const CLOUD_NAME = 'df4ogwkyn';
-const UPLOAD_PRESET = 'timgad_preset'; // تأكد من إنشاء هذا الـ Preset في Cloudinary (Unsigned)
+const UPLOAD_PRESET = 'ml_default'; // تم التغيير إلى ml_default وهو الإعداد الافتراضي في Cloudinary
 
 /**
  * Uploads a file to Cloudinary and returns the secure URL.
@@ -26,7 +26,14 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'فشل رفع الصورة');
+      const errorMessage = errorData.error?.message || 'فشل رفع الصورة';
+      
+      // توضيح المشكلة للمستخدم إذا كان السبب هو الـ Preset
+      if (errorMessage.includes('Upload preset not found')) {
+        throw new Error('لم يتم العثور على إعدادات الرفع (Upload Preset). يرجى التأكد من تفعيل Unsigned Upload في إعدادات Cloudinary باسم ml_default');
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
