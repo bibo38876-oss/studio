@@ -107,7 +107,7 @@ export default function Home() {
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 30)),
-      limit(50) 
+      limit(100) 
     );
   }, [firestore, user?.uid, profile?.followingIds]);
 
@@ -187,8 +187,8 @@ export default function Home() {
   const handleVaultNoticeClick = (e: React.MouseEvent) => {
     e.preventDefault();
     toast({
-      title: "قريباً! 🏺",
-      description: "جرة تيمقاد الملكية قيد الصيانة والتحسين، ستعود للعمل قريباً.",
+      title: "قريباً جداً! 🏺",
+      description: "ميزة جرة تيمقاد الملكية في مراحلها الأخيرة من التطوير. انتظرونا!",
     });
   };
 
@@ -257,9 +257,9 @@ export default function Home() {
                 {activeTab === 'for-you' ? (
                   <motion.div 
                     key="for-you"
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, x: 10 }} 
+                    animate={{ opacity: 1, x: 0 }} 
+                    exit={{ opacity: 0, x: -10 }}
                     transition={{ duration: 0.2 }}
                     className="w-full"
                   >
@@ -280,9 +280,9 @@ export default function Home() {
                 ) : (
                   <motion.div 
                     key="following"
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, x: -10 }} 
+                    animate={{ opacity: 1, x: 0 }} 
+                    exit={{ opacity: 0, x: 10 }}
                     transition={{ duration: 0.2 }}
                     className="w-full"
                   >
