@@ -177,17 +177,17 @@ export default function VaultPage() {
       return;
     }
     if (hasParticipated) {
-      toast({ variant: "destructive", description: "لقد وضعت عملتك بالفعل في هذه الجرة." });
+      toast({ variant: "destructive", description: "لقد وضعت عملاتك بالفعل في هذه الجرة." });
       return;
     }
-    if ((profile.coins || 0) < 1) {
-      toast({ variant: "destructive", title: "الخزانة فارغة", description: "تحتاج لعملة واحدة للمشاركة." });
+    if ((profile.coins || 0) < 3) {
+      toast({ variant: "destructive", title: "الخزانة لا تكفي", description: "تحتاج لـ 3 عملات للمشاركة في هذه الدورة." });
       return;
     }
 
     setIsContributing(true);
     try {
-      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-1) });
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-3) });
       await setDoc(doc(firestore, 'vault', 'current_jar', 'participants', user.uid), {
         userId: user.uid,
         username: profile.username,
@@ -196,8 +196,8 @@ export default function VaultPage() {
         followerCount: profile.followerIds?.length || 0,
         joinedAt: serverTimestamp()
       });
-      updateDocumentNonBlocking(doc(firestore, 'vault', 'current_jar'), { totalCoins: increment(1) });
-      toast({ title: "مساهمة مباركة!", description: "عملتك الآن جزء من كنز تيمقاد." });
+      updateDocumentNonBlocking(doc(firestore, 'vault', 'current_jar'), { totalCoins: increment(3) });
+      toast({ title: "مساهمة مباركة!", description: "عملاتك الثلاث أصبحت الآن جزءاً من كنز تيمقاد." });
     } catch (error) {
       toast({ variant: "destructive", description: "فشل الوصول للخزنة." });
     } finally {
@@ -219,7 +219,11 @@ export default function VaultPage() {
           <AnimatePresence>
             {isContributing && (
               <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -100, opacity: 0 }} className="absolute inset-0 flex items-center justify-center z-50">
-                <TimgadCoin size={64} />
+                <div className="flex gap-1">
+                  <TimgadCoin size={48} />
+                  <TimgadCoin size={48} />
+                  <TimgadCoin size={48} />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -271,7 +275,7 @@ export default function VaultPage() {
                 disabled={isContributing || !!hasParticipated}
               >
                 {isContributing ? <Loader2 className="animate-spin" /> : hasParticipated ? <Shield size={20} /> : <Plus size={20} />}
-                {hasParticipated ? "أنت مشارك في السحب" : "المشاركة بعملة تيمقاد واحدة"}
+                {hasParticipated ? "أنت مشارك في السحب" : "المشاركة بـ 3 عملات تيمقاد"}
               </Button>
 
               <Card className="bg-black/20 border-[#B45309]/20 w-full rounded-none">
@@ -281,7 +285,7 @@ export default function VaultPage() {
                     <h3 className="text-[10px] font-bold uppercase tracking-wider">كيف تفوز بـ "أورا تيمقاد"؟</h3>
                   </div>
                   <p className="text-[9px] text-[#F3E5AB]/60 text-right leading-relaxed">
-                    يتم ترتيب المشاركين العشرة الأوائل بناءً على قوة تأثيرهم الرقمي (عدد المتابعين + التفاعل اليومي). كلما كنت مؤثراً أكثر، زادت فرصك في نيل نصيب الأسد من الجرة.
+                    يتم ترتيب المشاركين العشرة الأوائل بناءً على قوة تأثيرهم الرقمي (عدد المتابعين + التفاعل اليومي). تحتاج لـ 3 عملات للمشاركة في هذه الدورة.
                   </p>
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#B45309]/10">
                     <div className="text-right">
