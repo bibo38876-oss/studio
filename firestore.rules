@@ -17,17 +17,13 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      // السماح بالقراءة لجميع المستخدمين المسجلين لضمان استقرار التغذية الإخبارية والبحث
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
-      
-      // السماح بالتحديث لصاحب المنشور أو الأدمن، أو تحديث عدادات التفاعل/الترويج لأي مستخدم مسجل
       allow update: if isSignedIn() && (
         isOwner(resource.data.authorId) || 
         isAdmin() || 
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount', 'likesCount', 'repostsCount', 'commentsCount', 'poll', 'reportsCount', 'impressions_left', 'promoted'])
       );
-      
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isAdmin());
 
       match /likes/{userId} {
@@ -77,6 +73,11 @@ service cloud.firestore {
       match /groupInvites/{inviteId} {
         allow read, write: if isOwner(userId) || isSignedIn();
       }
+
+      match /supportedPeople/{targetUserId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId);
+      }
     }
 
     match /groups/{groupId} {
@@ -94,6 +95,12 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isSignedIn();
       allow delete: if isAdmin();
+    }
+
+    // السماح بالوصول لبيانات الخزنة الجماعية
+    match /vault/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
     }
   }
 }
