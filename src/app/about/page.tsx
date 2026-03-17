@@ -4,8 +4,9 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Target, Rocket, ShieldCheck, Heart, Sparkles, Globe, Scale, History, ShieldAlert, FileText, Users, Briefcase } from 'lucide-react';
+import { ChevronRight, Target, Rocket, ShieldCheck, Heart, Sparkles, Globe, Scale, History, ShieldAlert, FileText, Users, Coins, Trophy, BadgeCheck, BarChart3, Zap } from 'lucide-react';
 import TimgadLogo from '@/components/ui/Logo';
+import TimgadCoin from '@/components/ui/TimgadCoin';
 
 export default function AboutPage() {
   const router = useRouter();
@@ -38,6 +39,122 @@ export default function AboutPage() {
               <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
                 تُعد منصة تيمقاد صرحاً تقنياً عربياً يهدف إلى إعادة صياغة مفاهيم التواصل الرقمي، من خلال دمج الموروث الحضاري مع أحدث الابتكارات البرمجية، لتقديم تجربة مستخدم تتسم بالرصانة والكفاءة والاستدامة.
               </p>
+            </div>
+          </section>
+
+          {/* New Section: Comprehensive Guide (دليل تيمقاد الشامل) */}
+          <section className="space-y-8 py-6">
+            <div className="flex items-center gap-3 text-primary border-r-4 border-accent pr-3">
+              <Zap size={20} className="text-accent" />
+              <h3 className="font-bold text-md uppercase tracking-tighter">دليل تيمقاد: المنظومة والامتيازات</h3>
+            </div>
+
+            {/* Economy & Coins */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <Coins size={16} />
+                <h4 className="text-sm font-bold">1. اقتصاد تيمقاد (العملات)</h4>
+              </div>
+              <div className="bg-secondary/20 p-5 border-r-2 border-primary space-y-3">
+                <p className="text-xs text-foreground/80 leading-relaxed">
+                  تعتمد المنصة على "عملة تيمقاد" كوحدة مكافأة داخلية لتحفيز الجودة والتفاعل:
+                </p>
+                <ul className="text-[11px] text-muted-foreground space-y-2 list-disc pr-5">
+                  <li><span className="text-primary font-bold">هدية الانضمام:</span> يحصل كل عضو جديد فور التسجيل على <span className="text-primary">10 عملات</span> كبداية لرحلته.</li>
+                  <li><span className="text-primary font-bold">مكافأة الولاء:</span> تمنحك المنصة <span className="text-primary">عملة واحدة</span> تلقائياً عند دخولك اليومي (كل 24 ساعة).</li>
+                  <li><span className="text-primary font-bold">دعم المحتوى:</span> يمكنك إرسال واستقبال العملات من متابعيك كدعم لمحتواك المتميز.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* The Vault / Jar */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <Trophy size={16} className="text-yellow-600" />
+                <h4 className="text-sm font-bold">2. جرة تيمقاد الأثرية (المنافسة اليومية)</h4>
+              </div>
+              <div className="bg-[#2D1606] text-[#F3E5AB] p-5 space-y-3 shadow-xl">
+                <p className="text-xs leading-relaxed opacity-90">
+                  حدث الذروة اليومي الذي يجمع المجتمع حول كنز واحد:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-black/20 p-3 border border-[#FBBF24]/10">
+                    <h5 className="text-[10px] font-bold text-[#FBBF24] mb-1">الجدول الزمني (بتوقيت الجزائر)</h5>
+                    <p className="text-[9px] opacity-70">20:00: انكسار الجرة وتوزيع الكنوز.<br />20:05: بدء دورة جديدة للمساهمة.</p>
+                  </div>
+                  <div className="bg-black/20 p-3 border border-[#FBBF24]/10">
+                    <h5 className="text-[10px] font-bold text-[#FBBF24] mb-1">المشاركة والجوائز</h5>
+                    <p className="text-[9px] opacity-70">رسم الدخول: 3 عملات.<br />توزيع الكنز: 70% لأعلى 10 مستخدمين من حيث "الأورا".</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Verified vs Non-Verified Tier List */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <BadgeCheck size={16} className="text-blue-500" />
+                <h4 className="text-sm font-bold">3. ميثاق العضوية والتوثيق</h4>
+              </div>
+              <div className="overflow-hidden border rounded-none">
+                <table className="w-full text-[10px] text-right">
+                  <thead className="bg-secondary/50 border-b">
+                    <tr>
+                      <th className="p-3 font-bold border-l">الميزة</th>
+                      <th className="p-3 font-bold text-muted-foreground border-l">المستكشف (عادي)</th>
+                      <th className="p-3 font-bold text-blue-600">النخبة (موثق)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    <tr>
+                      <td className="p-3 font-medium bg-muted/10 border-l">طول المنشور</td>
+                      <td className="p-3 border-l">400 حرف</td>
+                      <td className="p-3">1500 حرف</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-medium bg-muted/10 border-l">معرض الصور</td>
+                      <td className="p-3 border-l">صورة واحدة</td>
+                      <td className="p-3">3 صور لكل منشور</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-medium bg-muted/10 border-l">استطلاعات الرأي</td>
+                      <td className="p-3 border-l">تكلفة: 3 عملات</td>
+                      <td className="p-3">مجاني (واحد/يومياً) أو عملتين</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-medium bg-muted/10 border-l">أولوية الظهور</td>
+                      <td className="p-3 border-l">عادية</td>
+                      <td className="p-3">أولوية فائقة (أورا أعلى)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[9px] text-muted-foreground italic px-2">
+                * يمكن الحصول على التوثيق مقابل 500 عملة لمدة 3 أشهر عبر صفحة "المحفظة".
+              </p>
+            </div>
+
+            {/* Promotion System */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <BarChart3 size={16} />
+                <h4 className="text-sm font-bold">4. نظام الترويج الذكي</h4>
+              </div>
+              <div className="bg-accent/5 p-5 border-r-2 border-accent">
+                <p className="text-xs text-foreground/80 leading-relaxed mb-3">
+                  تريد وصولاً أسرع لصوتك؟ تيح لك تيمقاد ترويج منشوراتك لمجتمع مختار:
+                </p>
+                <div className="flex items-center justify-between bg-white p-3 border">
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-bold text-primary">باقة الانطلاق</span>
+                    <span className="text-[9px] text-muted-foreground">4000 مشاهدة حقيقية</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-accent">100</span>
+                    <TimgadCoin size={20} />
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
