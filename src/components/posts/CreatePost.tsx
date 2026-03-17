@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface CreatePostProps {
   onSuccess?: () => void;
