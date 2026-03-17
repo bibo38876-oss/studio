@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useRouter } from 'next/navigation';
@@ -16,7 +15,6 @@ export default function AboutPage() {
       <Navbar />
       
       <main className="container mx-auto max-w-2xl pt-8 pb-20 px-4 md:px-0">
-        {/* Header Section */}
         <div className="bg-background sticky top-8 z-30 py-4 border-b flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full">
             <ChevronRight size={20} />
@@ -28,7 +26,6 @@ export default function AboutPage() {
         </div>
 
         <div className="space-y-12 text-right">
-          {/* Intro Hero */}
           <section className="flex flex-col items-center text-center gap-6 py-12 bg-primary/5 border-y border-primary/10 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-32 h-32 bg-accent/5 rounded-full -translate-x-16 -translate-y-16" />
             <div className="w-24 h-24 bg-white shadow-2xl rounded-full flex items-center justify-center relative z-10 border-4 border-primary/5">
@@ -37,19 +34,17 @@ export default function AboutPage() {
             <div className="space-y-3 px-6 relative z-10">
               <h2 className="text-2xl font-bold text-primary leading-tight">فلسفة تيمقاد: الريادة بالأصالة</h2>
               <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                تُعد منصة تيمقاد صرحاً تقنياً عربياً يهدف إلى إعادة صياغة مفاهيم التواصل الرقمي، من خلال دمج الموروث الحضاري مع أحدث الابتكارات البرمجية، لتقديم تجربة مستخدم تتسم بالرصانة والكفاءة والاستدامة.
+                تُعد منصة تيمقاد صرحاً تقنياً عربياً يهدف إلى إعادة صياغة مفاهيم التواصل الرقمي، من خلال دمج الموروث الحضاري مع أحدث الابتكارات البرمجية.
               </p>
             </div>
           </section>
 
-          {/* New Section: Comprehensive Guide (دليل تيمقاد الشامل) */}
           <section className="space-y-8 py-6">
             <div className="flex items-center gap-3 text-primary border-r-4 border-accent pr-3">
               <Zap size={20} className="text-accent" />
               <h3 className="font-bold text-md uppercase tracking-tighter">دليل تيمقاد: المنظومة والامتيازات</h3>
             </div>
 
-            {/* Economy & Coins */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-primary">
                 <Coins size={16} />
@@ -60,14 +55,13 @@ export default function AboutPage() {
                   تعتمد المنصة على "عملة تيمقاد" كوحدة مكافأة داخلية لتحفيز الجودة والتفاعل:
                 </p>
                 <ul className="text-[11px] text-muted-foreground space-y-2 list-disc pr-5">
-                  <li><span className="text-primary font-bold">هدية الانضمام:</span> يحصل كل عضو جديد فور التسجيل على <span className="text-primary">10 عملات</span> كبداية لرحلته.</li>
-                  <li><span className="text-primary font-bold">مكافأة الولاء:</span> تمنحك المنصة <span className="text-primary">عملة واحدة</span> تلقائياً عند دخولك اليومي (كل 24 ساعة).</li>
+                  <li><span className="text-primary font-bold">هدية الانضمام:</span> يحصل كل عضو جديد فور التسجيل على <span className="text-primary">10 عملات</span>.</li>
+                  <li><span className="text-primary font-bold">مكافأة الولاء:</span> تمنحك المنصة <span className="text-primary">عملة واحدة</span> تلقائياً كل 24 ساعة عند دخولك.</li>
                   <li><span className="text-primary font-bold">دعم المحتوى:</span> يمكنك إرسال واستقبال العملات من متابعيك كدعم لمحتواك المتميز.</li>
                 </ul>
               </div>
             </div>
 
-            {/* The Vault / Jar */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-primary">
                 <Trophy size={16} className="text-yellow-600" />
@@ -75,7 +69,7 @@ export default function AboutPage() {
               </div>
               <div className="bg-[#2D1606] text-[#F3E5AB] p-5 space-y-3 shadow-xl">
                 <p className="text-xs leading-relaxed opacity-90">
-                  حدث الذروة اليومي الذي يجمع المجتمع حول كنز واحد:
+                  الحدث اليومي الأكبر الذي يجمع المجتمع حول كنز واحد:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-black/20 p-3 border border-[#FBBF24]/10">
@@ -84,13 +78,12 @@ export default function AboutPage() {
                   </div>
                   <div className="bg-black/20 p-3 border border-[#FBBF24]/10">
                     <h5 className="text-[10px] font-bold text-[#FBBF24] mb-1">المشاركة والجوائز</h5>
-                    <p className="text-[9px] opacity-70">رسم الدخول: 3 عملات.<br />توزيع الكنز: 70% لأعلى 10 مستخدمين من حيث "الأورا".</p>
+                    <p className="text-[9px] opacity-70">رسم الدخول: 3 عملات.<br />توزيع الكنز: 70% لأعلى 10 مستخدمين من حيث "الأورا" (20% للمركز الأول، 15% للثاني، 10% للثالث).</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Verified vs Non-Verified Tier List */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-primary">
                 <BadgeCheck size={16} className="text-blue-500" />
@@ -119,7 +112,7 @@ export default function AboutPage() {
                     <tr>
                       <td className="p-3 font-medium bg-muted/10 border-l">استطلاعات الرأي</td>
                       <td className="p-3 border-l">تكلفة: 3 عملات</td>
-                      <td className="p-3">مجاني (واحد/يومياً) أو عملتين</td>
+                      <td className="p-3">مجاني (واحد/يومياً) ثم عملتين</td>
                     </tr>
                     <tr>
                       <td className="p-3 font-medium bg-muted/10 border-l">أولوية الظهور</td>
@@ -129,36 +122,9 @@ export default function AboutPage() {
                   </tbody>
                 </table>
               </div>
-              <p className="text-[9px] text-muted-foreground italic px-2">
-                * يمكن الحصول على التوثيق مقابل 500 عملة لمدة 3 أشهر عبر صفحة "المحفظة".
-              </p>
-            </div>
-
-            {/* Promotion System */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-primary">
-                <BarChart3 size={16} />
-                <h4 className="text-sm font-bold">4. نظام الترويج الذكي</h4>
-              </div>
-              <div className="bg-accent/5 p-5 border-r-2 border-accent">
-                <p className="text-xs text-foreground/80 leading-relaxed mb-3">
-                  تريد وصولاً أسرع لصوتك؟ تيح لك تيمقاد ترويج منشوراتك لمجتمع مختار:
-                </p>
-                <div className="flex items-center justify-between bg-white p-3 border">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-bold text-primary">باقة الانطلاق</span>
-                    <span className="text-[9px] text-muted-foreground">4000 مشاهدة حقيقية</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-accent">100</span>
-                    <TimgadCoin size={20} />
-                  </div>
-                </div>
-              </div>
             </div>
           </section>
 
-          {/* Legal and Compliance Section */}
           <section className="space-y-5">
             <div className="flex items-center gap-3 text-primary border-r-4 border-primary pr-3">
               <Scale size={20} />
@@ -166,110 +132,15 @@ export default function AboutPage() {
             </div>
             <div className="bg-secondary/20 p-6 space-y-4">
               <p className="text-xs text-foreground/80 leading-relaxed">
-                تعمل منصة تيمقاد بموجب **النظم والتشريعات الرقمية السارية في الجمهورية الجزائرية الديمقراطية الشعبية**، وبالتوافق التام مع المعاهدات العربية ذات الصلة. إن الالتزام بهذا الإطار التشريعي يُعد ركيزة أساسية لضمان استمرارية العضوية وجودة التفاعل:
+                تعمل منصة تيمقاد بموجب النظم والتشريعات الرقمية السارية في الجمهورية الجزائرية الديمقراطية الشعبية.
               </p>
-              <div className="grid gap-3">
-                <div className="flex items-start gap-2 bg-background p-3 border">
-                  <Globe size={14} className="text-primary mt-0.5" />
-                  <p className="text-[10px] text-muted-foreground">تخضع كافة البيانات والأنشطة للمعايير القانونية الوطنية والعربية، مع الالتزام بالشفافية الكاملة في إدارة المحتوى الرقمي.</p>
-                </div>
-                <div className="flex items-start gap-2 bg-background p-3 border">
-                  <FileText size={14} className="text-primary mt-0.5" />
-                  <p className="text-[10px] text-muted-foreground">يُطالب المستخدمون بالتقيد التام بمعايير الآداب العامة والنظم الأخلاقية المتبعة في المجتمعات العربية الأصيلة.</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Strict Content Prohibitions */}
-          <section className="space-y-5">
-            <div className="flex items-center gap-3 text-destructive border-r-4 border-destructive pr-3">
-              <ShieldAlert size={20} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">سلامة المجتمع والمعايير السلوكية</h3>
-            </div>
-            <div className="p-6 border border-destructive/20 bg-destructive/5 space-y-4">
-              <p className="text-xs text-foreground/80 leading-relaxed font-bold">
-                تلتزم تيمقاد بمعايير السلامة العالمية الصارمة؛ حيث تُطبق ضوابط حازمة لضمان خلو المنصة من أي محتوى يتعلق بـ:
-              </p>
-              <ul className="text-[11px] text-muted-foreground space-y-3 list-disc pr-5">
-                <li className="text-destructive font-bold">الترويج للمواد المخدرة، المؤثرات العقلية، أو المواد المحظورة بكافة أشكالها.</li>
-                <li>نشر الفكر المتطرف، التحريض على العنف، أو دعم الكيانات غير المشروعة.</li>
-                <li>خطاب الكراهية، العنصرية، أو المساس بالثوابت الوطنية والدينية للمجتمعات.</li>
-                <li>المحتوى الخادش للحياء العام أو الذي ينتهك حقوق الإنسان والخصوصية الفردية.</li>
-              </ul>
-              <div className="bg-primary/10 p-3 flex items-center gap-3 border border-primary/20">
-                <ShieldCheck size={16} className="text-primary shrink-0" />
-                <p className="text-[10px] text-primary font-bold italic">
-                  * إن الالتزام بهذه الضوابط هو ميثاق أخلاقي يربط كافة أعضاء تيمقاد لضمان بيئة تواصل آمنة ومثمرة للجميع.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Expansion Story */}
-          <section className="space-y-5">
-            <div className="flex items-center gap-3 text-primary border-r-4 border-accent pr-3">
-              <History size={20} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">منشأ التطبيق ومسيرة التوسع المؤسسي</h3>
-            </div>
-            <div className="relative pr-6 border-r-2 border-dotted border-muted">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                بدأت تيمقاد كرؤية تقنية طموحة لإيجاد بديل رقمي يحترم الخصوصية العربية ويدعم الهوية الوطنية. وبفضل التطور المتسارع، شهد منشأ التطبيق **تحولاً استراتيجياً** من مجرد واجهة تواصل إلى منظومة برمجية متكاملة تسعى للريادة الإقليمية. نحن الآن في مرحلة **التوسع المؤسسي الرقمي**، حيث نستثمر في تطوير بنية تحتية مستقلة وآمنة، تهدف إلى تمكين الكوادر العربية وتقديم نموذج تقني يحتذى به في الابتكار والجودة.
-              </p>
-            </div>
-          </section>
-
-          {/* Pillars Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <section className="space-y-4 p-6 bg-secondary/30 border-t-4 border-primary">
-              <div className="flex items-center gap-3 text-primary">
-                <Target size={22} />
-                <h3 className="font-bold text-sm">الرؤية الاستراتيجية</h3>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                أن نتبوأ مكانة الصدارة كأكثر المنصات الرقمية موثوقية في الوطن العربي، من خلال تقديم بيئة تكنولوجية تجمع بين الحماية الفائقة والجودة المعيارية.
-              </p>
-            </section>
-
-            <section className="space-y-4 p-6 bg-secondary/30 border-t-4 border-accent">
-              <div className="flex items-center gap-3 text-accent">
-                <Rocket size={22} />
-                <h3 className="font-bold text-sm">الرسالة التقنية</h3>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                تمكين الكوادر العربية عبر أدوات تواصل حديثة تخدم أهداف الابتكار المعرفي، مع الالتزام بتطوير بنية تحتية برمجية مستقلة وآمنة تماماً.
-              </p>
-            </section>
-          </div>
-
-          {/* Values Section */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3 text-primary border-b pb-2">
-              <Sparkles size={20} />
-              <h3 className="font-bold text-sm uppercase">منظومة القيم الجوهرية</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              {[
-                { icon: <Heart size={16} />, title: "المسؤولية الاجتماعية", desc: "وضع مصلحة المجتمع الرقمي فوق كل اعتبار تجاري." },
-                { icon: <ShieldCheck size={16} />, title: "الجودة والمعيارية", desc: "الالتزام الصارم بأعلى معايير الأمان الأداء العالمي." },
-                { icon: <Globe size={16} />, title: "الأصالة والابتكار", desc: "الموازنة بين الهوية الحضارية والتحول التكنولوجي." },
-                { icon: <Users size={16} />, title: "الاهتمام بالعضو", desc: "بناء تجربة مستخدم محورها الاحترام المتبادل والخصوصية." }
-              ].map((val, i) => (
-                <div key={i} className="space-y-2 p-4 border bg-card hover:shadow-md transition-all">
-                  <div className="flex items-center gap-2 text-primary">
-                    {val.icon}
-                    <h4 className="text-[11px] font-bold">{val.title}</h4>
-                  </div>
-                  <p className="text-[9px] text-muted-foreground leading-snug">{val.desc}</p>
-                </div>
-              ))}
             </div>
           </section>
 
           <footer className="pt-20 border-t text-center space-y-8">
             <div className="flex flex-col items-center gap-3">
               <p className="text-[11px] text-muted-foreground italic leading-relaxed max-w-md">
-                تيمقاد هي نتاج طموح وطني يسعى للسيادة التقنية.<br />نثمن ثقتكم وانضمامكم لهذه الرحلة التي تهدف لبناء مستقبل رقمي عربي أفضل.
+                تيمقاد هي نتاج طموح وطني يسعى للسيادة التقنية.
               </p>
               <div className="flex flex-col gap-1 items-center">
                 <span className="text-[9px] font-bold text-primary uppercase tracking-[0.2em]">Institutional Compliance Division</span>
