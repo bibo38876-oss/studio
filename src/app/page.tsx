@@ -101,17 +101,27 @@ export default function Home() {
 
   const { data: promotedPosts } = useCollection(promotedQuery);
 
+  // استعلام المتابعة: جلب المنشورات بدون ترتيب لتجنب الحاجة لفهرس مركب وضمان ظهور النتائج فوراً
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 30)),
-      orderBy('createdAt', 'desc'),
-      limit(limitFollowing)
+      limit(50) 
     );
-  }, [firestore, user?.uid, profile?.followingIds, limitFollowing]);
+  }, [firestore, user?.uid, profile?.followingIds]);
 
-  const { data: followingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
+  const { data: rawFollowingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
+
+  // فرز المنشورات برمجياً لضمان الدقة والسرعة دون الاعتماد على فهارس Firestore المركبة
+  const sortedFollowingPosts = useMemo(() => {
+    if (!rawFollowingPosts) return [];
+    return [...rawFollowingPosts].sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return dateB.getTime() - dateA.getTime();
+    }).slice(0, limitFollowing);
+  }, [rawFollowingPosts, limitFollowing]);
 
   const recommendedPosts = useMemo(() => {
     if (!postsPool) return [];
@@ -152,7 +162,7 @@ export default function Home() {
         if (entries[0].isIntersecting) {
           if (activeTab === 'for-you' && !isPoolLoading) {
             setLimitForYou(prev => prev + 10);
-          } else if (activeTab === 'following' && !isFollowingLoading && followingPostsQuery) {
+          } else if (activeTab === 'following' && !isFollowingLoading && sortedFollowingPosts.length >= limitFollowing) {
             setLimitFollowing(prev => prev + 10);
           }
         }
@@ -164,7 +174,7 @@ export default function Home() {
     if (currentRef) observer.observe(currentRef);
 
     return () => observer.disconnect();
-  }, [activeTab, isPoolLoading, isFollowingLoading, followingPostsQuery]);
+  }, [activeTab, isPoolLoading, isFollowingLoading, sortedFollowingPosts.length, limitFollowing]);
 
   if (isUserLoading || !user) {
     return (
@@ -173,6 +183,14 @@ export default function Home() {
       </div>
     );
   }
+
+  const handleVaultNoticeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast({
+      title: "قريباً! 🏺",
+      description: "جرة تيمقاد الملكية قيد الصيانة والتحسين، ستعود للعمل قريباً.",
+    });
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -192,25 +210,26 @@ export default function Home() {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <Link href="/vault">
-                  <div className="bg-gradient-to-r from-primary to-accent p-3 flex items-center justify-between text-white relative overflow-hidden group">
-                    <motion.div 
-                      animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                      className="absolute inset-0 bg-white/10"
-                    />
-                    <div className="flex items-center gap-3 relative z-10">
-                      <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
-                        <span className="text-lg">🏺</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold uppercase tracking-wider">حدث ذروة تيمقاد</span>
-                        <p className="text-[10px] font-medium opacity-90">جرة تيمقاد الأثرية على وشك الانكسار! انضم الآن قبل 20:00.</p>
-                      </div>
+                <div 
+                  onClick={handleVaultNoticeClick}
+                  className="cursor-pointer bg-gradient-to-r from-primary to-accent p-3 flex items-center justify-between text-white relative overflow-hidden group"
+                >
+                  <motion.div 
+                    animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="absolute inset-0 bg-white/10"
+                  />
+                  <div className="flex items-center gap-3 relative z-10">
+                    <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
+                      <span className="text-lg">🏺</span>
                     </div>
-                    <ChevronLeft size={18} className="relative z-10 group-hover:translate-x-[-4px] transition-transform" />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold uppercase tracking-wider">حدث ذروة تيمقاد</span>
+                      <p className="text-[10px] font-medium opacity-90">جرة تيمقاد الأثرية على وشك الانكسار! انضم الآن قبل 20:00.</p>
+                    </div>
                   </div>
-                </Link>
+                  <ChevronLeft size={18} className="relative z-10 group-hover:translate-x-[-4px] transition-transform" />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -238,10 +257,10 @@ export default function Home() {
                 {activeTab === 'for-you' ? (
                   <motion.div 
                     key="for-you"
-                    initial={{ opacity: 0, x: 10 }} 
-                    animate={{ opacity: 1, x: 0 }} 
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                     className="w-full"
                   >
                     {isPoolLoading && limitForYou === 10 ? (
@@ -261,10 +280,10 @@ export default function Home() {
                 ) : (
                   <motion.div 
                     key="following"
-                    initial={{ opacity: 0, x: 10 }} 
-                    animate={{ opacity: 1, x: 0 }} 
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                     className="w-full"
                   >
                     {isProfileLoading ? (
@@ -277,13 +296,14 @@ export default function Home() {
                         <p className="text-primary font-bold text-xs mb-1">ابدأ بمتابعة الآخرين</p>
                         <p className="text-muted-foreground text-[10px]">ستظهر منشورات من تتابعهم هنا.</p>
                       </div>
-                    ) : (isFollowingLoading && limitFollowing === 10) ? (
+                    ) : (isFollowingLoading && sortedFollowingPosts.length === 0) ? (
                       <div className="flex flex-col items-center justify-center py-20 gap-4">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <p className="text-[10px] text-muted-foreground animate-pulse font-bold">جاري جلب المنشورات...</p>
                       </div>
-                    ) : (followingPosts && followingPosts.length > 0) ? (
+                    ) : (sortedFollowingPosts && sortedFollowingPosts.length > 0) ? (
                       <>
-                        {followingPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)}
+                        {sortedFollowingPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)}
                         <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">
                           {isFollowingLoading && <Loader2 className="h-5 w-5 animate-spin text-primary/50" />}
                         </div>

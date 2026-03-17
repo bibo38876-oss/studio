@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment, runTransaction } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,12 +74,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     return doc(firestore, 'users', user.uid, 'bookmarks', postId);
   }, [firestore, postId, user?.uid]);
   const { data: bookmarkData } = useDoc(bookmarkRef);
-
-  const userVoteRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !postId) return null;
-    return doc(firestore, 'posts', postId, 'pollVotes', user.uid);
-  }, [firestore, postId, user?.uid]);
-  const { data: userVote, isLoading: isVoteLoading } = useDoc(userVoteRef);
 
   useEffect(() => {
     if (!api) return;
@@ -294,6 +288,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           </div>
         )}
 
+        {/* مساحة الإعلان المروج - تظهر دائماً بعد المنشور مباشرة */}
         <div className="px-4 py-4">
           <div className="bg-primary/5 border border-dashed border-primary/20 rounded-2xl p-4 flex items-center justify-between group hover:bg-primary/10 transition-all cursor-pointer">
             <div className="flex items-center gap-3">

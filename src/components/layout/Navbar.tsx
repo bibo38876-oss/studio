@@ -10,6 +10,7 @@ import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import TimgadLogo from '@/components/ui/Logo';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * WoodenChestIcon - A professional SVG representing a treasure chest.
@@ -41,6 +42,7 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   const { firestore, user } = useFirebase();
+  const { toast } = useToast();
 
   const unreadQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -59,6 +61,13 @@ export default function Navbar() {
       router.push(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchFocused(false);
     }
+  };
+
+  const handleVaultClick = () => {
+    toast({
+      title: "قريباً جداً! 🏺",
+      description: "ميزة جرة تيمقاد الملكية في مراحلها الأخيرة من التطوير. انتظرونا!",
+    });
   };
 
   return (
@@ -88,19 +97,18 @@ export default function Navbar() {
         </div>
 
         <div className={`flex items-center gap-1 transition-all duration-300 ${isSearchFocused ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'}`}>
-          <Link href="/vault">
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: [-2, 2, -2, 0] }}
-              whileTap={{ scale: 0.9 }}
-              className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full transition-colors relative"
-              title="خزانة تيمقاد"
-            >
-              <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
-                <WoodenChestIcon size={16} />
-              </motion.div>
-              <div className="absolute inset-0 bg-yellow-500/10 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <motion.div
+            whileHover={{ scale: 1.1, rotate: [-2, 2, -2, 0] }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleVaultClick}
+            className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full transition-colors relative"
+            title="خزانة تيمقاد"
+          >
+            <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
+              <WoodenChestIcon size={16} />
             </motion.div>
-          </Link>
+            <div className="absolute inset-0 bg-yellow-500/10 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </motion.div>
           
           <Link href="/notifications">
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full relative hover:bg-secondary transition-all">
