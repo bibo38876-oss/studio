@@ -51,7 +51,18 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
   const isAdmin = user?.email === 'adelbenmaza8@gmail.com';
-  const isVerifiedAuthor = post.authorVerificationType === 'blue' || post.authorVerificationType === 'gold';
+
+  // جلب بيانات الكاتب لحظياً لضمان ظهور التوثيق فور حدوثه
+  const authorRef = useMemoFirebase(() => {
+    if (!firestore || !post.authorId) return null;
+    return doc(firestore, 'users', post.authorId);
+  }, [firestore, post.authorId]);
+  
+  const { data: authorProfile } = useDoc(authorRef);
+  
+  // الأولوية للتوثيق اللحظي من الملف الشخصي، ثم النسخة المخزنة في المنشور
+  const currentVerificationType: VerificationType = authorProfile?.verificationType || post.authorVerificationType || 'none';
+  const isVerifiedAuthor = currentVerificationType === 'blue' || currentVerificationType === 'gold';
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !post.id) return null;
@@ -201,14 +212,14 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
           <Link href={`/profile/${post.authorId}`} className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col text-right">
               <div className="flex items-center gap-1.5 leading-tight justify-end">
-                <VerifiedBadge type={post.authorVerificationType || 'none'} size={14} />
-                <span className="text-xs font-bold text-primary">{post.authorName}</span>
+                <VerifiedBadge type={currentVerificationType} size={14} />
+                <span className="text-xs font-bold text-primary">{authorProfile?.username || post.authorName}</span>
               </div>
               <span className="text-[9px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
             </div>
             <Avatar className="h-10 w-10 border border-primary/10">
-              <AvatarImage src={post.authorAvatar} />
-              <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
+              <AvatarImage src={authorProfile?.profilePictureUrl || post.authorAvatar} />
+              <AvatarFallback>{(authorProfile?.username || post.authorName)?.[0]}</AvatarFallback>
             </Avatar>
           </Link>
         </CardHeader>
@@ -272,7 +283,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
         <DialogContent className="sm:max-w-[300px] text-center p-6">
           <DialogHeader>
             <DialogTitle className="text-md font-bold text-primary">دعم المحتوى المتميز</DialogTitle>
-            <DialogDescription className="text-xs">اختر مبلغاً من العملات لدعم المبدع {post.authorName}.</DialogDescription>
+            <DialogDescription className="text-xs">اختر مبلغاً من العملات لدعم المبدع {authorProfile?.username || post.authorName}.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-3 gap-3 py-6">
             {[1, 5, 10].map((amt) => (

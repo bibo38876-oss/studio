@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Rocket, Trash2, Coffee, Flag } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import { cn } from '@/lib/utils';
 import TimgadLogo from '@/components/ui/Logo';
 import { motion } from 'framer-motion';
@@ -28,14 +28,23 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
   const isAnonymous = !user || user.isAnonymous;
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
-  const isVerifiedAuthor = post.authorVerificationType === 'blue' || post.authorVerificationType === 'gold';
+
+  // جلب بيانات كاتب المنشور لحظياً
+  const postAuthorProfileRef = useMemoFirebase(() => {
+    if (!firestore || !postAuthorId) return null;
+    return doc(firestore, 'users', postAuthorId);
+  }, [firestore, postAuthorId]);
+  const { data: postAuthorProfile } = useDoc(postAuthorProfileRef);
+
+  const currentPostVerification: VerificationType = postAuthorProfile?.verificationType || post.authorVerificationType || 'none';
+  const isVerifiedAuthor = currentPostVerification === 'blue' || currentPostVerification === 'gold';
 
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
     return query(collection(firestore, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'));
   }, [firestore, postId]);
 
-  const { data: comments, isLoading } = useCollection(commentsQuery);
+  const { data: rawComments, isLoading } = useCollection(commentsQuery);
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !postId) return null;
@@ -161,14 +170,14 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           <div className="flex gap-3 mb-4 justify-end">
             <div className="flex flex-col text-right">
               <div className="flex items-center gap-1.5 leading-tight justify-end">
-                <VerifiedBadge type={post.authorVerificationType || 'none'} size={14} />
-                <span className="text-xs font-bold text-primary">{post.authorName}</span>
+                <VerifiedBadge type={currentPostVerification} size={14} />
+                <span className="text-xs font-bold text-primary">{postAuthorProfile?.username || post.authorName}</span>
               </div>
               <span className="text-[10px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
             </div>
             <Avatar className="h-10 w-10 border border-primary/10">
-              <AvatarImage src={post.authorAvatar} />
-              <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
+              <AvatarImage src={postAuthorProfile?.profilePictureUrl || post.authorAvatar} />
+              <AvatarFallback>{(postAuthorProfile?.username || post.authorName)?.[0]}</AvatarFallback>
             </Avatar>
           </div>
           
@@ -234,46 +243,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
-          ) : comments && comments.length > 0 ? (
-            comments.map((c: any) => {
-              const canDelete = user && (user.uid === c.authorId || user.email === ADMIN_EMAIL);
-              return (
-                <div key={c.id} className="flex gap-3 animate-in fade-in slide-in-from-bottom-1 duration-300 justify-end group">
-                  <div className="flex-1 flex flex-col items-end">
-                    <div className="bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right relative w-full">
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="flex items-center gap-2">
-                          {canDelete && (
-                            <button onClick={() => handleDeleteComment(c.id)} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>
-                          )}
-                          <button onClick={() => handleReportComment(c.id)} className="text-muted-foreground/40 hover:text-red-500 transition-colors"><Flag size={12} /></button>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <VerifiedBadge type={c.authorVerificationType || 'none'} size={10} />
-                          <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
-                        </div>
-                      </div>
-                      <p className="text-xs leading-relaxed mb-2">{c.content}</p>
-                      
-                      <div className="flex items-center gap-3 pt-1 border-t border-muted/10">
-                        <button 
-                          onClick={() => handleLikeComment(c.id)} 
-                          className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground hover:text-red-500 transition-colors"
-                        >
-                          <Heart size={10} />
-                          <span>{c.likesCount || 0}</span>
-                        </button>
-                      </div>
-                    </div>
-                    <span className="text-[7px] text-muted-foreground mt-1 px-1">{c.createdAt?.toDate ? formatDistanceToNow(c.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
-                  </div>
-                  <Avatar className="h-8 w-8 border shrink-0">
-                    <AvatarImage src={c.authorAvatar} />
-                    <AvatarFallback>{c.authorName?.[0]}</AvatarFallback>
-                  </Avatar>
-                </div>
-              );
-            })
+          ) : rawComments && rawComments.length > 0 ? (
+            rawComments.map((c: any) => (
+              <CommentItem key={c.id} comment={c} postId={postId} firestore={firestore} user={user} ADMIN_EMAIL={ADMIN_EMAIL} onDelete={handleDeleteComment} onLike={handleLikeComment} onReport={handleReportComment} />
+            ))
           ) : (
             <div className="text-center py-10 opacity-40"><p className="text-[10px] font-bold">لا توجد تعليقات بعد.</p></div>
           )}
@@ -303,6 +276,55 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           <Button variant="ghost" size="icon" onClick={handleAddComment} disabled={!commentText.trim()} className="h-8 w-8 rounded-full text-primary"><Send size={16} /></Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// مكون فرعي للتعليق لجلب التوثيق اللحظي للمعلقين
+function CommentItem({ comment, postId, firestore, user, ADMIN_EMAIL, onDelete, onLike, onReport }: any) {
+  const authorRef = useMemoFirebase(() => {
+    if (!firestore || !comment.authorId) return null;
+    return doc(firestore, 'users', comment.authorId);
+  }, [firestore, comment.authorId]);
+  
+  const { data: authorProfile } = useDoc(authorRef);
+  const verificationType = authorProfile?.verificationType || comment.authorVerificationType || 'none';
+  const canDelete = user && (user.uid === comment.authorId || user.email === ADMIN_EMAIL);
+
+  return (
+    <div className="flex gap-3 animate-in fade-in slide-in-from-bottom-1 duration-300 justify-end group">
+      <div className="flex-1 flex flex-col items-end">
+        <div className="bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right relative w-full">
+          <div className="flex justify-between items-start mb-1">
+            <div className="flex items-center gap-2">
+              {canDelete && (
+                <button onClick={() => onDelete(comment.id)} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>
+              )}
+              <button onClick={() => onReport(comment.id)} className="text-muted-foreground/40 hover:text-red-50 transition-colors"><Flag size={12} /></button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <VerifiedBadge type={verificationType} size={10} />
+              <span className="text-[10px] font-bold text-primary">{authorProfile?.username || comment.authorName}</span>
+            </div>
+          </div>
+          <p className="text-xs leading-relaxed mb-2">{comment.content}</p>
+          
+          <div className="flex items-center gap-3 pt-1 border-t border-muted/10">
+            <button 
+              onClick={() => onLike(comment.id)} 
+              className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground hover:text-red-500 transition-colors"
+            >
+              <Heart size={10} />
+              <span>{comment.likesCount || 0}</span>
+            </button>
+          </div>
+        </div>
+        <span className="text-[7px] text-muted-foreground mt-1 px-1">{comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
+      </div>
+      <Avatar className="h-8 w-8 border shrink-0">
+        <AvatarImage src={authorProfile?.profilePictureUrl || comment.authorAvatar} />
+        <AvatarFallback>{(authorProfile?.username || comment.authorName)?.[0]}</AvatarFallback>
+      </Avatar>
     </div>
   );
 }
