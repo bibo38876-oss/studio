@@ -54,7 +54,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   const isOwner = user?.uid === post.authorId;
   const isAdmin = user?.email === 'adelbenmaza8@gmail.com';
 
-  // مراقبة حالة التوثيق لحظياً من ملف الكاتب
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !post.authorId) return null;
     return doc(firestore, 'users', post.authorId);
@@ -101,7 +100,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
       updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { likesCount: increment(1) });
       
-      // تحديث نقاط الاهتمام لهذا الكاتب
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
         interactedAuthorIds: arrayUnion(post.authorId)
       });

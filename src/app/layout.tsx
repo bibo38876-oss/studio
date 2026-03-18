@@ -1,3 +1,4 @@
+
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import BottomNav from '@/components/layout/BottomNav';
@@ -15,6 +16,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'تيمقاد | Timgad',
   description: 'منصة اجتماعية عربية عريقة برؤية تقنية عصرية.',
+  manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -59,6 +61,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="apple-touch-icon" href="https://picsum.photos/seed/timgad-pwa-192/192/192" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="font-body antialiased bg-background text-foreground pb-12 md:pb-0">
         <FirebaseClientProvider>
