@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, Bookmark, BarChart3, MoreHorizontal, Trash2, AlertTriangle, Rocket, Coffee } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, BarChart3, MoreHorizontal, Trash2, AlertTriangle, Rocket, Coffee, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -12,14 +12,15 @@ import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, delete
 import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Dialog, DialogContent, DialogTitle, DialogFooter, DialogHeader, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import CommentsDialog from "./CommentsDialog";
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import TimgadCoin from '@/components/ui/TimgadCoin';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 interface PostData {
   id: string;
@@ -45,6 +46,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   const { toast } = useToast();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const viewedRef = useRef(false);
   
@@ -52,7 +54,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   const isOwner = user?.uid === post.authorId;
   const isAdmin = user?.email === 'adelbenmaza8@gmail.com';
 
-  // جلب بيانات الكاتب لحظياً لضمان ظهور التوثيق فور حدوثه
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !post.authorId) return null;
     return doc(firestore, 'users', post.authorId);
@@ -60,7 +61,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   
   const { data: authorProfile } = useDoc(authorRef);
   
-  // الأولوية للتوثيق اللحظي من الملف الشخصي، ثم النسخة المخزنة في المنشور
   const currentVerificationType: VerificationType = authorProfile?.verificationType || post.authorVerificationType || 'none';
   const isVerifiedAuthor = currentVerificationType === 'blue' || currentVerificationType === 'gold';
 
@@ -148,10 +148,8 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       toast({ variant: "destructive", description: "رصيدك في الخزانة لا يكفي لهذا الدعم." });
       return;
     }
-
     updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-amount) });
     updateDocumentNonBlocking(doc(firestore!, 'users', post.authorId), { coins: increment(amount) });
-
     addDocumentNonBlocking(collection(firestore!, 'users', post.authorId, 'notifications'), {
       type: 'support',
       fromUserId: user!.uid,
@@ -162,24 +160,36 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       createdAt: serverTimestamp(),
       read: false
     });
-
     toast({ title: "تم إرسال الدعم!", description: `لقد أرسلت ${amount} عملة ذهبية تقديراً لهذا المحتوى.` });
     setIsSupportOpen(false);
   };
 
   const renderContentWithHashtags = (text: string) => {
     if (!text) return null;
-    const parts = text.split(/(#[^\s#]+)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('#')) {
-        return (
-          <span key={i} className="text-accent font-bold hover:underline cursor-pointer">
-            {part}
-          </span>
-        );
-      }
-      return part;
-    });
+    const shouldTruncate = text.length > 200 && !isExpanded;
+    const displayText = shouldTruncate ? text.substring(0, 200) + "..." : text;
+    
+    const parts = displayText.split(/(#[^\s#]+)/g);
+    return (
+      <div className="flex flex-col items-start w-full">
+        <div className="text-sm leading-relaxed whitespace-pre-wrap text-right font-medium w-full">
+          {parts.map((part, i) => {
+            if (part.startsWith('#')) {
+              return <span key={i} className="text-accent font-bold hover:underline cursor-pointer">{part}</span>;
+            }
+            return part;
+          })}
+        </div>
+        {text.length > 200 && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+            className="text-accent text-[11px] font-bold mt-1 hover:underline"
+          >
+            {isExpanded ? "عرض أقل" : "إقرأ المزيد"}
+          </button>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -225,23 +235,36 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
         </CardHeader>
 
         <CardContent className="px-4 py-1 text-right">
-          <div className="text-sm leading-relaxed whitespace-pre-wrap mb-2 font-medium">
-            {renderContentWithHashtags(post.content)}
-          </div>
+          {renderContentWithHashtags(post.content)}
+          
           {post.mediaUrls && post.mediaUrls.length > 0 && (
-            <div className="mt-3 rounded-xl overflow-hidden border bg-muted/5">
-              <img src={post.mediaUrls[0]} alt="Post" className="w-full h-auto object-cover max-h-[500px]" />
+            <div className="mt-3 relative" onClick={(e) => e.stopPropagation()}>
+              {post.mediaUrls.length === 1 ? (
+                <div className="rounded-xl overflow-hidden border bg-muted/5">
+                  <img src={post.mediaUrls[0]} alt="Post" className="w-full h-auto object-cover max-h-[500px]" />
+                </div>
+              ) : (
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {post.mediaUrls.map((url, index) => (
+                      <CarouselItem key={index}>
+                        <div className="rounded-xl overflow-hidden border bg-muted/5">
+                          <img src={url} alt={`Post Image ${index + 1}`} className="w-full h-auto object-cover max-h-[500px]" />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8" />
+                  <CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8" />
+                </Carousel>
+              )}
             </div>
           )}
         </CardContent>
 
         <CardFooter className="p-4 py-3 border-t border-muted/5 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <motion.button 
-              whileTap={{ scale: 0.9 }} 
-              onClick={(e) => { e.stopPropagation(); handleLike(e); }} 
-              className={cn("flex items-center gap-1.5 transition-colors", likeData ? "text-red-500" : "text-muted-foreground hover:text-red-500")}
-            >
+            <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleLike(e); }} className={cn("flex items-center gap-1.5 transition-colors", likeData ? "text-red-500" : "text-muted-foreground hover:text-red-500")}>
               <Heart size={18} className={likeData ? "fill-current" : ""} />
               <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
             </motion.button>
@@ -252,11 +275,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
             </div>
 
             {isVerifiedAuthor && (
-              <motion.button 
-                whileTap={{ scale: 0.9 }} 
-                onClick={(e) => { e.stopPropagation(); setIsSupportOpen(true); }}
-                className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors"
-              >
+              <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); setIsSupportOpen(true); }} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors">
                 <Coffee size={18} />
                 <span className="text-[10px] font-bold">دعم</span>
               </motion.button>
@@ -268,11 +287,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
             </div>
           </div>
 
-          <motion.button 
-            whileTap={{ scale: 0.9 }} 
-            onClick={(e) => { e.stopPropagation(); handleBookmark(e); }} 
-            className={cn("flex items-center gap-1.5 transition-colors", bookmarkData ? "text-blue-500" : "text-muted-foreground hover:text-blue-500")}
-          >
+          <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleBookmark(e); }} className={cn("flex items-center gap-1.5 transition-colors", bookmarkData ? "text-blue-500" : "text-muted-foreground hover:text-blue-500")}>
             <Bookmark size={18} className={bookmarkData ? "fill-current" : ""} />
             <span className="text-[11px] font-bold">{post.bookmarksCount || 0}</span>
           </motion.button>
@@ -281,10 +296,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
         <DialogContent className="sm:max-w-[300px] text-center p-6">
-          <DialogHeader>
-            <DialogTitle className="text-md font-bold text-primary">دعم المحتوى المتميز</DialogTitle>
-            <DialogDescription className="text-xs">اختر مبلغاً من العملات لدعم المبدع {authorProfile?.username || post.authorName}.</DialogDescription>
-          </DialogHeader>
+          <DialogTitle className="text-md font-bold text-primary">دعم المحتوى المتميز</DialogTitle>
           <div className="grid grid-cols-3 gap-3 py-6">
             {[1, 5, 10].map((amt) => (
               <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>
@@ -299,7 +311,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
         <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[95vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col [&>button]:hidden">
-          <DialogTitle className="sr-only">تفاصيل المنشور</DialogTitle>
           <CommentsDialog postId={post.id} postAuthorId={post.authorId} post={post} onClose={() => setIsCommentsOpen(false)} currentUserProfile={currentUserProfile} />
         </DialogContent>
       </Dialog>

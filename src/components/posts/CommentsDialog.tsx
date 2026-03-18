@@ -16,8 +16,9 @@ import { cn } from '@/lib/utils';
 import TimgadLogo from '@/components/ui/Logo';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import TimgadCoin from '@/components/ui/TimgadCoin';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: { postId: string, postAuthorId: string, post: any, onClose: () => void, currentUserProfile?: any }) {
   const [commentText, setCommentText] = useState('');
@@ -29,7 +30,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const isAnonymous = !user || user.isAnonymous;
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
-  // جلب بيانات كاتب المنشور لحظياً
   const postAuthorProfileRef = useMemoFirebase(() => {
     if (!firestore || !postAuthorId) return null;
     return doc(firestore, 'users', postAuthorId);
@@ -37,7 +37,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const { data: postAuthorProfile } = useDoc(postAuthorProfileRef);
 
   const currentPostVerification: VerificationType = postAuthorProfile?.verificationType || post.authorVerificationType || 'none';
-  const isVerifiedAuthor = currentPostVerification === 'blue' || currentPostVerification === 'gold';
+  const isVerifiedAuthor = currentPostVerification === 'blue' || currentVerificationType === 'gold';
 
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
@@ -122,31 +122,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     setIsSupportOpen(false);
   };
 
-  const handleDeleteComment = (commentId: string) => {
-    if (!firestore || !postId || !commentId) return;
-    deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId));
-    updateDocumentNonBlocking(doc(firestore, 'posts', postId), { commentsCount: increment(-1) });
-    toast({ description: "تم حذف التعليق بنجاح." });
-  };
-
-  const handleLikeComment = (commentId: string) => {
-    if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !postId) return;
-    updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId), {
-      likesCount: increment(1)
-    });
-    toast({ description: "أعجبك هذا التعليق." });
-  };
-
-  const handleReportComment = (commentId: string) => {
-    if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !postId) return;
-    updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId), {
-      reportsCount: increment(1)
-    });
-    toast({ title: "شكراً لبلاغك", description: "سنقوم بمراجعة هذا التعليق." });
-  };
-
   const renderContentWithHashtags = (text: string) => {
     if (!text) return null;
     const parts = text.split(/(#[^\s#]+)/g);
@@ -185,7 +160,25 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
             {renderContentWithHashtags(post.content)}
           </div>
           
-          {post.mediaUrls && post.mediaUrls.length > 0 && <img src={post.mediaUrls[0]} alt="Media" className="w-full rounded-xl border mb-4 shadow-sm" />}
+          {post.mediaUrls && post.mediaUrls.length > 0 && (
+            <div className="mb-4">
+              {post.mediaUrls.length === 1 ? (
+                <img src={post.mediaUrls[0]} alt="Media" className="w-full rounded-xl border shadow-sm" />
+              ) : (
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {post.mediaUrls.map((url, index) => (
+                      <CarouselItem key={index}>
+                        <img src={url} alt={`Media ${index + 1}`} className="w-full rounded-xl border shadow-sm h-auto object-cover max-h-[500px]" />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="right-2 bg-black/20 text-white h-8 w-8 border-none" />
+                  <CarouselNext className="left-2 bg-black/20 text-white h-8 w-8 border-none" />
+                </Carousel>
+              )}
+            </div>
+          )}
           
           <div className="flex justify-between items-center py-3 border-t border-muted/10">
             <div className="flex items-center gap-6">
@@ -193,29 +186,21 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                 <Heart size={20} className={likeData ? "fill-current" : ""} />
                 <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
               </motion.button>
-              
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <MessageSquareText size={20} />
                 <span className="text-[11px] font-bold">{post.commentsCount || 0}</span>
               </div>
-
               {isVerifiedAuthor && (
-                <motion.button 
-                  whileTap={{ scale: 0.9 }} 
-                  onClick={() => setIsSupportOpen(true)}
-                  className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors"
-                >
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsSupportOpen(true)} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700">
                   <Coffee size={20} />
                   <span className="text-[10px] font-bold">دعم</span>
                 </motion.button>
               )}
-
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <BarChart3 size={20} />
                 <span className="text-[11px] font-bold">{post.viewsCount || 0}</span>
               </div>
             </div>
-
             <motion.button whileTap={{ scale: 0.9 }} onClick={handleBookmark} className={cn("flex items-center gap-1.5 transition-colors", bookmarkData ? "text-blue-500" : "text-muted-foreground hover:text-blue-500")}>
               <Bookmark size={20} className={bookmarkData ? "fill-current" : ""} />
               <span className="text-[11px] font-bold">{post.bookmarksCount || 0}</span>
@@ -223,29 +208,12 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
         </div>
 
-        <div className="p-4">
-          <div className="bg-primary/5 border border-dashed border-primary/20 rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <TimgadLogo size={24} className="text-primary" />
-              <div className="flex flex-col text-right">
-                <div className="flex items-center gap-1.5"><Rocket size={10} className="text-accent" /><span className="text-[9px] font-bold text-primary">مروج • Ad</span></div>
-                <p className="text-[11px] font-bold text-primary/80 leading-tight">شحن رصيدك عبر PayPal متاح الآن لتفعيل ميزات النخبة!</p>
-              </div>
-            </div>
-            <ChevronRight size={16} className="text-primary/30" />
-          </div>
-        </div>
-
         <div className="p-4 space-y-4">
-          <div className="flex items-center gap-2 border-b border-muted/10 pb-2 justify-end">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">التعليقات</span>
-            <MessageSquareText size={14} className="text-primary" />
-          </div>
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : rawComments && rawComments.length > 0 ? (
             rawComments.map((c: any) => (
-              <CommentItem key={c.id} comment={c} postId={postId} firestore={firestore} user={user} ADMIN_EMAIL={ADMIN_EMAIL} onDelete={handleDeleteComment} onLike={handleLikeComment} onReport={handleReportComment} />
+              <CommentItem key={c.id} comment={c} postId={postId} firestore={firestore} user={user} ADMIN_EMAIL={ADMIN_EMAIL} />
             ))
           ) : (
             <div className="text-center py-10 opacity-40"><p className="text-[10px] font-bold">لا توجد تعليقات بعد.</p></div>
@@ -255,10 +223,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
         <DialogContent className="sm:max-w-[300px] text-center p-6">
-          <DialogHeader>
-            <DialogTitle className="text-md font-bold text-primary">دعم المبدع</DialogTitle>
-            <DialogDescription className="text-xs">اختر مبلغاً لدعم هذا المحتوى المتميز.</DialogDescription>
-          </DialogHeader>
+          <DialogTitle className="text-md font-bold text-primary">دعم المبدع</DialogTitle>
           <div className="grid grid-cols-3 gap-3 py-6">
             {[1, 5, 10].map((amt) => (
               <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>
@@ -280,8 +245,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   );
 }
 
-// مكون فرعي للتعليق لجلب التوثيق اللحظي للمعلقين
-function CommentItem({ comment, postId, firestore, user, ADMIN_EMAIL, onDelete, onLike, onReport }: any) {
+function CommentItem({ comment, postId, firestore, user, ADMIN_EMAIL }: any) {
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !comment.authorId) return null;
     return doc(firestore, 'users', comment.authorId);
@@ -291,16 +255,21 @@ function CommentItem({ comment, postId, firestore, user, ADMIN_EMAIL, onDelete, 
   const verificationType = authorProfile?.verificationType || comment.authorVerificationType || 'none';
   const canDelete = user && (user.uid === comment.authorId || user.email === ADMIN_EMAIL);
 
+  const handleDelete = () => {
+    deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id));
+    updateDocumentNonBlocking(doc(firestore, 'posts', postId), { commentsCount: increment(-1) });
+  };
+
   return (
-    <div className="flex gap-3 animate-in fade-in slide-in-from-bottom-1 duration-300 justify-end group">
+    <div className="flex gap-3 justify-end group">
       <div className="flex-1 flex flex-col items-end">
         <div className="bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right relative w-full">
           <div className="flex justify-between items-start mb-1">
             <div className="flex items-center gap-2">
               {canDelete && (
-                <button onClick={() => onDelete(comment.id)} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>
+                <button onClick={handleDelete} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>
               )}
-              <button onClick={() => onReport(comment.id)} className="text-muted-foreground/40 hover:text-red-50 transition-colors"><Flag size={12} /></button>
+              <button onClick={() => updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id), { reportsCount: increment(1) })} className="text-muted-foreground/40 hover:text-red-50 transition-colors"><Flag size={12} /></button>
             </div>
             <div className="flex items-center gap-1.5">
               <VerifiedBadge type={verificationType} size={10} />
@@ -308,12 +277,8 @@ function CommentItem({ comment, postId, firestore, user, ADMIN_EMAIL, onDelete, 
             </div>
           </div>
           <p className="text-xs leading-relaxed mb-2">{comment.content}</p>
-          
           <div className="flex items-center gap-3 pt-1 border-t border-muted/10">
-            <button 
-              onClick={() => onLike(comment.id)} 
-              className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground hover:text-red-500 transition-colors"
-            >
+            <button onClick={() => updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id), { likesCount: increment(1) })} className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground hover:text-red-500">
               <Heart size={10} />
               <span>{comment.likesCount || 0}</span>
             </button>
