@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import PostCard from '@/components/posts/PostCard';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 
-export default function ExplorePage() {
+function ExploreContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -208,5 +208,13 @@ export default function ExplorePage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function ExplorePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}>
+      <ExploreContent />
+    </Suspense>
   );
 }

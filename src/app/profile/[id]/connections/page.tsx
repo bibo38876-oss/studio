@@ -2,7 +2,7 @@
 "use client"
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { doc, collection, query, where, arrayUnion, arrayRemove, updateDoc, serv
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import Link from 'next/link';
 
-export default function ConnectionsPage() {
+function ConnectionsContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const id = params?.id as string;
@@ -36,7 +36,6 @@ export default function ConnectionsPage() {
 
   const { data: currentUserProfile } = useDoc(currentUserProfileRef);
 
-  // جلب بيانات المتابعين والمتابعين (محدود بـ 30 لعرض MVP)
   const followersQuery = useMemoFirebase(() => {
     if (!firestore || !profile?.followerIds || profile.followerIds.length === 0) return null;
     return query(collection(firestore, 'users'), where('id', 'in', profile.followerIds.slice(0, 30)), limit(30));
@@ -141,7 +140,7 @@ export default function ConnectionsPage() {
 
 function UserListItem({ user, onFollow, isMe, followingIds, followerIds }: { user: any, onFollow: () => void, isMe: boolean, followingIds: string[], followerIds: string[] }) {
   const isFollowing = followingIds.includes(user.id);
-  const isFollowingMe = followerIds.includes(user.id); // ملاحظة: هذا يحتاج لضبط حسب منطق العلاقات لكن للمثال نستخدم followerIds للمستخدم الحالي
+  const isFollowingMe = followerIds.includes(user.id);
 
   return (
     <div className="p-4 flex items-center justify-between hover:bg-muted/5 transition-colors">
@@ -152,7 +151,7 @@ function UserListItem({ user, onFollow, isMe, followingIds, followerIds }: { use
         </Avatar>
         <div className="flex flex-col text-right">
           <div className="flex items-center gap-1.5 leading-tight justify-end">
-            <VerifiedBadge type={user.email === 'adelbenmaza8@gmail.com' ? 'blue' : (user.verificationType || 'none')} size={12} />
+            <VerifiedBadge type={user.verificationType || 'none'} size={12} />
             <span className="text-xs font-bold text-primary group-hover:underline">{user.username}</span>
           </div>
           <span className="text-[9px] text-muted-foreground">{user.email}</span>
@@ -183,5 +182,13 @@ function UserListItem({ user, onFollow, isMe, followingIds, followerIds }: { use
         </Button>
       )}
     </div>
+  );
+}
+
+export default function ConnectionsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}>
+      <ConnectionsContent />
+    </Suspense>
   );
 }
