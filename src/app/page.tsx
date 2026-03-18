@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import LeftSidebar from '@/components/layout/LeftSidebar';
@@ -32,7 +32,7 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // For You Feed
+  // جلب المنشورات العامة
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
@@ -40,7 +40,33 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // Following Feed
+  // خوارزمية أولوية الظهور (Priority of Appearance)
+  const recommendedPosts = useMemo(() => {
+    if (!postsPool) return [];
+    return [...postsPool].sort((a, b) => {
+      // 1. الأولوية القصوى للمنشورات المروجة
+      const aPromoted = a.promoted ? 1 : 0;
+      const bPromoted = b.promoted ? 1 : 0;
+      if (aPromoted !== bPromoted) return bPromoted - aPromoted;
+      
+      // 2. أولوية التوثيق الذهبي (الإدارة والنخبة)
+      const aGold = a.authorVerificationType === 'gold' ? 1 : 0;
+      const bGold = b.authorVerificationType === 'gold' ? 1 : 0;
+      if (aGold !== bGold) return bGold - aGold;
+
+      // 3. أولوية التوثيق الأزرق
+      const aBlue = a.authorVerificationType === 'blue' ? 1 : 0;
+      const bBlue = b.authorVerificationType === 'blue' ? 1 : 0;
+      if (aBlue !== bBlue) return bBlue - aBlue;
+      
+      // 4. الترتيب الزمني للأحدث
+      const dateA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const dateB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return dateB - dateA;
+    }).slice(0, 50);
+  }, [postsPool]);
+
+  // تغذية المتابعة
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -61,21 +87,6 @@ export default function Home() {
     });
   }, [rawFollowingPosts]);
 
-  const recommendedPosts = useMemo(() => {
-    if (!postsPool) return [];
-    return [...postsPool].sort((a, b) => {
-      // 1. Prioritize promoted posts
-      const aPromoted = a.promoted ? 1 : 0;
-      const bPromoted = b.promoted ? 1 : 0;
-      if (aPromoted !== bPromoted) return bPromoted - aPromoted;
-      
-      // 2. Then by date
-      const dateA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-      const dateB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-      return dateB - dateA;
-    }).slice(0, 40);
-  }, [postsPool]);
-
   if (isUserLoading || !user) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
@@ -88,7 +99,7 @@ export default function Home() {
           <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="w-full bg-background/80 backdrop-blur-md border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-10 z-40">
               <TabsTrigger value="for-you" className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary font-bold text-xs gap-2">
-                <Sparkles size={14} /> لك
+                <Sparkles size={14} /> لك (بالأولوية)
               </TabsTrigger>
               <TabsTrigger value="following" className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary font-bold text-xs gap-2">
                 <Users size={14} /> أتابعهم

@@ -27,9 +27,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const router = useRouter();
 
   const isAnonymous = !user || user.isAnonymous;
-  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
-  // مراقبة حالة كاتب المنشور لحظياً
   const postAuthorProfileRef = useMemoFirebase(() => {
     if (!firestore || !postAuthorId) return null;
     return doc(firestore, 'users', postAuthorId);
@@ -45,18 +43,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   }, [firestore, postId]);
 
   const { data: rawComments, isLoading } = useCollection(commentsQuery);
-
-  const likeRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !postId) return null;
-    return doc(firestore, 'posts', postId, 'likes', user.uid);
-  }, [firestore, postId, user?.uid]);
-  const { data: likeData } = useDoc(likeRef);
-
-  const bookmarkRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !postId) return null;
-    return doc(firestore, 'users', user.uid, 'bookmarks', postId);
-  }, [firestore, postId, user?.uid]);
-  const { data: bookmarkData } = useDoc(bookmarkRef);
 
   const handleAddComment = () => {
     if (isAnonymous) { router.push('/login'); return; }
@@ -76,34 +62,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     updateDocumentNonBlocking(doc(firestore, 'posts', postId), { commentsCount: increment(1) });
   };
 
-  const handleLike = () => {
-    if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user || !postId) return;
-    if (likeData) {
-      deleteDocumentNonBlocking(likeRef!);
-      updateDocumentNonBlocking(doc(firestore, 'posts', postId), { likesCount: increment(-1) });
-    } else {
-      setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
-      updateDocumentNonBlocking(doc(firestore, 'posts', postId), { likesCount: increment(1) });
-    }
-  };
-
-  const handleBookmark = () => {
-    if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user || !postId) return;
-    if (bookmarkData) {
-      deleteDocumentNonBlocking(bookmarkRef!);
-      updateDocumentNonBlocking(doc(firestore, 'posts', postId), { bookmarksCount: increment(-1) });
-    } else {
-      setDocumentNonBlocking(bookmarkRef!, { ...post, createdAt: serverTimestamp() }, { merge: true });
-      updateDocumentNonBlocking(doc(firestore, 'posts', postId), { bookmarksCount: increment(1) });
-    }
-  };
-
-  const handleSupport = async (amount: number) => {
+  const handleSupport = (amount: number) => {
     if (isAnonymous) { router.push('/login'); return; }
     if ((currentUserProfile?.coins || 0) < amount) {
-      toast({ variant: "destructive", description: "رصيدك لا يكفي لهذا الدعم." });
+      toast({ variant: "destructive", description: "رصيدك لا يكفي." });
       return;
     }
     if (!firestore) return;
@@ -122,19 +84,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       read: false
     });
     
-    toast({ title: "تم إرسال الدعم!", description: `لقد أرسلت ${amount} عملة ذهبية تقديراً لهذا المحتوى.` });
+    toast({ title: "تم الدعم!", description: `أرسلت ${amount} عملة للمبدع.` });
     setIsSupportOpen(false);
-  };
-
-  const renderContentWithHashtags = (text: string) => {
-    if (!text) return null;
-    const parts = text.split(/(#[^\s#]+)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('#')) {
-        return <span key={i} className="text-accent font-bold">{part}</span>;
-      }
-      return part;
-    });
   };
 
   return (
@@ -154,65 +105,35 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
               </div>
               <span className="text-[10px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
             </div>
-            <Avatar className="h-10 w-10 border border-primary/10">
-              <AvatarImage src={postAuthorProfile?.profilePictureUrl || post.authorAvatar} />
-              <AvatarFallback>{(postAuthorProfile?.username || post.authorName)?.[0]}</AvatarFallback>
-            </Avatar>
+            <Avatar className="h-10 w-10 border border-primary/10"><AvatarImage src={postAuthorProfile?.profilePictureUrl || post.authorAvatar} /><AvatarFallback>{(postAuthorProfile?.username || post.authorName)?.[0]}</AvatarFallback></Avatar>
           </div>
           
           <div className="text-sm leading-relaxed mb-4 whitespace-pre-wrap text-right font-medium">
-            {renderContentWithHashtags(post.content)}
+            {post.content.split(/(#[^\s#]+)/g).map((part, i) => (
+              part.startsWith('#') ? <span key={i} className="text-accent font-bold">{part}</span> : part
+            ))}
           </div>
           
           {post.mediaUrls && post.mediaUrls.length > 0 && (
             <div className="mb-4 relative px-4">
-              {post.mediaUrls.length === 1 ? (
-                <div className="rounded-xl overflow-hidden border bg-muted/5">
-                  <img src={post.mediaUrls[0]} alt="Media" className="w-full h-auto object-cover max-h-[500px]" />
-                </div>
-              ) : (
-                <Carousel className="w-full" opts={{ direction: 'rtl', align: 'start' }}>
-                  <CarouselContent className="-ml-2">
-                    {post.mediaUrls.map((url, index) => (
-                      <CarouselItem key={index} className="pl-2">
-                        <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative">
-                          <img src={url} alt={`Media ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" />
-                        </div>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious className="right-2 bg-black/20 text-white h-8 w-8 border-none z-10" />
-                  <CarouselNext className="left-2 bg-black/20 text-white h-8 w-8 border-none z-10" />
-                </Carousel>
-              )}
+              <Carousel className="w-full" opts={{ direction: 'rtl' }}>
+                <CarouselContent>
+                  {post.mediaUrls.map((url, index) => (
+                    <CarouselItem key={index}><div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative"><img src={url} alt="Media" className="absolute inset-0 w-full h-full object-cover" /></div></CarouselItem>
+                  ))}
+                </CarouselContent>
+                {post.mediaUrls.length > 1 && <><CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8 z-10" /><CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8 z-10" /></>}
+              </Carousel>
             </div>
           )}
           
           <div className="flex justify-between items-center py-3 border-t border-muted/10">
             <div className="flex items-center gap-6">
-              <motion.button whileTap={{ scale: 0.9 }} onClick={handleLike} className={cn("flex items-center gap-1.5 transition-colors", likeData ? "text-red-500" : "text-muted-foreground hover:text-red-500")}>
-                <Heart size={20} className={likeData ? "fill-current" : ""} />
-                <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
-              </motion.button>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <MessageSquareText size={20} />
-                <span className="text-[11px] font-bold">{post.commentsCount || 0}</span>
-              </div>
-              {isVerifiedAuthor && (
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsSupportOpen(true)} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700">
-                  <Coffee size={20} />
-                  <span className="text-[10px] font-bold">دعم</span>
-                </motion.button>
-              )}
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <BarChart3 size={20} />
-                <span className="text-[11px] font-bold">{post.viewsCount || 0}</span>
-              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground"><Heart size={20} /> <span className="text-[11px] font-bold">{post.likesCount || 0}</span></div>
+              <div className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareText size={20} /> <span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
+              {isVerifiedAuthor && <motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsSupportOpen(true)} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700"><Coffee size={20} /><span className="text-[10px] font-bold">دعم</span></motion.button>}
+              <div className="flex items-center gap-1.5 text-muted-foreground"><BarChart3 size={20} /> <span className="text-[11px] font-bold">{post.viewsCount || 0}</span></div>
             </div>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={handleBookmark} className={cn("flex items-center gap-1.5 transition-colors", bookmarkData ? "text-blue-500" : "text-muted-foreground hover:text-blue-500")}>
-              <Bookmark size={20} className={bookmarkData ? "fill-current" : ""} />
-              <span className="text-[11px] font-bold">{post.bookmarksCount || 0}</span>
-            </motion.button>
           </div>
         </div>
 
@@ -221,7 +142,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : rawComments && rawComments.length > 0 ? (
             rawComments.map((c: any) => (
-              <CommentItem key={c.id} comment={c} postId={postId} firestore={firestore} user={user} ADMIN_EMAIL={ADMIN_EMAIL} />
+              <CommentItem key={c.id} comment={c} postId={postId} firestore={firestore} user={user} />
             ))
           ) : (
             <div className="text-center py-10 opacity-40"><p className="text-[10px] font-bold">لا توجد تعليقات بعد.</p></div>
@@ -230,18 +151,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       </div>
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
-        <DialogContent className="sm:max-w-[300px] text-center p-6">
-          <DialogTitle className="sr-only">دعم المبدع بالعملات</DialogTitle>
-          <div className="text-md font-bold text-primary mb-4">دعم المبدع</div>
-          <div className="grid grid-cols-3 gap-3 py-6">
-            {[1, 5, 10].map((amt) => (
-              <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>
-                <span className="text-sm font-bold">{amt}</span>
-                <TimgadCoin size={14} />
-              </Button>
-            ))}
-          </div>
-        </DialogContent>
+        <DialogContent className="sm:max-w-[300px] text-center p-6"><DialogTitle className="sr-only">دعم المبدع</DialogTitle><div className="text-md font-bold text-primary mb-4">دعم المبدع</div><div className="grid grid-cols-3 gap-3 py-6">{[1, 5, 10].map((amt) => (<Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}><span className="text-sm font-bold">{amt}</span><TimgadCoin size={14} /></Button>))}</div></DialogContent>
       </Dialog>
 
       <div className="p-3 border-t bg-background sticky bottom-0">
@@ -254,8 +164,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   );
 }
 
-function CommentItem({ comment, postId, firestore, user, ADMIN_EMAIL }: any) {
-  // مراقبة حالة المعلق لحظياً
+function CommentItem({ comment, postId, firestore, user }: any) {
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !comment.authorId) return null;
     return doc(firestore, 'users', comment.authorId);
@@ -263,12 +172,7 @@ function CommentItem({ comment, postId, firestore, user, ADMIN_EMAIL }: any) {
   
   const { data: authorProfile } = useDoc(authorRef);
   const verificationType = authorProfile?.verificationType || comment.authorVerificationType || 'none';
-  const canDelete = user && (user.uid === comment.authorId || user.email === ADMIN_EMAIL);
-
-  const handleDelete = () => {
-    deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id));
-    updateDocumentNonBlocking(doc(firestore, 'posts', postId), { commentsCount: increment(-1) });
-  };
+  const canDelete = user && (user.uid === comment.authorId || user.email === 'adelbenmaza8@gmail.com');
 
   return (
     <div className="flex gap-3 justify-end group">
@@ -276,30 +180,19 @@ function CommentItem({ comment, postId, firestore, user, ADMIN_EMAIL }: any) {
         <div className="bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right relative w-full">
           <div className="flex justify-between items-start mb-1">
             <div className="flex items-center gap-2">
-              {canDelete && (
-                <button onClick={handleDelete} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>
-              )}
+              {canDelete && <button onClick={() => deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id))} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>}
               <button onClick={() => updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id), { reportsCount: increment(1) })} className="text-muted-foreground/40 hover:text-red-50 transition-colors"><Flag size={12} /></button>
             </div>
-            <div className="flex items-center gap-1.5">
-              <VerifiedBadge type={verificationType} size={10} />
-              <span className="text-[10px] font-bold text-primary">{authorProfile?.username || comment.authorName}</span>
-            </div>
+            <div className="flex items-center gap-1.5"><VerifiedBadge type={verificationType} size={10} /><span className="text-[10px] font-bold text-primary">{authorProfile?.username || comment.authorName}</span></div>
           </div>
           <p className="text-xs leading-relaxed mb-2">{comment.content}</p>
           <div className="flex items-center gap-3 pt-1 border-t border-muted/10">
-            <button onClick={() => updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id), { likesCount: increment(1) })} className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground hover:text-red-500">
-              <Heart size={10} />
-              <span>{comment.likesCount || 0}</span>
-            </button>
+            <button onClick={() => updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id), { likesCount: increment(1) })} className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground hover:text-red-500"><Heart size={10} /><span>{comment.likesCount || 0}</span></button>
           </div>
         </div>
         <span className="text-[7px] text-muted-foreground mt-1 px-1">{comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
       </div>
-      <Avatar className="h-8 w-8 border shrink-0">
-        <AvatarImage src={authorProfile?.profilePictureUrl || comment.authorAvatar} />
-        <AvatarFallback>{(authorProfile?.username || comment.authorName)?.[0]}</AvatarFallback>
-      </Avatar>
+      <Avatar className="h-8 w-8 border shrink-0"><AvatarImage src={authorProfile?.profilePictureUrl || comment.authorAvatar} /><AvatarFallback>{(authorProfile?.username || comment.authorName)?.[0]}</AvatarFallback></Avatar>
     </div>
   );
 }
