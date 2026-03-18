@@ -8,7 +8,7 @@ import { collection, query, orderBy, serverTimestamp, doc, increment } from 'fir
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Rocket, Trash2 } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Rocket, Trash2, Coffee } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -16,15 +16,19 @@ import { cn } from '@/lib/utils';
 import TimgadLogo from '@/components/ui/Logo';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogDescription } from "@/components/ui/dialog";
+import TimgadCoin from '@/components/ui/TimgadCoin';
 
-export default function CommentsDialog({ postId, postAuthorId, post, onClose }: { postId: string, postAuthorId: string, post: any, onClose: () => void }) {
+export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: { postId: string, postAuthorId: string, post: any, onClose: () => void, currentUserProfile?: any }) {
   const [commentText, setCommentText] = useState('');
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
 
   const isAnonymous = !user || user.isAnonymous;
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
+  const isVerifiedAuthor = post.authorVerificationType === 'blue' || post.authorVerificationType === 'gold';
 
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
@@ -84,6 +88,28 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
     }
   };
 
+  const handleSupport = async (amount: number) => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if ((currentUserProfile?.coins || 0) < amount) {
+      toast({ variant: "destructive", description: "رصيدك لا يكفي لهذا الدعم." });
+      return;
+    }
+    updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-amount) });
+    updateDocumentNonBlocking(doc(firestore!, 'users', post.authorId), { coins: increment(amount) });
+    addDocumentNonBlocking(collection(firestore!, 'users', post.authorId, 'notifications'), {
+      type: 'support',
+      fromUserId: user!.uid,
+      fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد',
+      fromAvatar: currentUserProfile?.profilePictureUrl || '',
+      amount,
+      postId: post.id,
+      createdAt: serverTimestamp(),
+      read: false
+    });
+    toast({ title: "تم إرسال الدعم!", description: `لقد أرسلت ${amount} عملة ذهبية تقديراً لهذا المحتوى.` });
+    setIsSupportOpen(false);
+  };
+
   const handleDeleteComment = (commentId: string) => {
     if (!firestore || !postId || !commentId) return;
     deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId));
@@ -110,7 +136,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
       </div>
 
       <div className="flex-1 overflow-y-auto pb-20">
-        {/* المنشور الرئيسي */}
         <div className="p-4 border-b bg-muted/5">
           <div className="flex gap-3 mb-4 justify-end">
             <div className="flex flex-col text-right">
@@ -141,6 +166,17 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                 <span className="text-[11px] font-bold">{post.commentsCount || 0}</span>
               </div>
 
+              {isVerifiedAuthor && (
+                <motion.button 
+                  whileTap={{ scale: 0.9 }} 
+                  onClick={() => setIsSupportOpen(true)}
+                  className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors"
+                >
+                  <Coffee size={20} />
+                  <span className="text-[10px] font-bold">دعم</span>
+                </motion.button>
+              )}
+
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <BarChart3 size={20} />
                 <span className="text-[11px] font-bold">{post.viewsCount || 0}</span>
@@ -154,7 +190,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           </div>
         </div>
 
-        {/* مساحة إعلانية - الإعلان أسفل المنشور مباشرة */}
         <div className="p-4">
           <div className="bg-primary/5 border border-dashed border-primary/20 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -168,7 +203,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
           </div>
         </div>
 
-        {/* قائمة التعليقات */}
         <div className="p-4 space-y-4">
           <div className="flex items-center gap-2 border-b border-muted/10 pb-2 justify-end">
             <span className="text-[10px] font-bold uppercase tracking-widest text-primary">التعليقات</span>
@@ -185,20 +219,13 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
                     <div className="bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right relative w-full">
                       <div className="flex justify-between items-start mb-1">
                         {canDelete && (
-                          <button 
-                            onClick={() => handleDeleteComment(c.id)}
-                            className="text-destructive/40 hover:text-destructive transition-colors"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                          <button onClick={() => handleDeleteComment(c.id)} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>
                         )}
                         <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
                       </div>
                       <p className="text-xs leading-relaxed">{c.content}</p>
                     </div>
-                    <span className="text-[7px] text-muted-foreground mt-1 px-1">
-                      {c.createdAt?.toDate ? formatDistanceToNow(c.createdAt.toDate(), { locale: ar }) : 'الآن'}
-                    </span>
+                    <span className="text-[7px] text-muted-foreground mt-1 px-1">{c.createdAt?.toDate ? formatDistanceToNow(c.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
                   </div>
                   <Avatar className="h-8 w-8 border shrink-0"><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
                 </div>
@@ -210,18 +237,27 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose }: 
         </div>
       </div>
 
+      <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
+        <DialogContent className="sm:max-w-xs text-center p-6">
+          <DialogHeader>
+            <DialogTitle className="text-md font-bold text-primary">دعم المبدع</DialogTitle>
+            <DialogDescription className="text-xs">اختر مبلغاً لدعم هذا المحتوى المتميز.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-3 py-6">
+            {[1, 5, 10].map((amt) => (
+              <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>
+                <span className="text-sm font-bold">{amt}</span>
+                <TimgadCoin size={14} />
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="p-3 border-t bg-background sticky bottom-0">
         <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-10">
-          <Input 
-            placeholder="اكتب تعليقاً..." 
-            className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs text-right h-full p-0" 
-            value={commentText} 
-            onChange={(e) => setCommentText(e.target.value)} 
-            onKeyDown={(e) => e.key === 'Enter' && handleAddComment()} 
-          />
-          <Button variant="ghost" size="icon" onClick={handleAddComment} disabled={!commentText.trim()} className="h-8 w-8 rounded-full text-primary">
-            <Send size={16} />
-          </Button>
+          <Input placeholder="اكتب تعليقاً..." className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs text-right h-full p-0" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddComment()} />
+          <Button variant="ghost" size="icon" onClick={handleAddComment} disabled={!commentText.trim()} className="h-8 w-8 rounded-full text-primary"><Send size={16} /></Button>
         </div>
       </div>
     </div>
