@@ -56,8 +56,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     setCommentText('');
     addDocumentNonBlocking(collection(firestore, 'posts', postId, 'comments'), {
       authorId: user.uid,
-      authorName: user.displayName || 'مستخدم تيمقاد',
-      authorAvatar: user.photoURL || '',
+      authorName: currentUserProfile?.username || user.displayName || 'مستخدم تيمقاد',
+      authorAvatar: currentUserProfile?.profilePictureUrl || user.photoURL || '',
       authorVerificationType: currentUserProfile?.verificationType || 'none',
       content,
       likesCount: 0,
@@ -281,7 +281,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       </div>
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
-        <DialogContent className="sm:max-w-xs text-center p-6">
+        <DialogContent className="sm:max-w-[300px] text-center p-6">
           <DialogHeader>
             <DialogTitle className="text-md font-bold text-primary">دعم المبدع</DialogTitle>
             <DialogDescription className="text-xs">اختر مبلغاً لدعم هذا المحتوى المتميز.</DialogDescription>

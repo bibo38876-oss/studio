@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Image as ImageIcon, X, Hash, Trash2, Loader2, BarChart2, PlusCircle, Info, Camera, Sparkles, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +30,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     { text: '', imageUrl: '' }
   ]);
   const [uploadingOptionIdx, setUploadingOptionIdx] = useState<number | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const optionImageRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -39,14 +40,13 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const db = useFirestore();
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
-  const isInfiniteAdmin = user?.email === ADMIN_EMAIL;
 
   const userRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
   }, [db, user]);
 
-  const { data: profile } = useDoc(userRef);
+  const { data: profile, isLoading: isProfileLoading } = useDoc(userRef);
 
   const isAdmin = profile?.email === ADMIN_EMAIL;
   const isVerified = profile?.verificationType === 'blue' || profile?.verificationType === 'gold' || isAdmin;
@@ -56,7 +56,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
   const pollStatus = (() => {
     if (!showPoll) return { cost: 0, isFree: true };
-    if (isInfiniteAdmin) return { cost: 0, isFree: true, label: 'إدارة تيمقاد' };
+    if (isAdmin) return { cost: 0, isFree: true, label: 'إدارة تيمقاد' };
     if (isVerified) {
       const lastPollDate = profile?.lastPollCreatedAt ? new Date(profile.lastPollCreatedAt).getTime() : 0;
       const now = new Date().getTime();
@@ -124,55 +124,63 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     setPollOptions(newOptions);
   };
 
-  const handlePost = () => {
+  const handlePost = async () => {
+    if (isPosting) return;
     if (!content.trim() && mediaUrls.length === 0 && !showPoll) return;
     if (content.length > charLimit) return toast({ variant: "destructive", description: `تجاوزت الحد (${charLimit} حرف).` });
     if (!db || !user) return;
 
     if (showPoll) {
-      if (!isInfiniteAdmin && !pollStatus.isFree && (profile?.coins || 0) < pollStatus.cost) {
+      if (!isAdmin && !pollStatus.isFree && (profile?.coins || 0) < pollStatus.cost) {
         return toast({ variant: "destructive", title: "رصيد غير كافٍ", description: `تحتاج إلى ${pollStatus.cost} عملات لهذا الاستطلاع.` });
       }
       if (!pollQuestion.trim() || pollOptions.some(opt => !opt.text.trim())) return toast({ variant: "destructive", description: "يرجى كتابة السؤال وجميع الخيارات." });
     }
 
-    const postData: any = {
-      content: content.trim(), 
-      authorId: user.uid, 
-      authorName: profile?.username || 'مستكشف تيمقاد',
-      authorAvatar: profile?.profilePictureUrl || '', 
-      createdAt: serverTimestamp(),
-      likesCount: 0, 
-      commentsCount: 0, 
-      repostsCount: 0, 
-      viewsCount: 0,
-      hashtags: content.match(/#[^\s#]+/g) || [], 
-      mediaUrls: mediaUrls.length > 0 ? mediaUrls : null,
-      email: user.email, 
-      authorVerificationType: profile?.verificationType || (isAdmin ? 'blue' : 'none')
-    };
-
-    if (showPoll) {
-      postData.poll = { 
-        question: pollQuestion.trim(), 
-        options: pollOptions.map(opt => ({ 
-          text: opt.text.trim(), 
-          imageUrl: opt.imageUrl || '', 
-          votes: 0 
-        })), 
-        totalVotes: 0, 
-        expiresAt: new Date(Date.now() + 86400000).toISOString() 
+    setIsPosting(true);
+    try {
+      const postData: any = {
+        content: content.trim(), 
+        authorId: user.uid, 
+        authorName: profile?.username || 'مستكشف تيمقاد',
+        authorAvatar: profile?.profilePictureUrl || '', 
+        createdAt: serverTimestamp(),
+        likesCount: 0, 
+        commentsCount: 0, 
+        repostsCount: 0, 
+        viewsCount: 0,
+        hashtags: content.match(/#[^\s#]+/g) || [], 
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : [],
+        email: user.email, 
+        authorVerificationType: profile?.verificationType || (isAdmin ? 'blue' : 'none')
       };
-      
-      if (!isInfiniteAdmin) {
-        if (!pollStatus.isFree) updateDocumentNonBlocking(doc(db, 'users', user.uid), { coins: increment(-pollStatus.cost) });
-        else if (isVerified) updateDocumentNonBlocking(doc(db, 'users', user.uid), { lastPollCreatedAt: new Date().toISOString() });
-      }
-    }
 
-    addDocumentNonBlocking(collection(db, 'posts'), postData);
-    toast({ title: "تم النشر بنجاح في تيمقاد!" });
-    if (onSuccess) onSuccess();
+      if (showPoll) {
+        postData.poll = { 
+          question: pollQuestion.trim(), 
+          options: pollOptions.map(opt => ({ 
+            text: opt.text.trim(), 
+            imageUrl: opt.imageUrl || '', 
+            votes: 0 
+          })), 
+          totalVotes: 0, 
+          expiresAt: new Date(Date.now() + 86400000).toISOString() 
+        };
+        
+        if (!isAdmin) {
+          if (!pollStatus.isFree) updateDocumentNonBlocking(doc(db, 'users', user.uid), { coins: increment(-pollStatus.cost) });
+          else if (isVerified) updateDocumentNonBlocking(doc(db, 'users', user.uid), { lastPollCreatedAt: new Date().toISOString() });
+        }
+      }
+
+      await addDocumentNonBlocking(collection(db, 'posts'), postData);
+      toast({ title: "تم النشر بنجاح في تيمقاد!" });
+      if (onSuccess) onSuccess();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "فشل النشر", description: "حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى." });
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   return (
@@ -192,10 +200,10 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         </div>
         <Button 
           onClick={handlePost} 
-          disabled={isUploading || (content.length === 0 && mediaUrls.length === 0 && !showPoll)} 
+          disabled={isUploading || isPosting || (content.length === 0 && mediaUrls.length === 0 && !showPoll)} 
           className="h-7 bg-primary text-white px-4 rounded-full font-bold text-[10px] shadow-sm hover:bg-primary/90 transition-all"
         >
-          {showPoll ? 'إطلاق' : 'نشر'}
+          {isPosting ? <Loader2 className="h-3 w-3 animate-spin" /> : (showPoll ? 'إطلاق' : 'نشر')}
         </Button>
       </div>
 
@@ -375,7 +383,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
               variant="secondary" 
               className="flex-1 h-9 rounded-xl gap-2 font-bold text-[10px] group transition-all"
               onClick={() => fileInputRef.current?.click()} 
-              disabled={isUploading}
+              disabled={isUploading || isPosting}
             >
               <ImageIcon size={16} className="text-primary" />
               <span>الصور</span>
@@ -385,6 +393,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
               variant="secondary" 
               className="flex-1 h-9 rounded-xl gap-2 font-bold text-[10px] group transition-all"
               onClick={() => setShowPoll(true)}
+              disabled={isPosting}
             >
               <BarChart2 size={16} className="text-accent" />
               <span>استطلاع</span>
@@ -393,6 +402,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
             <Button 
               variant="secondary" 
               className="h-9 w-9 rounded-xl p-0 flex items-center justify-center text-muted-foreground hover:text-primary transition-all"
+              disabled={isPosting}
               onClick={() => {
                 const hash = ' #';
                 if (!content.endsWith(hash)) setContent(content + hash);
@@ -407,6 +417,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
               variant="secondary" 
               className="flex-1 h-9 rounded-xl font-bold text-[10px] gap-2"
               onClick={() => setShowPoll(false)}
+              disabled={isPosting}
             >
               <Sparkles size={14} className="text-primary" />
               العودة للمنشور العادي

@@ -202,13 +202,13 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
             <div className="flex flex-col text-right">
               <div className="flex items-center gap-1.5 leading-tight justify-end">
                 <VerifiedBadge type={post.authorVerificationType || 'none'} size={14} />
-                <span className="text-sm font-bold text-primary">{post.authorName}</span>
+                <span className="text-xs font-bold text-primary">{post.authorName}</span>
               </div>
               <span className="text-[9px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
             </div>
             <Avatar className="h-10 w-10 border border-primary/10">
               <AvatarImage src={post.authorAvatar} />
-              <AvatarFallback className="font-bold">{post.authorName?.[0]}</AvatarFallback>
+              <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
             </Avatar>
           </Link>
         </CardHeader>
@@ -269,7 +269,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       </Card>
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
-        <DialogContent className="sm:max-w-xs text-center p-6">
+        <DialogContent className="sm:max-w-[300px] text-center p-6">
           <DialogHeader>
             <DialogTitle className="text-md font-bold text-primary">دعم المحتوى المتميز</DialogTitle>
             <DialogDescription className="text-xs">اختر مبلغاً من العملات لدعم المبدع {post.authorName}.</DialogDescription>
