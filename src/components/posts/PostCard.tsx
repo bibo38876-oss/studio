@@ -311,6 +311,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
         <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[95vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col [&>button]:hidden">
+          <DialogTitle className="sr-only">تعليقات وتفاصيل المنشور</DialogTitle>
           <CommentsDialog postId={post.id} postAuthorId={post.authorId} post={post} onClose={() => setIsCommentsOpen(false)} currentUserProfile={currentUserProfile} />
         </DialogContent>
       </Dialog>
