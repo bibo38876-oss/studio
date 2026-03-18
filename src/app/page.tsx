@@ -32,18 +32,17 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // 1. جلب منشورات من مصادر متنوعة (مجمع البيانات)
+  // 1. تجميع المنشورات (Pool Collection) - جلب 150 منشوراً لتطبيق الخوارزمية
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    // نجلب عينة كبيرة من المنشورات لترتيبها برمجياً
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(150));
   }, [firestore, user?.uid]);
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
   /**
-   * 2 & 3. حساب الـ Score وترتيب المنشورات بناءً على الخوارزمية
-   * Score = (LikeCount * 3) + (CommentCount * 5) + (FollowingBoost * 4) + (RecencyScore * 2) + (UserInterestScore * 6)
+   * 2. محرك التقييم (Scoring Engine) بناءً على المعادلة الذهبية:
+   * Score = (Likes * 3) + (Comments * 5) + (FollowingBoost * 4) + (RecencyScore * 2) + (UserInterestScore * 6)
    */
   const recommendedPosts = useMemo(() => {
     if (!postsPool) return [];
@@ -54,33 +53,30 @@ export default function Home() {
       const createdAt = post.createdAt?.toMillis ? post.createdAt.toMillis() : now;
       const diffHours = (now - createdAt) / (1000 * 60 * 60);
 
-      // أ. حساب نقاط التفاعل الأساسية
+      // أ. التفاعل الأساسي
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
 
-      // ب. FollowingBoost (+20 if following)
+      // ب. دعم المتابعة (FollowingBoost: +20 raw points * 4 weight = +80)
       const isFollowing = profile?.followingIds?.includes(post.authorId);
-      const followingBoost = isFollowing ? 20 : 0;
-      score += followingBoost * 4;
+      if (isFollowing) score += (20 * 4);
 
-      // ج. RecencyScore (الحداثة)
-      let recencyPoints = 5; // قديم
-      if (diffHours < 1) recencyPoints = 30; // أقل من ساعة
-      else if (diffHours < 24) recencyPoints = 15; // أقل من يوم
-      score += recencyPoints * 2;
+      // ج. حداثة المنشور (RecencyScore)
+      let recencyBase = 5; 
+      if (diffHours < 1) recencyBase = 30;
+      else if (diffHours < 24) recencyBase = 15;
+      score += (recencyBase * 2);
 
-      // د. UserInterestScore (الاهتمام بالكاتب)
+      // د. اهتمام المستخدم بالكاتب (UserInterestScore: +25 points * 6 weight = +150)
       const hasInteractedBefore = profile?.interactedAuthorIds?.includes(post.authorId);
-      const interestPoints = hasInteractedBefore ? 25 : 0;
-      score += interestPoints * 6;
+      if (hasInteractedBefore) score += (25 * 6);
 
       return { ...post, calculatedScore: score };
     })
     .sort((a, b) => {
-      // الأولوية القصوى دائماً للمنشورات المروجة (Promoted)
+      // الأولوية المطلقة للمنشورات المروجة (Promoted)
       if (a.promoted !== b.promoted) return a.promoted ? -1 : 1;
-      
-      // الترتيب حسب النتيجة المحسوبة (الخوارزمية الذكية)
+      // ثم الترتيب حسب النتيجة المحسوبة
       return b.calculatedScore - a.calculatedScore;
     })
     .slice(0, 50); // عرض أفضل 50 نتيجة
@@ -119,7 +115,7 @@ export default function Home() {
           <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="w-full bg-background/80 backdrop-blur-md border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-10 z-40">
               <TabsTrigger value="for-you" className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary font-bold text-xs gap-2">
-                <Sparkles size={14} /> لك (خوارزمية ذكية)
+                <Sparkles size={14} /> لك (توصيات ذكية)
               </TabsTrigger>
               <TabsTrigger value="following" className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary font-bold text-xs gap-2">
                 <Users size={14} /> أتابعهم

@@ -1,18 +1,15 @@
 
 "use client"
 
-import { useState, useRef, useEffect } from 'react';
-import { Image as ImageIcon, X, Hash, Trash2, Loader2, BarChart2, PlusCircle, Info, Camera, Sparkles, ChevronRight } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Image as ImageIcon, X, Hash, Loader2, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, doc, increment } from 'firebase/firestore';
-import { Input } from '@/components/ui/input';
+import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
-import { Badge } from '@/components/ui/badge';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface CreatePostProps {
@@ -31,8 +28,6 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const { user } = useUser();
   const db = useFirestore();
 
-  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
-
   const userRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
@@ -40,7 +35,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
   const { data: profile } = useDoc(userRef);
 
-  const isAdmin = profile?.email === ADMIN_EMAIL;
+  const isAdmin = profile?.role === 'admin';
   const isVerified = profile?.verificationType === 'blue' || profile?.verificationType === 'gold' || isAdmin;
   
   const charLimit = isVerified ? 1500 : 400;
@@ -97,7 +92,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
         reportsCount: 0,
         hashtags: content.match(/#[^\s#]+/g) || [], 
         mediaUrls: mediaUrls,
-        authorVerificationType: profile?.verificationType || (isAdmin ? 'blue' : 'none')
+        authorVerificationType: profile?.verificationType || 'none'
       };
 
       await addDocumentNonBlocking(collection(db, 'posts'), postData);

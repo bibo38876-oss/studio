@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -119,10 +119,19 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
               <Carousel className="w-full" opts={{ direction: 'rtl' }}>
                 <CarouselContent>
                   {post.mediaUrls.map((url, index) => (
-                    <CarouselItem key={url}><div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full h-full"><img src={url} alt="Media" className="absolute inset-0 w-full h-full object-cover" /></div></CarouselItem>
+                    <CarouselItem key={url}>
+                      <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full h-full">
+                        <img src={url} alt="Media" className="absolute inset-0 w-full h-full object-cover" />
+                      </div>
+                    </CarouselItem>
                   ))}
                 </CarouselContent>
-                {post.mediaUrls.length > 1 && <><CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8 z-10" /><CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8 z-10" /></>}
+                {post.mediaUrls.length > 1 && (
+                  <>
+                    <CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
+                    <CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
+                  </>
+                )}
               </Carousel>
             </div>
           )}
@@ -151,7 +160,18 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       </div>
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
-        <DialogContent className="sm:max-w-[300px] text-center p-6"><DialogTitle className="sr-only">دعم المبدع</DialogTitle><div className="text-md font-bold text-primary mb-4">دعم المبدع</div><div className="grid grid-cols-3 gap-3 py-6">{[1, 5, 10].map((amt) => (<Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}><span className="text-sm font-bold">{amt}</span><TimgadCoin size={14} /></Button>))}</div></DialogContent>
+        <DialogContent className="sm:max-w-[300px] text-center p-6">
+          <DialogTitle className="sr-only">دعم المبدع</DialogTitle>
+          <div className="text-md font-bold text-primary mb-4">دعم المبدع</div>
+          <div className="grid grid-cols-3 gap-3 py-6">
+            {[1, 5, 10].map((amt) => (
+              <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>
+                <span className="text-sm font-bold">{amt}</span>
+                <TimgadCoin size={14} />
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
       </Dialog>
 
       <div className="p-3 border-t bg-background sticky bottom-0">

@@ -54,6 +54,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   const isOwner = user?.uid === post.authorId;
   const isAdmin = user?.email === 'adelbenmaza8@gmail.com';
 
+  // مراقبة حالة التوثيق لحظياً من ملف الكاتب
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !post.authorId) return null;
     return doc(firestore, 'users', post.authorId);
@@ -100,7 +101,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
       updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { likesCount: increment(1) });
       
-      // تحديث قائمة "الاهتمامات" للمستخدم لزيادة أولوية هذا الكاتب مستقبلاً
+      // تحديث نقاط الاهتمام لهذا الكاتب
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
         interactedAuthorIds: arrayUnion(post.authorId)
       });
@@ -232,10 +233,19 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
               <Carousel className="w-full" opts={{ direction: 'rtl' }}>
                 <CarouselContent>
                   {post.mediaUrls.map((url, i) => (
-                    <CarouselItem key={url}><div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full h-full"><img src={url} alt="Media" className="absolute inset-0 w-full h-full object-cover" /></div></CarouselItem>
+                    <CarouselItem key={url}>
+                      <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full h-full">
+                        <img src={url} alt="Media" className="absolute inset-0 w-full h-full object-cover" />
+                      </div>
+                    </CarouselItem>
                   ))}
                 </CarouselContent>
-                {post.mediaUrls.length > 1 && <><CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8 z-10" /><CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8 z-10" /></>}
+                {post.mediaUrls.length > 1 && (
+                  <>
+                    <CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
+                    <CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
+                  </>
+                )}
               </Carousel>
             </div>
           )}
@@ -253,11 +263,26 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       </Card>
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
-        <DialogContent className="sm:max-w-[300px] text-center p-6"><DialogTitle className="sr-only">دعم المبدع</DialogTitle><div className="text-md font-bold text-primary mb-4">دعم المحتوى المتميز</div><div className="grid grid-cols-3 gap-3 py-6">{[1, 5, 10].map((amt) => (<Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}><span className="text-sm font-bold">{amt}</span><TimgadCoin size={14} /></Button>))}</div><p className="text-[9px] text-muted-foreground italic">سيتم خصم المبلغ من رصيدك فوراً.</p></DialogContent>
+        <DialogContent className="sm:max-w-[300px] text-center p-6">
+          <DialogTitle className="sr-only">دعم المبدع</DialogTitle>
+          <div className="text-md font-bold text-primary mb-4">دعم المحتوى المتميز</div>
+          <div className="grid grid-cols-3 gap-3 py-6">
+            {[1, 5, 10].map((amt) => (
+              <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>
+                <span className="text-sm font-bold">{amt}</span>
+                <TimgadCoin size={14} />
+              </Button>
+            ))}
+          </div>
+          <p className="text-[9px] text-muted-foreground italic">سيتم خصم المبلغ من رصيدك فوراً.</p>
+        </DialogContent>
       </Dialog>
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-        <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[95vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col [&>button]:hidden"><DialogTitle className="sr-only">التفاصيل والتعليقات</DialogTitle><CommentsDialog postId={post.id} postAuthorId={post.authorId} post={post} onClose={() => setIsCommentsOpen(false)} currentUserProfile={currentUserProfile} /></DialogContent>
+        <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[95vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col [&>button]:hidden">
+          <DialogTitle className="sr-only">التفاصيل والتعليقات</DialogTitle>
+          <CommentsDialog postId={post.id} postAuthorId={post.authorId} post={post} onClose={() => setIsCommentsOpen(false)} currentUserProfile={currentUserProfile} />
+        </DialogContent>
       </Dialog>
     </>
   );
