@@ -163,13 +163,17 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           {post.mediaUrls && post.mediaUrls.length > 0 && (
             <div className="mb-4">
               {post.mediaUrls.length === 1 ? (
-                <img src={post.mediaUrls[0]} alt="Media" className="w-full rounded-xl border shadow-sm" />
+                <div className="rounded-xl overflow-hidden border bg-muted/5">
+                  <img src={post.mediaUrls[0]} alt="Media" className="w-full h-auto object-cover max-h-[500px]" />
+                </div>
               ) : (
-                <Carousel className="w-full">
+                <Carousel className="w-full" opts={{ direction: 'rtl' }}>
                   <CarouselContent>
                     {post.mediaUrls.map((url, index) => (
                       <CarouselItem key={index}>
-                        <img src={url} alt={`Media ${index + 1}`} className="w-full rounded-xl border shadow-sm h-auto object-cover max-h-[500px]" />
+                        <div className="rounded-xl overflow-hidden border bg-muted/5">
+                          <img src={url} alt={`Media ${index + 1}`} className="w-full h-auto object-cover max-h-[500px]" />
+                        </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>

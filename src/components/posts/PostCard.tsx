@@ -244,7 +244,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
                   <img src={post.mediaUrls[0]} alt="Post" className="w-full h-auto object-cover max-h-[500px]" />
                 </div>
               ) : (
-                <Carousel className="w-full">
+                <Carousel className="w-full" opts={{ direction: 'rtl' }}>
                   <CarouselContent>
                     {post.mediaUrls.map((url, index) => (
                       <CarouselItem key={index}>
