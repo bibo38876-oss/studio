@@ -8,7 +8,7 @@ import { collection, query, orderBy, serverTimestamp, doc, increment } from 'fir
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Rocket, Trash2, Coffee } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Rocket, Trash2, Coffee, Flag } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -58,7 +58,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       authorId: user.uid,
       authorName: user.displayName || 'مستخدم تيمقاد',
       authorAvatar: user.photoURL || '',
+      authorVerificationType: currentUserProfile?.verificationType || 'none',
       content,
+      likesCount: 0,
+      reportsCount: 0,
       createdAt: serverTimestamp(),
     });
     updateDocumentNonBlocking(doc(firestore, 'posts', postId), { commentsCount: increment(1) });
@@ -117,6 +120,24 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     toast({ description: "تم حذف التعليق بنجاح." });
   };
 
+  const handleLikeComment = (commentId: string) => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !postId) return;
+    updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId), {
+      likesCount: increment(1)
+    });
+    toast({ description: "أعجبك هذا التعليق." });
+  };
+
+  const handleReportComment = (commentId: string) => {
+    if (isAnonymous) { router.push('/login'); return; }
+    if (!firestore || !postId) return;
+    updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId), {
+      reportsCount: increment(1)
+    });
+    toast({ title: "شكراً لبلاغك", description: "سنقوم بمراجعة هذا التعليق." });
+  };
+
   const renderContentWithHashtags = (text: string) => {
     if (!text) return null;
     const parts = text.split(/(#[^\s#]+)/g);
@@ -145,7 +166,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
               </div>
               <span className="text-[10px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
             </div>
-            <Avatar className="h-10 w-10 border border-primary/10"><AvatarImage src={post.authorAvatar} /><AvatarFallback>{post.authorName?.[0]}</AvatarFallback></Avatar>
+            <Avatar className="h-10 w-10 border border-primary/10">
+              <AvatarImage src={post.authorAvatar} />
+              <AvatarFallback>{post.authorName?.[0]}</AvatarFallback>
+            </Avatar>
           </div>
           
           <div className="text-sm leading-relaxed mb-4 whitespace-pre-wrap text-right font-medium">
@@ -218,16 +242,35 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                   <div className="flex-1 flex flex-col items-end">
                     <div className="bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right relative w-full">
                       <div className="flex justify-between items-start mb-1">
-                        {canDelete && (
-                          <button onClick={() => handleDeleteComment(c.id)} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>
-                        )}
-                        <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
+                        <div className="flex items-center gap-2">
+                          {canDelete && (
+                            <button onClick={() => handleDeleteComment(c.id)} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>
+                          )}
+                          <button onClick={() => handleReportComment(c.id)} className="text-muted-foreground/40 hover:text-red-500 transition-colors"><Flag size={12} /></button>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <VerifiedBadge type={c.authorVerificationType || 'none'} size={10} />
+                          <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
+                        </div>
                       </div>
-                      <p className="text-xs leading-relaxed">{c.content}</p>
+                      <p className="text-xs leading-relaxed mb-2">{c.content}</p>
+                      
+                      <div className="flex items-center gap-3 pt-1 border-t border-muted/10">
+                        <button 
+                          onClick={() => handleLikeComment(c.id)} 
+                          className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground hover:text-red-500 transition-colors"
+                        >
+                          <Heart size={10} />
+                          <span>{c.likesCount || 0}</span>
+                        </button>
+                      </div>
                     </div>
                     <span className="text-[7px] text-muted-foreground mt-1 px-1">{c.createdAt?.toDate ? formatDistanceToNow(c.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
                   </div>
-                  <Avatar className="h-8 w-8 border shrink-0"><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
+                  <Avatar className="h-8 w-8 border shrink-0">
+                    <AvatarImage src={c.authorAvatar} />
+                    <AvatarFallback>{c.authorName?.[0]}</AvatarFallback>
+                  </Avatar>
                 </div>
               );
             })
