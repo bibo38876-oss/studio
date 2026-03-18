@@ -23,17 +23,9 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const [content, setContent] = useState('');
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [showPoll, setShowPoll] = useState(false);
-  const [pollQuestion, setPollQuestion] = useState('');
-  const [pollOptions, setPollOptions] = useState([
-    { text: '', imageUrl: '' },
-    { text: '', imageUrl: '' }
-  ]);
-  const [uploadingOptionIdx, setUploadingOptionIdx] = useState<number | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const optionImageRefs = useRef<(HTMLInputElement | null)[]>([]);
   
   const { toast } = useToast();
   const { user } = useUser();
@@ -85,7 +77,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
   const handlePost = async () => {
     if (isPosting) return;
-    if (!content.trim() && mediaUrls.length === 0 && !showPoll) return;
+    if (!content.trim() && mediaUrls.length === 0) return;
     if (content.length > charLimit) return toast({ variant: "destructive", description: `تجاوزت الحد (${charLimit} حرف).` });
     if (!db || !user) return;
 

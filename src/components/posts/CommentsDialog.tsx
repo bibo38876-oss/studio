@@ -29,6 +29,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const isAnonymous = !user || user.isAnonymous;
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
+  // مراقبة حالة كاتب المنشور لحظياً
   const postAuthorProfileRef = useMemoFirebase(() => {
     if (!firestore || !postAuthorId) return null;
     return doc(firestore, 'users', postAuthorId);
@@ -254,6 +255,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 }
 
 function CommentItem({ comment, postId, firestore, user, ADMIN_EMAIL }: any) {
+  // مراقبة حالة المعلق لحظياً
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !comment.authorId) return null;
     return doc(firestore, 'users', comment.authorId);
