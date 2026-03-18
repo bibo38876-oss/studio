@@ -35,12 +35,12 @@ export default function Home() {
   // For You Feed
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(50));
+    return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(100));
   }, [firestore, user?.uid]);
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // Following Feed - Fetch all posts and sort client-side to avoid index errors
+  // Following Feed
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(
@@ -63,7 +63,17 @@ export default function Home() {
 
   const recommendedPosts = useMemo(() => {
     if (!postsPool) return [];
-    return [...postsPool].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0)).slice(0, 20);
+    return [...postsPool].sort((a, b) => {
+      // 1. Prioritize promoted posts
+      const aPromoted = a.promoted ? 1 : 0;
+      const bPromoted = b.promoted ? 1 : 0;
+      if (aPromoted !== bPromoted) return bPromoted - aPromoted;
+      
+      // 2. Then by date
+      const dateA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const dateB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return dateB - dateA;
+    }).slice(0, 40);
   }, [postsPool]);
 
   if (isUserLoading || !user) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;

@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Sparkles, ShieldCheck, Package, BadgeCheck, Loader2, Coins, Trophy, Scale, AlertCircle } from 'lucide-react';
+import { ChevronRight, BadgeCheck, Coins, Trophy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +21,6 @@ const PACKAGES = [
   { id: "pkg_4", amount: 5000, price: "30.00", label: "كنز الريادة", color: "bg-amber-500/20 text-[#FBBF24]" }
 ];
 
-// استخدام الـ Client ID الجديد والمحدث
 const PAYPAL_CLIENT_ID = "EOoPoQ5ewKmEjpsXQ5aJ8Hh93_dkemhg3wdTGU5LkkjjJDQ6liKoRZwU1NRgOubcgwEZnMSbpOHfNv-s3fDxw";
 
 export default function WalletPage() {
@@ -66,7 +65,7 @@ export default function WalletPage() {
             </Button>
             <div className="flex flex-col flex-1">
               <h1 className="text-sm font-bold text-[#FBBF24] uppercase tracking-tighter">خزانة تيمقاد الملكية {isInfiniteAdmin && '∞'}</h1>
-              <span className="text-[8px] text-[#FBBF24]/60 uppercase tracking-[0.2em] font-medium">Auto-Payment Gateway Active</span>
+              <span className="text-[8px] text-[#FBBF24]/60 uppercase tracking-[0.2em] font-medium">نظام الدفع الآلي نشط</span>
             </div>
           </div>
 

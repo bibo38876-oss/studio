@@ -13,7 +13,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import { cn } from '@/lib/utils';
-import TimgadLogo from '@/components/ui/Logo';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -165,18 +164,18 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
           
           {post.mediaUrls && post.mediaUrls.length > 0 && (
-            <div className="mb-4 relative">
+            <div className="mb-4 relative px-4">
               {post.mediaUrls.length === 1 ? (
                 <div className="rounded-xl overflow-hidden border bg-muted/5">
                   <img src={post.mediaUrls[0]} alt="Media" className="w-full h-auto object-cover max-h-[500px]" />
                 </div>
               ) : (
-                <Carousel className="w-full" opts={{ direction: 'rtl' }}>
-                  <CarouselContent>
+                <Carousel className="w-full" opts={{ direction: 'rtl', align: 'start' }}>
+                  <CarouselContent className="-ml-2">
                     {post.mediaUrls.map((url, index) => (
-                      <CarouselItem key={index}>
-                        <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square">
-                          <img src={url} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
+                      <CarouselItem key={index} className="pl-2">
+                        <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative">
+                          <img src={url} alt={`Media ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" />
                         </div>
                       </CarouselItem>
                     ))}
@@ -231,7 +230,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
         <DialogContent className="sm:max-w-[300px] text-center p-6">
-          <DialogTitle className="text-md font-bold text-primary">دعم المبدع</DialogTitle>
+          <DialogTitle className="sr-only">دعم المبدع بالعملات</DialogTitle>
+          <div className="text-md font-bold text-primary mb-4">دعم المبدع</div>
           <div className="grid grid-cols-3 gap-3 py-6">
             {[1, 5, 10].map((amt) => (
               <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>

@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, Bookmark, BarChart3, MoreHorizontal, Trash2, AlertTriangle, Rocket, Coffee, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, BarChart3, MoreHorizontal, Trash2, AlertTriangle, Rocket, Coffee } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import CommentsDialog from "./CommentsDialog";
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -252,8 +252,8 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
                   <CarouselContent>
                     {post.mediaUrls.map((url, index) => (
                       <CarouselItem key={index}>
-                        <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square">
-                          <img src={url} alt={`Post Image ${index + 1}`} className="w-full h-full object-cover" />
+                        <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative">
+                          <img src={url} alt={`Post Image ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" />
                         </div>
                       </CarouselItem>
                     ))}
@@ -300,7 +300,8 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
         <DialogContent className="sm:max-w-[300px] text-center p-6">
-          <DialogTitle className="text-md font-bold text-primary">دعم المحتوى المتميز</DialogTitle>
+          <DialogTitle className="sr-only">دعم المبدع</DialogTitle>
+          <div className="text-md font-bold text-primary mb-4">دعم المحتوى المتميز</div>
           <div className="grid grid-cols-3 gap-3 py-6">
             {[1, 5, 10].map((amt) => (
               <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>
