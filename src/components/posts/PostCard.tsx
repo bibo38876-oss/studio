@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, increment, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -54,6 +54,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   const isOwner = user?.uid === post.authorId;
   const isAdmin = user?.email === 'adelbenmaza8@gmail.com';
 
+  // مراقبة حالة توثيق الكاتب لحظياً من ملفه الشخصي
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !post.authorId) return null;
     return doc(firestore, 'users', post.authorId);
@@ -92,12 +93,18 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     e.stopPropagation();
     if (isAnonymous) { router.push('/login'); return; }
     if (!firestore || !user || !post.id) return;
+    
     if (likeData) {
       deleteDocumentNonBlocking(likeRef!);
       updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { likesCount: increment(-1) });
     } else {
       setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
       updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { likesCount: increment(1) });
+      
+      // تحديث قائمة "الاهتمامات" للمستخدم لزيادة أولوية هذا الكاتب مستقبلاً
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+        interactedAuthorIds: arrayUnion(post.authorId)
+      });
     }
   };
 
