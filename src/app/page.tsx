@@ -32,16 +32,17 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // جلب المنشورات العامة
+  // 1. جلب منشورات من مصادر متنوعة (مجمع البيانات)
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
+    // نجلب عينة كبيرة من المنشورات لترتيبها برمجياً
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(150));
   }, [firestore, user?.uid]);
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
   /**
-   * خوارزمية تقييم المنشور (The Golden Equation)
+   * 2 & 3. حساب الـ Score وترتيب المنشورات بناءً على الخوارزمية
    * Score = (LikeCount * 3) + (CommentCount * 5) + (FollowingBoost * 4) + (RecencyScore * 2) + (UserInterestScore * 6)
    */
   const recommendedPosts = useMemo(() => {
@@ -53,22 +54,22 @@ export default function Home() {
       const createdAt = post.createdAt?.toMillis ? post.createdAt.toMillis() : now;
       const diffHours = (now - createdAt) / (1000 * 60 * 60);
 
-      // 1. حساب نقاط التفاعل الأساسية
+      // أ. حساب نقاط التفاعل الأساسية
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
 
-      // 2. حساب FollowingBoost (+20 if following)
+      // ب. FollowingBoost (+20 if following)
       const isFollowing = profile?.followingIds?.includes(post.authorId);
       const followingBoost = isFollowing ? 20 : 0;
       score += followingBoost * 4;
 
-      // 3. حساب RecencyScore (الحداثة)
+      // ج. RecencyScore (الحداثة)
       let recencyPoints = 5; // قديم
       if (diffHours < 1) recencyPoints = 30; // أقل من ساعة
       else if (diffHours < 24) recencyPoints = 15; // أقل من يوم
       score += recencyPoints * 2;
 
-      // 4. حساب UserInterestScore (الاهتمام بالكاتب)
+      // د. UserInterestScore (الاهتمام بالكاتب)
       const hasInteractedBefore = profile?.interactedAuthorIds?.includes(post.authorId);
       const interestPoints = hasInteractedBefore ? 25 : 0;
       score += interestPoints * 6;
@@ -76,13 +77,13 @@ export default function Home() {
       return { ...post, calculatedScore: score };
     })
     .sort((a, b) => {
-      // الأولوية القصوى للمنشورات المروجة
+      // الأولوية القصوى دائماً للمنشورات المروجة (Promoted)
       if (a.promoted !== b.promoted) return a.promoted ? -1 : 1;
       
-      // الترتيب حسب النتيجة المحسوبة (الخوارزمية)
+      // الترتيب حسب النتيجة المحسوبة (الخوارزمية الذكية)
       return b.calculatedScore - a.calculatedScore;
     })
-    .slice(0, 50);
+    .slice(0, 50); // عرض أفضل 50 نتيجة
   }, [postsPool, profile]);
 
   // تغذية المتابعة الصرفة

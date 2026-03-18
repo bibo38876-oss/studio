@@ -54,7 +54,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   const isOwner = user?.uid === post.authorId;
   const isAdmin = user?.email === 'adelbenmaza8@gmail.com';
 
-  // مراقبة حالة توثيق الكاتب لحظياً من ملفه الشخصي
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !post.authorId) return null;
     return doc(firestore, 'users', post.authorId);
@@ -233,7 +232,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
               <Carousel className="w-full" opts={{ direction: 'rtl' }}>
                 <CarouselContent>
                   {post.mediaUrls.map((url, i) => (
-                    <CarouselItem key={i}><div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative"><img src={url} alt="Media" className="absolute inset-0 w-full h-full object-cover" /></div></CarouselItem>
+                    <CarouselItem key={url}><div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full h-full"><img src={url} alt="Media" className="absolute inset-0 w-full h-full object-cover" /></div></CarouselItem>
                   ))}
                 </CarouselContent>
                 {post.mediaUrls.length > 1 && <><CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8 z-10" /><CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8 z-10" /></>}
