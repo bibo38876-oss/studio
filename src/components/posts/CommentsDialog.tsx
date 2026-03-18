@@ -8,7 +8,7 @@ import { collection, query, orderBy, serverTimestamp, doc, increment } from 'fir
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Rocket, Trash2, Coffee, Flag } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Trash2, Coffee, Flag } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
@@ -37,7 +37,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const { data: postAuthorProfile } = useDoc(postAuthorProfileRef);
 
   const currentPostVerification: VerificationType = postAuthorProfile?.verificationType || post.authorVerificationType || 'none';
-  const isVerifiedAuthor = currentPostVerification === 'blue' || currentVerificationType === 'gold';
+  const isVerifiedAuthor = currentPostVerification === 'blue' || currentPostVerification === 'gold';
 
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
