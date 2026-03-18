@@ -8,23 +8,16 @@ import LeftSidebar from '@/components/layout/LeftSidebar';
 import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
-import { useCollection, useFirebase, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, doc, where, limit, increment } from 'firebase/firestore';
-import { Loader2, Sparkles, Users, ChevronLeft } from 'lucide-react';
+import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, doc, where, limit } from 'firebase/firestore';
+import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
   const [activeTab, setActiveTab] = useState('for-you');
-  const [limitForYou, setLimitForYou] = useState(15);
-  const [limitFollowing, setLimitFollowing] = useState(15);
   const router = useRouter();
-  const { toast } = useToast();
-
-  const loadMoreForYouRef = useRef<HTMLDivElement>(null);
-  const loadMoreFollowingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -37,9 +30,9 @@ export default function Home() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user?.uid]);
 
-  const { data: profile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  const { data: profile } = useDoc(userProfileRef);
 
-  // For You Feed: جلب المنشورات العامة مع زيادة الحد لضمان التنوع
+  // For You Feed
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(50));
@@ -47,16 +40,15 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  // Following Feed: جلب منشورات المتابعين - نستخدم جلب عام ثم فرز برمي لضمان الاستقرار
+  // Following Feed - Fetch all posts and sort client-side to avoid index errors
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
-    // نقوم بجلب منشورات من تتبعهم (بحد أقصى 30 شخص)
     return query(
       collection(firestore, 'posts'), 
       where('authorId', 'in', profile.followingIds.slice(0, 30)),
-      limit(limitFollowing)
+      limit(50)
     );
-  }, [firestore, user?.uid, profile?.followingIds, limitFollowing]);
+  }, [firestore, user?.uid, profile?.followingIds]);
 
   const { data: rawFollowingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
 
@@ -71,15 +63,8 @@ export default function Home() {
 
   const recommendedPosts = useMemo(() => {
     if (!postsPool) return [];
-    return [...postsPool].map(post => {
-      let score = 0;
-      score += (post.likesCount || 0) * 3;
-      score += (post.commentsCount || 0) * 5;
-      score += (post.viewsCount || 0) * 0.1;
-      if (profile?.followingIds?.includes(post.authorId)) score += 50;
-      return { ...post, recommendationScore: score };
-    }).sort((a, b) => b.recommendationScore - a.recommendationScore).slice(0, limitForYou);
-  }, [postsPool, profile, limitForYou]);
+    return [...postsPool].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0)).slice(0, 20);
+  }, [postsPool]);
 
   if (isUserLoading || !user) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
@@ -103,30 +88,20 @@ export default function Home() {
             <div className="relative min-h-[70vh]">
               <AnimatePresence mode="wait">
                 {activeTab === 'for-you' ? (
-                  <motion.div key="for-you" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <motion.div key="for-you" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     {isPoolLoading && recommendedPosts.length === 0 ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div> : (
-                      <>
-                        {recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)}
-                        <div ref={loadMoreForYouRef} className="py-10 flex justify-center">{isPoolLoading && <Loader2 className="animate-spin text-primary/50" />}</div>
-                      </>
+                      recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)
                     )}
                   </motion.div>
                 ) : (
-                  <motion.div key="following" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                    {isProfileLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div> : (!profile?.followingIds || profile.followingIds.length === 0) ? (
+                  <motion.div key="following" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    {isFollowingLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div> : (!profile?.followingIds || profile.followingIds.length === 0) ? (
                       <div className="text-center py-24 px-8">
                         <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
                         <p className="text-primary font-bold text-xs">لم تتابع أحداً بعد!</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">ابدأ بمتابعة الآخرين لتظهر منشوراتهم هنا.</p>
                       </div>
                     ) : (
-                      <>
-                        {sortedFollowingPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)}
-                        {sortedFollowingPosts.length === 0 && !isFollowingLoading && (
-                          <div className="text-center py-24 px-8 text-[10px] text-muted-foreground">لا يوجد منشورات جديدة من الأشخاص الذين تتابعهم.</div>
-                        )}
-                        <div ref={loadMoreFollowingRef} className="py-10 flex justify-center">{isFollowingLoading && <Loader2 className="animate-spin text-primary/50" />}</div>
-                      </>
+                      sortedFollowingPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)
                     )}
                   </motion.div>
                 )}
