@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, increment, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -148,9 +148,12 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       toast({ variant: "destructive", description: "رصيدك في الخزانة لا يكفي لهذا الدعم." });
       return;
     }
-    updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-amount) });
-    updateDocumentNonBlocking(doc(firestore!, 'users', post.authorId), { coins: increment(amount) });
-    addDocumentNonBlocking(collection(firestore!, 'users', post.authorId, 'notifications'), {
+    if (!firestore) return;
+    
+    updateDocumentNonBlocking(doc(firestore, 'users', user!.uid), { coins: increment(-amount) });
+    updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(amount) });
+    
+    addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), {
       type: 'support',
       fromUserId: user!.uid,
       fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد',
@@ -160,6 +163,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       createdAt: serverTimestamp(),
       read: false
     });
+    
     toast({ title: "تم إرسال الدعم!", description: `لقد أرسلت ${amount} عملة ذهبية تقديراً لهذا المحتوى.` });
     setIsSupportOpen(false);
   };
@@ -248,14 +252,14 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
                   <CarouselContent>
                     {post.mediaUrls.map((url, index) => (
                       <CarouselItem key={index}>
-                        <div className="rounded-xl overflow-hidden border bg-muted/5">
-                          <img src={url} alt={`Post Image ${index + 1}`} className="w-full h-auto object-cover max-h-[500px]" />
+                        <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square">
+                          <img src={url} alt={`Post Image ${index + 1}`} className="w-full h-full object-cover" />
                         </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8" />
-                  <CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8" />
+                  <CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
+                  <CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
                 </Carousel>
               )}
             </div>

@@ -106,9 +106,12 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       toast({ variant: "destructive", description: "رصيدك لا يكفي لهذا الدعم." });
       return;
     }
-    updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-amount) });
-    updateDocumentNonBlocking(doc(firestore!, 'users', post.authorId), { coins: increment(amount) });
-    addDocumentNonBlocking(collection(firestore!, 'users', post.authorId, 'notifications'), {
+    if (!firestore) return;
+
+    updateDocumentNonBlocking(doc(firestore, 'users', user!.uid), { coins: increment(-amount) });
+    updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(amount) });
+    
+    addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), {
       type: 'support',
       fromUserId: user!.uid,
       fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد',
@@ -118,6 +121,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       createdAt: serverTimestamp(),
       read: false
     });
+    
     toast({ title: "تم إرسال الدعم!", description: `لقد أرسلت ${amount} عملة ذهبية تقديراً لهذا المحتوى.` });
     setIsSupportOpen(false);
   };
@@ -161,7 +165,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
           
           {post.mediaUrls && post.mediaUrls.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-4 relative">
               {post.mediaUrls.length === 1 ? (
                 <div className="rounded-xl overflow-hidden border bg-muted/5">
                   <img src={post.mediaUrls[0]} alt="Media" className="w-full h-auto object-cover max-h-[500px]" />
@@ -171,14 +175,14 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                   <CarouselContent>
                     {post.mediaUrls.map((url, index) => (
                       <CarouselItem key={index}>
-                        <div className="rounded-xl overflow-hidden border bg-muted/5">
-                          <img src={url} alt={`Media ${index + 1}`} className="w-full h-auto object-cover max-h-[500px]" />
+                        <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square">
+                          <img src={url} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
                         </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="right-2 bg-black/20 text-white h-8 w-8 border-none" />
-                  <CarouselNext className="left-2 bg-black/20 text-white h-8 w-8 border-none" />
+                  <CarouselPrevious className="right-2 bg-black/20 text-white h-8 w-8 border-none z-10" />
+                  <CarouselNext className="left-2 bg-black/20 text-white h-8 w-8 border-none z-10" />
                 </Carousel>
               )}
             </div>
