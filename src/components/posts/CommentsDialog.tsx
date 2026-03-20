@@ -4,11 +4,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, doc, increment } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, doc, increment, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Trash2, Coffee, Flag } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Trash2, Coffee, Flag, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
@@ -33,6 +33,18 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     return doc(firestore, 'users', postAuthorId);
   }, [firestore, postAuthorId]);
   const { data: postAuthorProfile } = useDoc(postAuthorProfileRef);
+
+  // جلب إعلان المنشور المخصص (إن وجد)
+  const postAdQuery = useMemoFirebase(() => {
+    if (!firestore || !postId) return null;
+    return query(
+      collection(firestore, 'post_ads'),
+      where('postId', '==', postId),
+      where('expiresAt', '>', new Date())
+    );
+  }, [firestore, postId]);
+  const { data: postAds } = useCollection(postAdQuery);
+  const activeAd = postAds?.[0];
 
   const currentPostVerification: VerificationType = postAuthorProfile?.verificationType || post.authorVerificationType || 'none';
   const isVerifiedAuthor = currentPostVerification === 'blue' || currentPostVerification === 'gold';
@@ -70,14 +82,12 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     }
     if (!firestore || !user) return;
 
-    // عمولة المنصة 10%
     const platformFee = amount * 0.1;
     const netAmount = amount - platformFee;
 
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amount) });
     updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(netAmount) });
     
-    // تسجيل الأرباح للمنصة
     addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
       type: 'support_fee',
       amount: platformFee,
@@ -156,6 +166,26 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
             </div>
           </div>
         </div>
+
+        {/* مساحة إعلان الإدارة المخصصة للمنشور */}
+        {activeAd && (
+          <div 
+            className="m-4 p-4 bg-primary/5 border border-primary/10 rounded-lg relative group cursor-pointer overflow-hidden"
+            onClick={() => window.open(activeAd.link, '_blank')}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[8px] font-bold text-primary uppercase tracking-[0.2em]">إعلان مميز</span>
+              <ExternalLink size={10} className="text-primary/40 group-hover:text-primary transition-colors" />
+            </div>
+            <div className="flex gap-3">
+              <img src={activeAd.imageUrl} className="h-16 w-24 object-cover rounded shadow-sm" alt="Ad" />
+              <div className="flex flex-col justify-center">
+                <h4 className="text-xs font-bold text-primary">{activeAd.title}</h4>
+                <p className="text-[10px] text-muted-foreground line-clamp-2 mt-1">اضغط للتفاصيل والزيارة</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="p-4 space-y-4">
           {isLoading ? (

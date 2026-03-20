@@ -9,7 +9,7 @@ import { collection, query, doc, limit, where, serverTimestamp, orderBy, increme
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp, LayoutGrid, Plus, Calendar as CalendarIcon, ImageIcon } from 'lucide-react';
+import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp, LayoutGrid, Plus, Calendar as CalendarIcon, ImageIcon, Megaphone } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -25,13 +25,20 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [coinAmount, setCoinAmount] = useState<Record<string, string>>({});
 
-  // لبانرات المستطيلات
+  // لبانرات المستطيلات (سوق القصص)
   const [bannerTitle, setBannerTitle] = useState('');
   const [bannerLink, setBannerLink] = useState('');
   const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [bannerDays, setBannerDays] = useState('5');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // لإعلانات المنشورات (فوق التعليقات)
+  const [postAdId, setPostAdId] = useState('');
+  const [postAdTitle, setPostAdIdTitle] = useState('');
+  const [postAdLink, setPostAdIdLink] = useState('');
+  const [postAdImage, setPostAdIdImage] = useState<string | null>(null);
+  const postAdFileRef = useRef<HTMLInputElement>(null);
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
   const isAdminUser = currentUser?.email === ADMIN_EMAIL;
@@ -47,9 +54,9 @@ export default function AdminPage() {
     return query(collection(firestore, 'users'), limit(100));
   }, [firestore, isAdminUser]);
 
-  const reportedPostsQuery = useMemoFirebase(() => {
+  const postAdsQuery = useMemoFirebase(() => {
     if (!firestore || !isAdminUser) return null;
-    return query(collection(firestore, 'posts'), where('reportsCount', '>', 0), orderBy('reportsCount', 'desc'), limit(50));
+    return query(collection(firestore, 'post_ads'), orderBy('createdAt', 'desc'));
   }, [firestore, isAdminUser]);
 
   const revenueQuery = useMemoFirebase(() => {
@@ -63,7 +70,7 @@ export default function AdminPage() {
   }, [firestore, isAdminUser]);
 
   const { data: users } = useCollection(usersQuery);
-  const { data: reportedPosts } = useCollection(reportedPostsQuery);
+  const { data: postAds } = useCollection(postAdsQuery);
   const { data: revenue } = useCollection(revenueQuery);
   const { data: banners } = useCollection(bannersQuery);
 
@@ -71,11 +78,7 @@ export default function AdminPage() {
     if (!users || !revenue) return { totalUsers: 0, totalRevenue: 0, totalCoins: 0 };
     const totalRevenue = revenue.reduce((acc, entry) => acc + (entry.amount || 0), 0);
     const totalCoins = users.reduce((acc, u) => acc + (u.coins || 0), 0);
-    return {
-      totalUsers: users.length,
-      totalRevenue,
-      totalCoins
-    };
+    return { totalUsers: users.length, totalRevenue, totalCoins };
   }, [users, revenue]);
 
   const filteredUsers = users?.filter(u => 
@@ -83,25 +86,33 @@ export default function AdminPage() {
     u.email?.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
-  const handleUpdateVerification = (userId: string, type: string) => {
-    if (!firestore || !isAdminUser) return;
-    updateDocumentNonBlocking(doc(firestore, 'users', userId), { verificationType: type });
-    toast({ description: "تم تحديث التوثيق." });
+  const handleCreatePostAd = async () => {
+    if (!postAdId || !postAdTitle || !postAdImage || !firestore) return;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 3); // 3 أيام كما هو مطلوب
+
+    await addDocumentNonBlocking(collection(firestore, 'post_ads'), {
+      postId: postAdId,
+      title: postAdTitle,
+      link: postAdLink,
+      imageUrl: postAdImage,
+      expiresAt: expiresAt,
+      createdAt: serverTimestamp()
+    });
+
+    toast({ description: "تم ربط الإعلان بالمنشور بنجاح." });
+    setPostAdId(''); setPostAdIdTitle(''); setPostAdIdImage(null);
   };
 
-  const handleAdjustCoins = (userId: string) => {
-    const amount = parseInt(coinAmount[userId] || '0');
-    if (isNaN(amount) || amount === 0) return;
-    if (!firestore || !isAdminUser) return;
-    updateDocumentNonBlocking(doc(firestore, 'users', userId), { coins: increment(amount) });
-    addDocumentNonBlocking(collection(firestore, 'users', userId, 'notifications'), {
-      type: 'system',
-      message: amount > 0 ? `🎁 مُنحت ${amount} عملة من الإدارة.` : `⚠️ سُحب ${Math.abs(amount)} عملة من رصيدك.`,
-      createdAt: serverTimestamp(),
-      read: false
-    });
-    setCoinAmount(prev => ({ ...prev, [userId]: '' }));
-    toast({ description: "تم التحديث." });
+  const handlePostAdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setPostAdIdImage(url);
+    } catch (e) { toast({ description: "فشل الرفع." }); }
+    finally { setIsUploading(false); }
   };
 
   const handleCreateBanner = async () => {
@@ -128,11 +139,8 @@ export default function AdminPage() {
     try {
       const url = await uploadImageToCloudinary(file);
       setBannerImage(url);
-    } catch (e) {
-      toast({ variant: "destructive", description: "فشل الرفع." });
-    } finally {
-      setIsUploading(false);
-    }
+    } catch (e) { toast({ description: "فشل الرفع." }); }
+    finally { setIsUploading(false); }
   };
 
   if (isUserLoading || !isAdminUser) return null;
@@ -146,17 +154,17 @@ export default function AdminPage() {
             <ShieldCheck size={24} className="text-white" />
             <div className="text-right">
               <h1 className="text-xl font-bold text-white uppercase">مركز قيادة تيمقاد</h1>
-              <p className="text-[10px] text-white/60">Revenue & Banner Control</p>
+              <p className="text-[10px] text-white/60">Revenue & Ad Control</p>
             </div>
           </div>
         </header>
 
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="w-full bg-secondary/30 mb-8 rounded-none p-1 border-b h-12">
+          <TabsList className="w-full bg-secondary/30 mb-8 rounded-none p-1 border-b h-12 overflow-x-auto no-scrollbar">
             <TabsTrigger value="analytics" className="flex-1 text-[11px] font-bold gap-2">الإحصائيات</TabsTrigger>
             <TabsTrigger value="users" className="flex-1 text-[11px] font-bold gap-2">الأعضاء</TabsTrigger>
-            <TabsTrigger value="banners" className="flex-1 text-[11px] font-bold gap-2">المستطيلات</TabsTrigger>
-            <TabsTrigger value="moderation" className="flex-1 text-[11px] font-bold gap-2">الرقابة</TabsTrigger>
+            <TabsTrigger value="banners" className="flex-1 text-[11px] font-bold gap-2">مستطيلات السوق</TabsTrigger>
+            <TabsTrigger value="post_ads" className="flex-1 text-[11px] font-bold gap-2">إعلانات المنشورات</TabsTrigger>
             <TabsTrigger value="revenue" className="flex-1 text-[11px] font-bold gap-2">الإيرادات</TabsTrigger>
           </TabsList>
 
@@ -168,9 +176,44 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="post_ads" className="space-y-6">
+            <Card className="p-6">
+              <h3 className="text-sm font-bold mb-4 flex items-center gap-2"><Megaphone size={16} className="text-primary" /> إضافة إعلان لمنشور معين (3 أيام - 5 TRX)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input placeholder="معرف المنشور (Post ID)" value={postAdId} onChange={e => setPostAdId(e.target.value)} className="h-10 text-xs" />
+                <Input placeholder="عنوان الإعلان" value={postAdTitle} onChange={e => setPostAdIdTitle(e.target.value)} className="h-10 text-xs" />
+                <Input placeholder="رابط المعلن" value={postAdLink} onChange={e => setPostAdIdLink(e.target.value)} className="h-10 text-xs" />
+                <div className="flex gap-2">
+                  <Button variant="outline" className="h-10 text-xs flex-1 gap-2" onClick={() => postAdFileRef.current?.click()}>
+                    {isUploading ? <Loader2 className="animate-spin" size={14} /> : <ImageIcon size={14} />}
+                    {postAdImage ? "تم اختيار صورة" : "رفع بانر المنشور"}
+                  </Button>
+                  <input type="file" hidden ref={postAdFileRef} onChange={handlePostAdUpload} accept="image/*" />
+                  <Button className="h-10 text-xs font-bold px-8" onClick={handleCreatePostAd} disabled={!postAdImage}>نشر الإعلان</Button>
+                </div>
+              </div>
+            </Card>
+
+            <div className="space-y-4">
+              {postAds?.map((ad: any) => (
+                <Card key={ad.id} className="p-4 flex items-center justify-between border-r-4 border-r-primary">
+                  <div className="flex items-center gap-4">
+                    <img src={ad.imageUrl} className="h-12 w-20 object-cover rounded shadow-sm" alt="" />
+                    <div className="text-right">
+                      <p className="text-xs font-bold">{ad.title}</p>
+                      <p className="text-[9px] text-muted-foreground">Post ID: {ad.postId}</p>
+                      <p className="text-[8px] text-accent">ينتهي في: {ad.expiresAt?.toDate?.().toLocaleDateString('ar-SA')}</p>
+                    </div>
+                  </div>
+                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'post_ads', ad.id))}><Trash2 size={16} /></Button>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
           <TabsContent value="banners" className="space-y-6">
             <Card className="p-6">
-              <h3 className="text-sm font-bold mb-4">إضافة مستطيل إعلاني جديد</h3>
+              <h3 className="text-sm font-bold mb-4">إضافة مستطيل إعلاني للسوق (5 أيام - 5 TRX)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input placeholder="عنوان الإعلان" value={bannerTitle} onChange={e => setBannerTitle(e.target.value)} className="h-10 text-xs" />
                 <Input placeholder="رابط الموقع" value={bannerLink} onChange={e => setBannerLink(e.target.value)} className="h-10 text-xs" />
@@ -235,27 +278,14 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="moderation" className="space-y-4">
-            {reportedPosts?.map((post: any) => (
-              <Card key={post.id} className="p-4 flex justify-between items-center">
-                <div className="text-right">
-                  <p className="text-xs font-bold text-red-600">{post.reportsCount} بلاغ</p>
-                  <p className="text-[10px] line-clamp-1">{post.content}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'posts', post.id))}><Trash2 size={12} /></Button>
-                  <Button size="sm" variant="outline" onClick={() => updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { reportsCount: 0 })}><CheckCircle2 size={12} /></Button>
-                </div>
-              </Card>
-            ))}
-          </TabsContent>
-
           <TabsContent value="revenue" className="space-y-4">
             <div className="space-y-2">
               {revenue?.map((rev: any) => (
                 <div key={rev.id} className="p-3 bg-secondary/20 flex justify-between items-center border-r-4 border-r-accent">
                   <div className="text-right">
-                    <span className="text-[10px] font-bold text-accent">{rev.type === 'support_fee' ? 'عمولة دعم' : rev.type === 'ad_click_commission' ? 'عمولة إعلان' : 'رسوم ترويج'}</span>
+                    <span className="text-[10px] font-bold text-accent">
+                      {rev.type === 'support_fee' ? 'عمولة دعم' : rev.type === 'ad_click_commission' ? 'عمولة إعلان' : rev.type === 'promote_fee' ? 'رسوم ترويج' : 'رسوم شحن/إعلان'}
+                    </span>
                     <p className="text-[8px] text-muted-foreground">{rev.createdAt?.toDate?.()?.toLocaleString('ar-SA')}</p>
                   </div>
                   <div className="flex items-center gap-1 text-sm font-bold text-accent">+{rev.amount.toFixed(2)} <TimgadCoin size={14} /></div>
@@ -267,4 +297,25 @@ export default function AdminPage() {
       </main>
     </div>
   );
+
+  function handleUpdateVerification(userId: string, type: string) {
+    if (!firestore || !isAdminUser) return;
+    updateDocumentNonBlocking(doc(firestore, 'users', userId), { verificationType: type });
+    toast({ description: "تم تحديث التوثيق." });
+  }
+
+  function handleAdjustCoins(userId: string) {
+    const amount = parseInt(coinAmount[userId] || '0');
+    if (isNaN(amount) || amount === 0) return;
+    if (!firestore || !isAdminUser) return;
+    updateDocumentNonBlocking(doc(firestore, 'users', userId), { coins: increment(amount) });
+    addDocumentNonBlocking(collection(firestore, 'users', userId, 'notifications'), {
+      type: 'system',
+      message: amount > 0 ? `🎁 مُنحت ${amount} عملة من الإدارة.` : `⚠️ سُحب ${Math.abs(amount)} عملة من رصيدك.`,
+      createdAt: serverTimestamp(),
+      read: false
+    });
+    setCoinAmount(prev => ({ ...prev, [userId]: '' }));
+    toast({ description: "تم التحديث." });
+  }
 }
