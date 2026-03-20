@@ -5,11 +5,11 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, BadgeCheck, Coins, Trophy, Wallet, ShieldCheck, ArrowDownToLine, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ChevronRight, BadgeCheck, Coins, Trophy, Wallet, ShieldCheck, ArrowDownToLine, Loader2, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { doc, collection, serverTimestamp, increment } from 'firebase/firestore';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import VerifiedBadge from '@/components/ui/VerifiedBadge';
 
 const PACKAGES = [
   { id: "pkg_1", amount: 100, price: "1 TRX", label: "حقيبة البداية" },
@@ -30,6 +31,7 @@ const PACKAGES = [
   { id: "pkg_4", amount: 5000, price: "50 TRX", label: "كنز الريادة" }
 ];
 
+const VERIFICATION_COST = 500;
 const CONVERSION_RATE = 100; // 100 coins = 1 TRX
 const MIN_WITHDRAW_TRX = 20; 
 const CONVERSION_FEE_PERCENT = 3;
@@ -43,6 +45,7 @@ export default function WalletPage() {
   const [fastPayAddress, setFastPayAddress] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [isPurchasingVerification, setIsPurchasingVerification] = useState(false);
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
   const isInfiniteAdmin = user?.email === ADMIN_EMAIL;
@@ -67,6 +70,58 @@ export default function WalletPage() {
 
   const handlePackageSelect = (pkg: any) => {
     router.push(`/support?package=${encodeURIComponent(pkg.label)}&amount=${pkg.amount}&price=${encodeURIComponent(pkg.price)}`);
+  };
+
+  const handlePurchaseVerification = async () => {
+    if (!user || !firestore || !profile) return;
+    
+    if (profile.verificationType === 'blue' || profile.verificationType === 'gold') {
+      toast({ description: "حسابك موثق بالفعل." });
+      return;
+    }
+
+    if ((profile.coins || 0) < VERIFICATION_COST) {
+      toast({ 
+        variant: "destructive", 
+        title: "رصيد غير كافٍ", 
+        description: `تحتاج إلى ${VERIFICATION_COST} عملة للحصول على التوثيق.` 
+      });
+      return;
+    }
+
+    setIsPurchasingVerification(true);
+    try {
+      // 1. خصم العملات وتحديث نوع التوثيق
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+        coins: increment(-VERIFICATION_COST),
+        verificationType: 'blue'
+      });
+
+      // 2. تسجيل الإيراد للمنصة
+      addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
+        type: 'verification_purchase',
+        amount: VERIFICATION_COST,
+        fromUserId: user.uid,
+        createdAt: serverTimestamp()
+      });
+
+      // 3. إرسال تنبيه للعضو
+      addDocumentNonBlocking(collection(firestore, 'users', user.uid, 'notifications'), {
+        type: 'system',
+        message: "🎉 مبروك! تم توثيق حسابك بنجاح. يمكنك الآن الاستفادة من ميزات المبدعين الموثقين.",
+        createdAt: serverTimestamp(),
+        read: false
+      });
+
+      toast({ 
+        title: "مبروك التوثيق! 🛡️", 
+        description: "أصبح حسابك الآن موثقاً بالشارة الزرقاء في تيمقاد." 
+      });
+    } catch (error) {
+      toast({ variant: "destructive", description: "فشل إتمام العملية." });
+    } finally {
+      setIsPurchasingVerification(false);
+    }
   };
 
   const handleWithdrawRequest = async () => {
@@ -101,6 +156,7 @@ export default function WalletPage() {
         createdAt: serverTimestamp()
       });
 
+      // تسجيل الطلب في دردشة الدعم أيضاً للمتابعة
       await addDocumentNonBlocking(collection(firestore!, 'support_chats', user!.uid, 'messages'), {
         content: `طلب سحب أرباح: ${amount} عملة (${calculatedTRX.raw} TRX).\nرسوم التحويل (3%): ${calculatedTRX.fee.toFixed(2)} TRX.\nالصافي المستحق: ${calculatedTRX.final.toFixed(2)} TRX.\nالعنوان: ${fastPayAddress.trim()}`,
         senderId: 'system',
@@ -232,12 +288,42 @@ export default function WalletPage() {
                 <Trophy size={14} className="text-blue-400" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
-                <p className="text-3xl font-bold text-[#F3E5AB]">
-                  {profile?.verificationType === 'gold' ? 'نخبة تيمقاد' : profile?.verificationType === 'blue' ? 'عضو موثق' : 'مستكشف'}
-                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <VerifiedBadge type={profile?.verificationType || 'none'} size={20} />
+                  <p className="text-xl font-bold text-[#F3E5AB]">
+                    {profile?.verificationType === 'gold' ? 'نخبة تيمقاد' : profile?.verificationType === 'blue' ? 'عضو موثق' : 'مستكشف'}
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* نظام شراء التوثيق الآلي */}
+          {(!profile?.verificationType || profile?.verificationType === 'none') && (
+            <Card className="w-full bg-blue-500/10 border border-blue-500/30 rounded-none overflow-hidden group">
+              <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4 text-right">
+                  <div className="h-14 w-14 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                    <BadgeCheck size={32} className="text-white" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-md font-bold text-blue-400">احصل على الشارة الزرقاء</h3>
+                    <p className="text-[10px] text-[#F3E5AB]/60 leading-relaxed">
+                      وثق حسابك فوراً بـ 500 عملة لتفعيل ميزات الربح من المنشورات وبناء موثوقية عالية في مجتمع تيمقاد.
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 px-8 rounded-full shadow-xl shadow-blue-600/20 shrink-0 gap-2 transition-all active:scale-95"
+                  onClick={handlePurchaseVerification}
+                  disabled={isPurchasingVerification || (profile?.coins || 0) < VERIFICATION_COST}
+                >
+                  {isPurchasingVerification ? <Loader2 className="animate-spin" /> : <Sparkles size={16} />}
+                  شراء التوثيق (500 عملة)
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <section className="w-full text-right space-y-6 pt-6">
             <div className="flex items-center justify-end gap-3 text-[#FBBF24] border-r-4 border-[#FBBF24] pr-3">

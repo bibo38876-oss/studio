@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Zap, Coins, Trophy, BadgeCheck, Scale, History, ShieldCheck, Info, Globe, Heart, Coffee, Star, Gavel, AlertCircle, Megaphone, Wallet, LayoutGrid } from 'lucide-react';
+import { ChevronRight, Zap, Coins, Trophy, BadgeCheck, Scale, History, ShieldCheck, Info, Globe, Heart, Coffee, Star, Gavel, AlertCircle, Megaphone, Wallet, LayoutGrid, Sparkles } from 'lucide-react';
 import TimgadLogo from '@/components/ui/Logo';
 
 export default function AboutPage() {
@@ -53,31 +53,42 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* 2. نظام تحقيق الدخل للمبدعين */}
+          {/* 2. نظام التوثيق وتحقيق الدخل */}
           <section className="space-y-6">
             <div className="flex items-center gap-3 text-primary border-r-4 border-blue-500 pr-3">
-              <Star size={20} className="text-blue-500" />
-              <h2 className="text-xl font-bold font-headline tracking-tighter">تحقيق الدخل للمبدعين</h2>
+              <BadgeCheck size={20} className="text-blue-500" />
+              <h2 className="text-xl font-bold font-headline tracking-tighter">التوثيق وتحقيق الدخل</h2>
             </div>
             
-            <div className="bg-blue-50/30 p-6 border border-blue-100 rounded-sm">
-              <h4 className="text-xs font-bold text-blue-700 mb-3 flex items-center gap-2">
-                <BadgeCheck size={14} /> شروط الربح من الإعلانات الإدارية
-              </h4>
-              <ul className="text-[10px] space-y-3 text-blue-900/80">
-                <li className="flex items-start gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
-                  <span>يجب أن يمتلك العضو <span className="font-bold underline">500 متابع</span> حقيقي على الأقل.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
-                  <span>يجب أن يكون الحساب <span className="font-bold underline">موثقاً</span> (الشارة الزرقاء أو الذهبية).</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
-                  <span>عند استيفاء الشروط، يحصل العضو على <span className="font-bold text-primary">250 عملة (50%)</span> فور وضع الإدارة إعلاناً على منشوره.</span>
-                </li>
-              </ul>
+            <div className="space-y-4">
+              <div className="bg-blue-50/30 p-6 border border-blue-100 rounded-sm">
+                <h4 className="text-xs font-bold text-blue-700 mb-3 flex items-center gap-2">
+                  <Sparkles size={14} /> شراء التوثيق الذاتي
+                </h4>
+                <p className="text-[10px] text-blue-900/80 leading-relaxed mb-4">
+                  يمكن لأي عضو الحصول على الشارة الزرقاء فوراً مقابل <span className="font-bold text-primary">500 عملة تيمقاد</span> عبر المحفظة. التوثيق هو الخطوة الأولى لتفعيل نظام الأرباح.
+                </p>
+              </div>
+
+              <div className="bg-blue-50/30 p-6 border border-blue-100 rounded-sm">
+                <h4 className="text-xs font-bold text-blue-700 mb-3 flex items-center gap-2">
+                  <Star size={14} /> شروط الربح من الإعلانات الإدارية
+                </h4>
+                <ul className="text-[10px] space-y-3 text-blue-900/80">
+                  <li className="flex items-start gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
+                    <span>يجب أن يمتلك العضو <span className="font-bold underline">500 متابع</span> حقيقي على الأقل.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
+                    <span>يجب أن يكون الحساب <span className="font-bold underline">موثقاً</span> (الشارة الزرقاء أو الذهبية).</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
+                    <span>عند استيفاء الشروط، يحصل العضو على <span className="font-bold text-primary">250 عملة (50%)</span> فور وضع الإدارة إعلاناً على منشوره.</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </section>
 
