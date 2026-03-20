@@ -2,67 +2,58 @@
 {
   "entities": {
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user profile within the Timgad social media application.",
+      "description": "Represents a user profile in Timgad.",
       "properties": {
         "id": { "type": "string" },
         "username": { "type": "string" },
-        "bio": { "type": "string" },
-        "profilePictureUrl": { "type": "string", "format": "uri" },
-        "bannerUrl": { "type": "string", "format": "uri" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "lastLoginAt": { "type": "string", "format": "date-time" },
-        "lastPollCreatedAt": { "type": "string", "format": "date-time" },
-        "followingIds": { "type": "array", "items": { "type": "string" } },
-        "followerIds": { "type": "array", "items": { "type": "string" } },
-        "interactedAuthorIds": { "type": "array", "items": { "type": "string" } },
-        "email": { "type": "string", "format": "email" },
+        "email": { "type": "string" },
         "role": { "type": "string", "enum": ["user", "admin"] },
         "verificationType": { "type": "string", "enum": ["none", "blue", "gold"] },
+        "coins": { "type": "number", "default": 0 },
         "isPrivate": { "type": "boolean", "default": false },
-        "coins": { "type": "number", "default": 0 }
-      },
-      "required": ["id", "username", "createdAt"]
+        "followingIds": { "type": "array", "items": { "type": "string" } },
+        "followerIds": { "type": "array", "items": { "type": "string" } }
+      }
     },
     "Ad": {
       "title": "Ad",
       "type": "object",
-      "description": "Represents a story advertisement.",
+      "description": "Represents a user story ad.",
       "properties": {
         "id": { "type": "string" },
         "authorId": { "type": "string" },
         "title": { "type": "string" },
-        "description": { "type": "string" },
-        "imageUrl": { "type": "string", "format": "uri" },
-        "link": { "type": "string", "format": "uri" },
-        "totalClicks": { "type": "number", "default": 100 },
-        "remainingClicks": { "type": "number", "default": 100 },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["authorId", "title", "imageUrl", "link"]
+        "link": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "remainingClicks": { "type": "number", "default": 100 }
+      }
     },
     "Post": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a user post in Timgad.",
+      "description": "Represents a social post.",
       "properties": {
         "id": { "type": "string" },
         "authorId": { "type": "string" },
-        "authorName": { "type": "string" },
-        "authorAvatar": { "type": "string" },
         "content": { "type": "string" },
-        "mediaUrls": { "type": "array", "items": { "type": "string" } },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "hashtags": { "type": "array", "items": { "type": "string" } },
-        "likesCount": { "type": "number", "default": 0 },
-        "commentsCount": { "type": "number", "default": 0 },
-        "promoted": { "type": "boolean" },
-        "authorVerificationType": { "type": "string" }
-      },
-      "required": ["id", "authorId", "content", "createdAt"]
+        "reportsCount": { "type": "number", "default": 0 },
+        "promoted": { "type": "boolean", "default": false }
+      }
+    },
+    "WithdrawalRequest": {
+      "title": "WithdrawalRequest",
+      "type": "object",
+      "description": "Represents a TRX withdrawal request.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "finalTRX": { "type": "number" },
+        "address": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] }
+      }
     }
   }
 }

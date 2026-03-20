@@ -9,7 +9,7 @@ import { collection, query, doc, limit, where, serverTimestamp, orderBy, increme
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp, LayoutGrid, Plus, Calendar as CalendarIcon, ImageIcon, Megaphone, ArrowDownToLine, Wallet } from 'lucide-react';
+import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp, LayoutGrid, Plus, Calendar as CalendarIcon, ImageIcon, Megaphone, ArrowDownToLine, Wallet, Flag } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -73,11 +73,17 @@ export default function AdminPage() {
     return query(collection(firestore, 'withdrawal_requests'), orderBy('createdAt', 'desc'));
   }, [firestore, isAdminUser]);
 
+  const reportedPostsQuery = useMemoFirebase(() => {
+    if (!firestore || !isAdminUser) return null;
+    return query(collection(firestore, 'posts'), where('reportsCount', '>', 0), orderBy('reportsCount', 'desc'));
+  }, [firestore, isAdminUser]);
+
   const { data: users } = useCollection(usersQuery);
   const { data: postAds } = useCollection(postAdsQuery);
   const { data: revenue } = useCollection(revenueQuery);
   const { data: banners } = useCollection(bannersQuery);
   const { data: withdrawals } = useCollection(withdrawalsQuery);
+  const { data: reportedPosts } = useCollection(reportedPostsQuery);
 
   const stats = useMemo(() => {
     if (!users || !revenue) return { totalUsers: 0, totalRevenue: 0, totalCoins: 0 };
@@ -152,7 +158,7 @@ export default function AdminPage() {
           fromUserId: authorId,
           createdAt: serverTimestamp()
         });
-        toast({ description: `تم النشر. العضو غير مؤهل (أقل من 500 متابع أو غير موثق)، الإيراد كامل للمنصة.` });
+        toast({ description: `تم النشر. العضو غير مؤهل، الإيراد كامل للمنصة.` });
       }
 
       setPostAdId(''); setPostAdIdTitle(''); setPostAdIdImage(null);
@@ -222,7 +228,7 @@ export default function AdminPage() {
             <ShieldCheck size={24} className="text-white" />
             <div className="text-right">
               <h1 className="text-xl font-bold text-white uppercase">مركز قيادة تيمقاد</h1>
-              <p className="text-[10px] text-white/60">Monetization & Control Panel</p>
+              <p className="text-[10px] text-white/60">الإدارة والتحكم الاقتصادي</p>
             </div>
           </div>
         </header>
@@ -231,8 +237,9 @@ export default function AdminPage() {
           <TabsList className="w-full bg-secondary/30 mb-8 rounded-none p-1 border-b h-12 overflow-x-auto no-scrollbar">
             <TabsTrigger value="analytics" className="flex-1 text-[11px] font-bold gap-2">الإحصائيات</TabsTrigger>
             <TabsTrigger value="withdrawals" className="flex-1 text-[11px] font-bold gap-2 text-accent">طلبات السحب</TabsTrigger>
+            <TabsTrigger value="moderation" className="flex-1 text-[11px] font-bold gap-2 text-destructive">الرقابة</TabsTrigger>
             <TabsTrigger value="post_ads" className="flex-1 text-[11px] font-bold gap-2">إعلانات المنشورات</TabsTrigger>
-            <TabsTrigger value="banners" className="flex-1 text-[11px] font-bold gap-2 text-primary">مستطيلات السوق</TabsTrigger>
+            <TabsTrigger value="banners" className="flex-1 text-[11px] font-bold gap-2">مستطيلات السوق</TabsTrigger>
             <TabsTrigger value="users" className="flex-1 text-[11px] font-bold gap-2">الأعضاء</TabsTrigger>
             <TabsTrigger value="revenue" className="flex-1 text-[11px] font-bold gap-2">الإيرادات</TabsTrigger>
           </TabsList>
@@ -240,8 +247,32 @@ export default function AdminPage() {
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="bg-primary/5 border-r-4 border-r-primary"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">إجمالي المستخدمين</CardTitle></CardHeader><CardContent className="p-4 pt-0 text-2xl font-bold text-primary">{stats.totalUsers}</CardContent></Card>
-              <Card className="bg-accent/5 border-r-4 border-r-accent"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">أرباح المنصة (العمولات)</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-accent">{stats.totalRevenue.toFixed(1)} <TimgadCoin size={20} /></CardContent></Card>
+              <Card className="bg-accent/5 border-r-4 border-r-accent"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">أرباح المنصة (TRX)</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-accent">{(stats.totalRevenue / 100).toFixed(2)} TRX</CardContent></Card>
               <Card className="bg-yellow-500/5 border-r-4 border-r-yellow-600"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">العملات المتداولة</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-yellow-600">{stats.totalCoins.toFixed(0)} <TimgadCoin size={20} /></CardContent></Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="moderation" className="space-y-4">
+            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-destructive"><Flag size={16} /> المحتوى المبلّغ عنه</h3>
+            <div className="grid gap-4">
+              {reportedPosts?.map((post: any) => (
+                <Card key={post.id} className="p-4 border-r-4 border-r-destructive">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6"><AvatarImage src={post.authorAvatar} /></Avatar>
+                        <span className="text-[10px] font-bold">{post.authorName}</span>
+                        <span className="text-[8px] bg-red-100 text-red-600 px-2 py-0.5 font-bold">{post.reportsCount} بلاغات</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{post.content}</p>
+                    </div>
+                    <Button variant="destructive" size="sm" className="h-8 text-[10px]" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'posts', post.id))}>حذف نهائي</Button>
+                  </div>
+                </Card>
+              ))}
+              {(!reportedPosts || reportedPosts.length === 0) && (
+                <div className="text-center py-20 opacity-40 text-xs">لا يوجد محتوى مخالف حالياً.</div>
+              )}
             </div>
           </TabsContent>
 
@@ -275,18 +306,12 @@ export default function AdminPage() {
                   </div>
                 </Card>
               ))}
-              {(!withdrawals || withdrawals.length === 0) && (
-                <div className="text-center py-20 opacity-40 text-xs">لا توجد طلبات سحب حالياً.</div>
-              )}
             </div>
           </TabsContent>
 
           <TabsContent value="post_ads" className="space-y-6">
             <Card className="p-6">
               <h3 className="text-sm font-bold mb-4 flex items-center gap-2"><Megaphone size={16} className="text-primary" /> إضافة إعلان لمنشور (3 أيام - 5 TRX)</h3>
-              <p className="text-[10px] text-muted-foreground mb-4 font-bold">
-                قانون الربح: يحصل صاحب المنشور على 250 عملة (50%) <span className="text-accent underline">فقط إذا كان موثقاً ويملك 500+ متابع</span>.
-              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input placeholder="معرف المنشور (Post ID)" value={postAdId} onChange={e => setPostAdId(e.target.value)} className="h-10 text-xs" />
                 <Input placeholder="عنوان الإعلان" value={postAdTitle} onChange={e => setPostAdIdTitle(e.target.value)} className="h-10 text-xs" />
@@ -297,9 +322,7 @@ export default function AdminPage() {
                     {postAdImage ? "تم اختيار صورة" : "رفع بانر المنشور"}
                   </Button>
                   <input type="file" hidden ref={postAdFileRef} onChange={handlePostAdUpload} accept="image/*" />
-                  <Button className="h-10 text-xs font-bold px-8" onClick={handleCreatePostAd} disabled={!postAdImage || isUploading}>
-                    {isUploading ? <Loader2 className="animate-spin" size={14} /> : "نشر الإعلان"}
-                  </Button>
+                  <Button className="h-10 text-xs font-bold px-8" onClick={handleCreatePostAd} disabled={!postAdImage || isUploading}>نشر الإعلان</Button>
                 </div>
               </div>
             </Card>
@@ -311,7 +334,6 @@ export default function AdminPage() {
                     <img src={ad.imageUrl} className="h-12 w-20 object-cover rounded shadow-sm" alt="" />
                     <div className="text-right">
                       <p className="text-xs font-bold">{ad.title}</p>
-                      <p className="text-[9px] text-muted-foreground">Post ID: {ad.postId}</p>
                       <p className="text-[8px] text-accent">ينتهي في: {ad.expiresAt?.toDate?.().toLocaleDateString('ar-SA')}</p>
                     </div>
                   </div>
@@ -330,7 +352,7 @@ export default function AdminPage() {
                 <div className="flex gap-2">
                   <Select value={bannerDays} onValueChange={setBannerDays}>
                     <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="المدة" /></SelectTrigger>
-                    <SelectContent><SelectItem value="4">4 أيام</SelectItem><SelectItem value="5">5 أيام</SelectItem><SelectItem value="10">10 أيام</SelectItem></SelectContent>
+                    <SelectContent><SelectItem value="5">5 أيام</SelectItem><SelectItem value="10">10 أيام</SelectItem></SelectContent>
                   </Select>
                   <Button variant="outline" className="h-10 text-xs flex-1 gap-2" onClick={() => fileInputRef.current?.click()}>
                     {isUploading ? <Loader2 className="animate-spin" size={14} /> : <ImageIcon size={14} />}
@@ -394,7 +416,7 @@ export default function AdminPage() {
                 <div key={rev.id} className="p-3 bg-secondary/20 flex justify-between items-center border-r-4 border-r-accent">
                   <div className="text-right">
                     <span className="text-[10px] font-bold text-accent">
-                      {rev.type === 'support_fee' ? 'عمولة دعم' : rev.type === 'ad_click_commission' ? 'عمولة إعلان' : rev.type === 'post_ad_share' ? 'رسوم إعلان منشور (50%)' : rev.type === 'post_ad_full' ? 'رسوم إعلان منشور (100%)' : 'رسوم شحن/إعلان'}
+                      {rev.type === 'support_fee' ? 'عمولة دعم' : rev.type === 'ad_click_commission' ? 'عمولة إعلان' : rev.type === 'post_ad_share' ? 'رسوم إعلان منشور (50%)' : 'رسوم شحن/إعلان'}
                     </span>
                     <p className="text-[8px] text-muted-foreground">{rev.createdAt?.toDate?.()?.toLocaleString('ar-SA')}</p>
                   </div>

@@ -34,7 +34,7 @@ service cloud.firestore {
 
     match /adClicks/{clickId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && clickId == request.resource.data.adId + "_" + request.auth.uid;
     }
 
     match /withdrawal_requests/{reqId} {
@@ -97,10 +97,6 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow write: if isSignedIn();
       }
-      
-      match /groupInvites/{inviteId} {
-        allow read, write: if isOwner(userId);
-      }
     }
 
     match /support_chats/{userId}/messages/{msgId} {
@@ -130,11 +126,6 @@ service cloud.firestore {
       }
     }
     
-    match /vault_history/{docId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
     match /platform_revenue/{docId} {
       allow read: if isAdmin();
       allow create: if isSignedIn();
