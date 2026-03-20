@@ -20,7 +20,6 @@ export default function AdsPage() {
   const router = useRouter();
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
-  const [selectedAd, setSelectedAd] = useState<any>(null);
   const [isPosting, setIsPosting] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -31,7 +30,6 @@ export default function AdsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // جلب القصص الإعلانية
   const adsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'ads'), where('remainingClicks', '>', 0), orderBy('createdAt', 'desc'));
@@ -39,7 +37,6 @@ export default function AdsPage() {
 
   const { data: ads, isLoading } = useCollection(adsQuery);
 
-  // جلب البانرات الإدارية (المستطيلات)
   const bannersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'admin_banners'), where('expiresAt', '>', new Date()));
@@ -53,7 +50,6 @@ export default function AdsPage() {
   }, [firestore, user?.uid]);
   const { data: profile } = useDoc(userProfileRef);
 
-  // خوارزمية توزيع البانرات الإدارية بشكل عادل (تبادل أماكن)
   const combinedItems = useMemo(() => {
     if (!ads) return [];
     const items: any[] = [];
@@ -172,7 +168,6 @@ export default function AdsPage() {
 
       toast({ title: "مبروك! 🎉", description: "حصلت على 0.6 عملة مقابل مشاهدة الإعلان." });
       window.open(ad.link, '_blank');
-      setSelectedAd(null);
     } catch (error) {
       toast({ variant: "destructive", description: "لا يمكنك الربح من هذا الإعلان مجدداً." });
     } finally {
@@ -248,7 +243,7 @@ export default function AdsPage() {
               {combinedItems.map((item, idx) => {
                 if (item.type === 'banner') {
                   return (
-                    <div key={`banner-${item.data.id}`} className="col-span-3 h-24 bg-primary/5 border border-primary/10 rounded-lg overflow-hidden relative cursor-pointer group" onClick={() => window.open(item.data.link, '_blank')}>
+                    <div key={`banner-${item.data.id}-${idx}`} className="col-span-3 h-24 bg-primary/5 border border-primary/10 rounded-lg overflow-hidden relative cursor-pointer group" onClick={() => window.open(item.data.link, '_blank')}>
                       <img src={item.data.imageUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" alt="Ad Banner" />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center p-6">
                         <div className="text-right">
@@ -262,7 +257,7 @@ export default function AdsPage() {
 
                 const ad = item.data;
                 return (
-                  <Dialog key={`story-${ad.id}`}>
+                  <Dialog key={`story-${ad.id}-${idx}`}>
                     <DialogTrigger asChild>
                       <div className="aspect-[9/16] bg-secondary/20 rounded-lg overflow-hidden relative cursor-pointer group">
                         <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all" />

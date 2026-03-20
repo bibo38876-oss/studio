@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { cn } from '@/lib/utils';
 
 export default function AdminPage() {
   const { firestore, user: currentUser, isUserLoading } = useFirebase();
@@ -25,7 +26,6 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [coinAmount, setCoinAmount] = useState<Record<string, string>>({});
 
-  // لبانرات المستطيلات (سوق القصص)
   const [bannerTitle, setBannerTitle] = useState('');
   const [bannerLink, setBannerLink] = useState('');
   const [bannerImage, setBannerImage] = useState<string | null>(null);
@@ -33,7 +33,6 @@ export default function AdminPage() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // لإعلانات المنشورات (فوق التعليقات)
   const [postAdId, setPostAdId] = useState('');
   const [postAdTitle, setPostAdIdTitle] = useState('');
   const [postAdLink, setPostAdIdLink] = useState('');
@@ -97,7 +96,6 @@ export default function AdminPage() {
     
     setIsUploading(true);
     try {
-      // 1. جلب بيانات المنشور لمعرفة الكاتب
       const postSnap = await getDoc(doc(firestore, 'posts', postAdId));
       if (!postSnap.exists()) {
         toast({ variant: "destructive", description: "المنشور غير موجود." });
@@ -106,10 +104,16 @@ export default function AdminPage() {
       const postData = postSnap.data();
       const authorId = postData.authorId;
 
+      const authorSnap = await getDoc(doc(firestore, 'users', authorId));
+      const authorData = authorSnap.data();
+      
+      const isVerified = authorData?.verificationType === 'blue' || authorData?.verificationType === 'gold';
+      const hasMinFollowers = (authorData?.followerIds?.length || 0) >= 500;
+      const isEligible = isVerified && hasMinFollowers;
+
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 3); 
 
-      // 2. إنشاء الإعلان
       await addDocumentNonBlocking(collection(firestore, 'post_ads'), {
         postId: postAdId,
         title: postAdTitle,
@@ -119,30 +123,38 @@ export default function AdminPage() {
         createdAt: serverTimestamp()
       });
 
-      // 3. توزيع الأرباح (50% لصاحب المنشور كعملات تيمقاد)
-      // تكلفة الإعلان 5 TRX = 500 عملة. 50% = 250 عملة.
-      const rewardAmount = 250;
-      updateDocumentNonBlocking(doc(firestore, 'users', authorId), {
-        coins: increment(rewardAmount)
-      });
+      if (isEligible) {
+        const rewardAmount = 250;
+        updateDocumentNonBlocking(doc(firestore, 'users', authorId), {
+          coins: increment(rewardAmount)
+        });
 
-      addDocumentNonBlocking(collection(firestore, 'users', authorId, 'notifications'), {
-        type: 'system',
-        message: `🎉 مبروك! لقد تم وضع إعلان على منشورك، وحصلت على ${rewardAmount} عملة تيمقاد (50% من الأرباح).`,
-        createdAt: serverTimestamp(),
-        read: false
-      });
+        addDocumentNonBlocking(collection(firestore, 'users', authorId, 'notifications'), {
+          type: 'system',
+          message: `🎉 مبروك! منشورك حقق شروط الربح (500+ متابع وتوثيق) وتم وضع إعلان عليه، حصلت على ${rewardAmount} عملة.`,
+          createdAt: serverTimestamp(),
+          read: false
+        });
 
-      // 4. تسجيل إيرادات المنصة (الـ 50% الأخرى = 2.5 TRX = 250 عملة)
-      addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
-        type: 'post_ad_share',
-        amount: 250,
-        postId: postAdId,
-        fromUserId: authorId,
-        createdAt: serverTimestamp()
-      });
+        addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
+          type: 'post_ad_share',
+          amount: 250,
+          postId: postAdId,
+          fromUserId: authorId,
+          createdAt: serverTimestamp()
+        });
+        toast({ description: `تم النشر. العضو مؤهل وحصل على 250 عملة.` });
+      } else {
+        addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
+          type: 'post_ad_full',
+          amount: 500,
+          postId: postAdId,
+          fromUserId: authorId,
+          createdAt: serverTimestamp()
+        });
+        toast({ description: `تم النشر. العضو غير مؤهل (أقل من 500 متابع أو غير موثق)، الإيراد كامل للمنصة.` });
+      }
 
-      toast({ description: `تم النشر بنجاح وتوزيع ${rewardAmount} عملة لصاحب المنشور.` });
       setPostAdId(''); setPostAdIdTitle(''); setPostAdIdImage(null);
     } catch (e) {
       toast({ variant: "destructive", description: "فشل إنشاء الإعلان." });
@@ -190,21 +202,13 @@ export default function AdminPage() {
     finally { setIsUploading(false); }
   };
 
-  const handleCompleteWithdrawal = async (id: string, userId: string, coins: number) => {
+  const handleCompleteWithdrawal = async (id: string) => {
     if (!firestore) return;
-    try {
-      // 1. خصم العملات من المستخدم (لو لم تُخصم عند الطلب)
-      // في المنطق الحالي، يفضل خصمها عند طلب السحب لضمان عدم إنفاقها.
-      // هنا نقوم بتحديث الحالة فقط
-      updateDocumentNonBlocking(doc(firestore, 'withdrawal_requests', id), {
-        status: 'completed',
-        completedAt: serverTimestamp()
-      });
-
-      toast({ description: "تم تعليم الطلب كمكتمل بنجاح." });
-    } catch (e) {
-      toast({ variant: "destructive", description: "فشل تحديث الحالة." });
-    }
+    updateDocumentNonBlocking(doc(firestore, 'withdrawal_requests', id), {
+      status: 'completed',
+      completedAt: serverTimestamp()
+    });
+    toast({ description: "تم تعليم الطلب كمكتمل بنجاح." });
   };
 
   if (isUserLoading || !isAdminUser) return null;
@@ -218,7 +222,7 @@ export default function AdminPage() {
             <ShieldCheck size={24} className="text-white" />
             <div className="text-right">
               <h1 className="text-xl font-bold text-white uppercase">مركز قيادة تيمقاد</h1>
-              <p className="text-[10px] text-white/60">Revenue & Withdrawal Control</p>
+              <p className="text-[10px] text-white/60">Monetization & Control Panel</p>
             </div>
           </div>
         </header>
@@ -227,9 +231,9 @@ export default function AdminPage() {
           <TabsList className="w-full bg-secondary/30 mb-8 rounded-none p-1 border-b h-12 overflow-x-auto no-scrollbar">
             <TabsTrigger value="analytics" className="flex-1 text-[11px] font-bold gap-2">الإحصائيات</TabsTrigger>
             <TabsTrigger value="withdrawals" className="flex-1 text-[11px] font-bold gap-2 text-accent">طلبات السحب</TabsTrigger>
-            <TabsTrigger value="users" className="flex-1 text-[11px] font-bold gap-2">الأعضاء</TabsTrigger>
-            <TabsTrigger value="banners" className="flex-1 text-[11px] font-bold gap-2">مستطيلات السوق</TabsTrigger>
             <TabsTrigger value="post_ads" className="flex-1 text-[11px] font-bold gap-2">إعلانات المنشورات</TabsTrigger>
+            <TabsTrigger value="banners" className="flex-1 text-[11px] font-bold gap-2 text-primary">مستطيلات السوق</TabsTrigger>
+            <TabsTrigger value="users" className="flex-1 text-[11px] font-bold gap-2">الأعضاء</TabsTrigger>
             <TabsTrigger value="revenue" className="flex-1 text-[11px] font-bold gap-2">الإيرادات</TabsTrigger>
           </TabsList>
 
@@ -252,7 +256,7 @@ export default function AdminPage() {
                         <span className="text-xs font-bold text-primary">{req.username}</span>
                         <span className="text-[8px] px-1.5 py-0.5 bg-secondary rounded text-muted-foreground">{req.email}</span>
                       </div>
-                      <p className="text-[10px] font-bold text-accent">المبلغ: {req.amount} عملة ({req.finalTRX.toFixed(2)} TRX الصافي)</p>
+                      <p className="text-[10px] font-bold text-accent">المبلغ: {req.amount} عملة ({req.finalTRX?.toFixed(2)} TRX الصافي)</p>
                       <div className="flex items-center gap-2 bg-secondary/50 p-2 rounded mt-2">
                         <Wallet size={12} className="text-muted-foreground" />
                         <code className="text-[10px] font-mono select-all">{req.address}</code>
@@ -261,8 +265,8 @@ export default function AdminPage() {
                     <div className="flex items-center gap-2">
                       {req.status !== 'completed' ? (
                         <>
-                          <Button size="sm" className="h-8 text-[10px] font-bold bg-green-600" onClick={() => handleCompleteWithdrawal(req.id, req.userId, req.amount)}>إتمام التحويل</Button>
-                          <Button size="sm" variant="ghost" className="h-8 text-[10px] font-bold text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'withdrawal_requests', req.id))}>رفض/حذف</Button>
+                          <Button size="sm" className="h-8 text-[10px] font-bold bg-green-600" onClick={() => handleCompleteWithdrawal(req.id)}>إتمام التحويل</Button>
+                          <Button size="sm" variant="ghost" className="h-8 text-[10px] font-bold text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'withdrawal_requests', req.id))}>حذف</Button>
                         </>
                       ) : (
                         <span className="text-[10px] font-bold text-green-600 flex items-center gap-1"><CheckCircle2 size={12} /> تم التحويل</span>
@@ -280,7 +284,9 @@ export default function AdminPage() {
           <TabsContent value="post_ads" className="space-y-6">
             <Card className="p-6">
               <h3 className="text-sm font-bold mb-4 flex items-center gap-2"><Megaphone size={16} className="text-primary" /> إضافة إعلان لمنشور (3 أيام - 5 TRX)</h3>
-              <p className="text-[10px] text-muted-foreground mb-4 font-bold">ملاحظة: سيحصل صاحب المنشور تلقائياً على 250 عملة (50% من الأرباح).</p>
+              <p className="text-[10px] text-muted-foreground mb-4 font-bold">
+                قانون الربح: يحصل صاحب المنشور على 250 عملة (50%) <span className="text-accent underline">فقط إذا كان موثقاً ويملك 500+ متابع</span>.
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input placeholder="معرف المنشور (Post ID)" value={postAdId} onChange={e => setPostAdId(e.target.value)} className="h-10 text-xs" />
                 <Input placeholder="عنوان الإعلان" value={postAdTitle} onChange={e => setPostAdIdTitle(e.target.value)} className="h-10 text-xs" />
@@ -292,7 +298,7 @@ export default function AdminPage() {
                   </Button>
                   <input type="file" hidden ref={postAdFileRef} onChange={handlePostAdUpload} accept="image/*" />
                   <Button className="h-10 text-xs font-bold px-8" onClick={handleCreatePostAd} disabled={!postAdImage || isUploading}>
-                    {isUploading ? <Loader2 className="animate-spin" size={14} /> : "نشر الإعلان ومكافأة العضو"}
+                    {isUploading ? <Loader2 className="animate-spin" size={14} /> : "نشر الإعلان"}
                   </Button>
                 </div>
               </div>
@@ -362,7 +368,7 @@ export default function AdminPage() {
                       <Avatar><AvatarImage src={user.profilePictureUrl} /><AvatarFallback>{user.username?.[0]}</AvatarFallback></Avatar>
                       <div className="text-right">
                         <div className="flex items-center gap-1"><VerifiedBadge type={user.verificationType || 'none'} size={14} /><span className="text-xs font-bold">{user.username}</span></div>
-                        <span className="text-[9px] text-muted-foreground">{user.email}</span>
+                        <span className="text-[9px] text-muted-foreground">{user.followerIds?.length || 0} متابع</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 text-xs font-bold">{user.coins || 0} <TimgadCoin size={14} /></div>
@@ -388,7 +394,7 @@ export default function AdminPage() {
                 <div key={rev.id} className="p-3 bg-secondary/20 flex justify-between items-center border-r-4 border-r-accent">
                   <div className="text-right">
                     <span className="text-[10px] font-bold text-accent">
-                      {rev.type === 'support_fee' ? 'عمولة دعم' : rev.type === 'ad_click_commission' ? 'عمولة إعلان' : rev.type === 'promote_fee' ? 'رسوم ترويج' : rev.type === 'post_ad_share' ? 'رسوم إعلان منشور (50%)' : 'رسوم شحن/إعلان'}
+                      {rev.type === 'support_fee' ? 'عمولة دعم' : rev.type === 'ad_click_commission' ? 'عمولة إعلان' : rev.type === 'post_ad_share' ? 'رسوم إعلان منشور (50%)' : rev.type === 'post_ad_full' ? 'رسوم إعلان منشور (100%)' : 'رسوم شحن/إعلان'}
                     </span>
                     <p className="text-[8px] text-muted-foreground">{rev.createdAt?.toDate?.()?.toLocaleString('ar-SA')}</p>
                   </div>
