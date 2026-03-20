@@ -22,6 +22,11 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /admin_banners/{bannerId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     match /adClicks/{clickId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
@@ -123,6 +128,11 @@ service cloud.firestore {
     match /vault_history/{docId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
+    }
+
+    match /platform_revenue/{docId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
     }
   }
 }

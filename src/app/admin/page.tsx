@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, useDoc } from '@/firebase';
@@ -9,23 +9,14 @@ import { collection, query, doc, limit, where, serverTimestamp, orderBy, increme
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp, LayoutGrid, Plus, Calendar as CalendarIcon, ImageIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import TimgadCoin from '@/components/ui/TimgadCoin';
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip
-} from 'recharts';
+import { uploadImageToCloudinary } from '@/lib/cloudinary';
 
 export default function AdminPage() {
   const { firestore, user: currentUser, isUserLoading } = useFirebase();
@@ -33,6 +24,14 @@ export default function AdminPage() {
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [coinAmount, setCoinAmount] = useState<Record<string, string>>({});
+
+  // لبانرات المستطيلات
+  const [bannerTitle, setBannerTitle] = useState('');
+  const [bannerLink, setBannerLink] = useState('');
+  const [bannerImage, setBannerImage] = useState<string | null>(null);
+  const [bannerDays, setBannerDays] = useState('5');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
   const isAdminUser = currentUser?.email === ADMIN_EMAIL;
@@ -58,9 +57,15 @@ export default function AdminPage() {
     return query(collection(firestore, 'platform_revenue'), orderBy('createdAt', 'desc'), limit(100));
   }, [firestore, isAdminUser]);
 
-  const { data: users, isLoading: isUsersLoading } = useCollection(usersQuery);
-  const { data: reportedPosts, isLoading: isReportedLoading } = useCollection(reportedPostsQuery);
-  const { data: revenue, isLoading: isRevenueLoading } = useCollection(revenueQuery);
+  const bannersQuery = useMemoFirebase(() => {
+    if (!firestore || !isAdminUser) return null;
+    return query(collection(firestore, 'admin_banners'), orderBy('createdAt', 'desc'));
+  }, [firestore, isAdminUser]);
+
+  const { data: users } = useCollection(usersQuery);
+  const { data: reportedPosts } = useCollection(reportedPostsQuery);
+  const { data: revenue } = useCollection(revenueQuery);
+  const { data: banners } = useCollection(bannersQuery);
 
   const stats = useMemo(() => {
     if (!users || !revenue) return { totalUsers: 0, totalRevenue: 0, totalCoins: 0 };
@@ -99,6 +104,37 @@ export default function AdminPage() {
     toast({ description: "تم التحديث." });
   };
 
+  const handleCreateBanner = async () => {
+    if (!bannerTitle || !bannerLink || !bannerImage || !firestore) return;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + parseInt(bannerDays));
+
+    await addDocumentNonBlocking(collection(firestore, 'admin_banners'), {
+      title: bannerTitle,
+      link: bannerLink,
+      imageUrl: bannerImage,
+      expiresAt: expiresAt,
+      createdAt: serverTimestamp()
+    });
+
+    toast({ description: "تمت إضافة البانر بنجاح." });
+    setBannerTitle(''); setBannerLink(''); setBannerImage(null);
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setBannerImage(url);
+    } catch (e) {
+      toast({ variant: "destructive", description: "فشل الرفع." });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   if (isUserLoading || !isAdminUser) return null;
 
   return (
@@ -110,7 +146,7 @@ export default function AdminPage() {
             <ShieldCheck size={24} className="text-white" />
             <div className="text-right">
               <h1 className="text-xl font-bold text-white uppercase">مركز قيادة تيمقاد</h1>
-              <p className="text-[10px] text-white/60">Revenue & User Control Center</p>
+              <p className="text-[10px] text-white/60">Revenue & Banner Control</p>
             </div>
           </div>
         </header>
@@ -119,6 +155,7 @@ export default function AdminPage() {
           <TabsList className="w-full bg-secondary/30 mb-8 rounded-none p-1 border-b h-12">
             <TabsTrigger value="analytics" className="flex-1 text-[11px] font-bold gap-2">الإحصائيات</TabsTrigger>
             <TabsTrigger value="users" className="flex-1 text-[11px] font-bold gap-2">الأعضاء</TabsTrigger>
+            <TabsTrigger value="banners" className="flex-1 text-[11px] font-bold gap-2">المستطيلات</TabsTrigger>
             <TabsTrigger value="moderation" className="flex-1 text-[11px] font-bold gap-2">الرقابة</TabsTrigger>
             <TabsTrigger value="revenue" className="flex-1 text-[11px] font-bold gap-2">الإيرادات</TabsTrigger>
           </TabsList>
@@ -128,6 +165,43 @@ export default function AdminPage() {
               <Card className="bg-primary/5 border-r-4 border-r-primary"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">إجمالي المستخدمين</CardTitle></CardHeader><CardContent className="p-4 pt-0 text-2xl font-bold text-primary">{stats.totalUsers}</CardContent></Card>
               <Card className="bg-accent/5 border-r-4 border-r-accent"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">أرباح المنصة (العمولات)</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-accent">{stats.totalRevenue.toFixed(1)} <TimgadCoin size={20} /></CardContent></Card>
               <Card className="bg-yellow-500/5 border-r-4 border-r-yellow-600"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">العملات المتداولة</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-yellow-600">{stats.totalCoins.toFixed(0)} <TimgadCoin size={20} /></CardContent></Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="banners" className="space-y-6">
+            <Card className="p-6">
+              <h3 className="text-sm font-bold mb-4">إضافة مستطيل إعلاني جديد</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input placeholder="عنوان الإعلان" value={bannerTitle} onChange={e => setBannerTitle(e.target.value)} className="h-10 text-xs" />
+                <Input placeholder="رابط الموقع" value={bannerLink} onChange={e => setBannerLink(e.target.value)} className="h-10 text-xs" />
+                <div className="flex gap-2">
+                  <Select value={bannerDays} onValueChange={setBannerDays}>
+                    <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="المدة" /></SelectTrigger>
+                    <SelectContent><SelectItem value="4">4 أيام</SelectItem><SelectItem value="5">5 أيام</SelectItem><SelectItem value="10">10 أيام</SelectItem></SelectContent>
+                  </Select>
+                  <Button variant="outline" className="h-10 text-xs flex-1 gap-2" onClick={() => fileInputRef.current?.click()}>
+                    {isUploading ? <Loader2 className="animate-spin" size={14} /> : <ImageIcon size={14} />}
+                    {bannerImage ? "تم اختيار صورة" : "ارفع بانر (أفقي)"}
+                  </Button>
+                  <input type="file" hidden ref={fileInputRef} onChange={handleBannerUpload} accept="image/*" />
+                </div>
+                <Button className="h-10 text-xs font-bold" onClick={handleCreateBanner} disabled={!bannerImage}>حفظ ونشر البانر</Button>
+              </div>
+            </Card>
+
+            <div className="space-y-4">
+              {banners?.map((banner: any) => (
+                <Card key={banner.id} className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <img src={banner.imageUrl} className="h-12 w-20 object-cover rounded" alt="" />
+                    <div className="text-right">
+                      <p className="text-xs font-bold">{banner.title}</p>
+                      <p className="text-[10px] text-muted-foreground">ينتهي في: {banner.expiresAt?.toDate?.().toLocaleDateString('ar-SA')}</p>
+                    </div>
+                  </div>
+                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'admin_banners', banner.id))}><Trash2 size={16} /></Button>
+                </Card>
+              ))}
             </div>
           </TabsContent>
 

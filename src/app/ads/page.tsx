@@ -1,12 +1,12 @@
 
 "use client"
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, increment, serverTimestamp, orderBy } from 'firebase/firestore';
-import { Loader2, ChevronRight, Play, Eye, Sparkles, DollarSign, Wallet, Plus, ImageIcon, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { Loader2, ChevronRight, Play, Eye, Sparkles, DollarSign, Wallet, Plus, ImageIcon, Link as LinkIcon, AlertCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { cn } from '@/lib/utils';
 
 export default function AdsPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function AdsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // جلب القصص الإعلانية
   const adsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'ads'), where('remainingClicks', '>', 0), orderBy('createdAt', 'desc'));
@@ -37,11 +39,36 @@ export default function AdsPage() {
 
   const { data: ads, isLoading } = useCollection(adsQuery);
 
+  // جلب البانرات الإدارية (المستطيلات)
+  const bannersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'admin_banners'), where('expiresAt', '>', new Date()));
+  }, [firestore]);
+
+  const { data: banners } = useCollection(bannersQuery);
+
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user?.uid]);
   const { data: profile } = useDoc(userProfileRef);
+
+  // خوارزمية توزيع البانرات الإدارية بشكل عادل (تبادل أماكن)
+  const combinedItems = useMemo(() => {
+    if (!ads) return [];
+    const items: any[] = [];
+    const shuffledBanners = banners ? [...banners].sort(() => Math.random() - 0.5) : [];
+    let bannerIndex = 0;
+
+    ads.forEach((ad, index) => {
+      items.push({ type: 'story', data: ad });
+      if ((index + 1) % 6 === 0 && shuffledBanners.length > 0) {
+        items.push({ type: 'banner', data: shuffledBanners[bannerIndex % shuffledBanners.length] });
+        bannerIndex++;
+      }
+    });
+    return items;
+  }, [ads, banners]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,7 +118,6 @@ export default function AdsPage() {
         createdAt: serverTimestamp()
       });
 
-      // تسجيل ربح المنصة (مبدئياً 100 عملة سيتم توزيعها)
       addDocumentNonBlocking(collection(firestore!, 'platform_revenue'), {
         type: 'ad_creation',
         amount: 100,
@@ -132,7 +158,6 @@ export default function AdsPage() {
         remainingClicks: increment(-1)
       });
 
-      // توزيع الأرباح: 60% للمستخدم، 40% للمنصة
       updateDocumentNonBlocking(doc(firestore!, 'users', user.uid), {
         coins: increment(0.6)
       });
@@ -171,80 +196,105 @@ export default function AdsPage() {
             </div>
           </div>
           
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="h-8 rounded-full bg-accent hover:bg-accent/90 text-white text-[10px] font-bold gap-1.5 shadow-lg shadow-accent/20">
-                <Plus size={14} />
-                انشر قصتك (100 عملة)
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle className="text-sm font-bold text-primary">إنشاء قصة إعلانية (100 نقرة)</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-1 text-right">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground">عنوان الإعلان</label>
-                  <Input placeholder="مثال: خصم 50% على خدماتنا" className="h-10 text-xs rounded-none bg-secondary/30 border-none" value={adTitle} onChange={(e) => setAdTitle(e.target.value)} />
-                </div>
-                <div className="space-y-1 text-right">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground">رابط المعلن</label>
-                  <Input placeholder="https://example.com" className="h-10 text-xs rounded-none bg-secondary/30 border-none" value={adLink} onChange={(e) => setAdLink(e.target.value)} />
-                </div>
-                <div className="space-y-1 text-right">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground">صورة القصة</label>
-                  <div className="h-32 bg-secondary/30 border-2 border-dashed border-muted-foreground/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden" onClick={() => fileInputRef.current?.click()}>
-                    {adImage ? <img src={adImage} className="w-full h-full object-cover" alt="Preview" /> : <ImageIcon size={24} className="text-muted-foreground/40" />}
-                  </div>
-                  <input type="file" hidden ref={fileInputRef} onChange={handleFileUpload} accept="image/*" />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button className="w-full h-10 rounded-full font-bold text-xs" onClick={handleCreateAd} disabled={isPosting || isUploading}>
-                  {isPosting ? <Loader2 className="animate-spin" /> : "تأكيد والنشر الآن"}
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-accent hover:bg-accent/10" onClick={() => router.push('/support?package=إعلان_بانر&price=5_TRX')}>
+              <MessageCircle size={20} />
+            </Button>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="h-8 rounded-full bg-accent hover:bg-accent/90 text-white text-[10px] font-bold gap-1.5 shadow-lg shadow-accent/20">
+                  <Plus size={14} />
+                  انشر (100 عملة)
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="text-sm font-bold text-primary">إنشاء قصة إعلانية (100 نقرة)</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-1 text-right">
+                    <label className="text-[10px] font-bold uppercase text-muted-foreground">عنوان الإعلان</label>
+                    <Input placeholder="مثال: خصم 50% على خدماتنا" className="h-10 text-xs rounded-none bg-secondary/30 border-none" value={adTitle} onChange={(e) => setAdTitle(e.target.value)} />
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <label className="text-[10px] font-bold uppercase text-muted-foreground">رابط المعلن</label>
+                    <Input placeholder="https://example.com" className="h-10 text-xs rounded-none bg-secondary/30 border-none" value={adLink} onChange={(e) => setAdLink(e.target.value)} />
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <label className="text-[10px] font-bold uppercase text-muted-foreground">صورة القصة</label>
+                    <div className="h-32 bg-secondary/30 border-2 border-dashed border-muted-foreground/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden" onClick={() => fileInputRef.current?.click()}>
+                      {adImage ? <img src={adImage} className="w-full h-full object-cover" alt="Preview" /> : <ImageIcon size={24} className="text-muted-foreground/40" />}
+                    </div>
+                    <input type="file" hidden ref={fileInputRef} onChange={handleFileUpload} accept="image/*" />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button className="w-full h-10 rounded-full font-bold text-xs" onClick={handleCreateAd} disabled={isPosting || isUploading}>
+                    {isPosting ? <Loader2 className="animate-spin" /> : "تأكيد والنشر الآن"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </header>
 
         {isLoading ? (
           <div className="grid grid-cols-3 gap-2">
             {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="aspect-[9/16] bg-secondary/30 animate-pulse rounded-lg" />)}
           </div>
-        ) : ads && ads.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2 md:gap-4">
-            {ads.map((ad: any) => (
-              <Dialog key={ad.id}>
-                <DialogTrigger asChild>
-                  <div className="aspect-[9/16] bg-secondary/20 rounded-lg overflow-hidden relative cursor-pointer group" onClick={() => setSelectedAd(ad)}>
-                    <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                    <div className="absolute bottom-2 left-2 right-2 text-right">
-                      <p className="text-[10px] font-bold text-white line-clamp-1">{ad.title}</p>
-                      <div className="flex items-center justify-end gap-1 mt-1">
-                        <span className="text-[8px] font-bold text-green-400">0.6</span>
-                        <TimgadCoin size={10} />
+        ) : combinedItems.length > 0 ? (
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
+              {combinedItems.map((item, idx) => {
+                if (item.type === 'banner') {
+                  return (
+                    <div key={`banner-${item.data.id}`} className="col-span-3 h-24 bg-primary/5 border border-primary/10 rounded-lg overflow-hidden relative cursor-pointer group" onClick={() => window.open(item.data.link, '_blank')}>
+                      <img src={item.data.imageUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" alt="Ad Banner" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center p-6">
+                        <div className="text-right">
+                          <p className="text-[10px] font-bold text-white uppercase tracking-widest">إعلان مميز</p>
+                          <h3 className="text-sm font-bold text-white">{item.data.title}</h3>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="p-0 overflow-hidden border-none max-w-sm">
-                  <div className="relative aspect-[9/16] w-full">
-                    <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent p-6 flex flex-col justify-end gap-4">
-                      <div className="space-y-2 text-right text-white">
-                        <h2 className="text-xl font-bold">{ad.title}</h2>
-                        <p className="text-xs opacity-70">{ad.description}</p>
+                  );
+                }
+
+                const ad = item.data;
+                return (
+                  <Dialog key={`story-${ad.id}`}>
+                    <DialogTrigger asChild>
+                      <div className="aspect-[9/16] bg-secondary/20 rounded-lg overflow-hidden relative cursor-pointer group">
+                        <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                        <div className="absolute bottom-2 left-2 right-2 text-right">
+                          <p className="text-[10px] font-bold text-white line-clamp-1">{ad.title}</p>
+                          <div className="flex items-center justify-end gap-1 mt-1">
+                            <span className="text-[8px] font-bold text-green-400">0.6</span>
+                            <TimgadCoin size={10} />
+                          </div>
+                        </div>
                       </div>
-                      <Button className="w-full h-12 rounded-full bg-primary font-bold gap-2" onClick={() => handleAdClick(ad)} disabled={isProcessing}>
-                        {isProcessing ? <Loader2 className="animate-spin" /> : <>انقر واربح 0.6 <TimgadCoin size={16} /></>}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            ))}
+                    </DialogTrigger>
+                    <DialogContent className="p-0 overflow-hidden border-none max-w-sm">
+                      <DialogTitle className="sr-only">{ad.title}</DialogTitle>
+                      <div className="relative aspect-[9/16] w-full">
+                        <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent p-6 flex flex-col justify-end gap-4">
+                          <div className="space-y-2 text-right text-white">
+                            <h2 className="text-xl font-bold">{ad.title}</h2>
+                            <p className="text-xs opacity-70">{ad.description}</p>
+                          </div>
+                          <Button className="w-full h-12 rounded-full bg-primary font-bold gap-2" onClick={() => handleAdClick(ad)} disabled={isProcessing}>
+                            {isProcessing ? <Loader2 className="animate-spin" /> : <>انقر واربح 0.6 <TimgadCoin size={16} /></>}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                );
+              })}
+            </div>
           </div>
         ) : (
           <div className="text-center py-32 opacity-40">لا توجد قصص إعلانية حالياً.</div>
