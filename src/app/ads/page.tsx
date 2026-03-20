@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { cn } from '@/lib/utils';
-import AadsUnit from '@/components/ads/AadsUnit';
+import AadsUnit, { AadsUnitSmall } from '@/components/ads/AadsUnit';
 
 export default function AdsPage() {
   const router = useRouter();
@@ -190,6 +190,7 @@ export default function AdsPage() {
       window.location.href = ad.link;
     } catch (error) {
       toast({ variant: "destructive", description: "لا يمكنك الربح من هذا الإعلان مجدداً." });
+      window.location.href = ad.link;
     } finally {
       setIsPosting(false);
     }
@@ -200,7 +201,7 @@ export default function AdsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0 flex flex-col md:flex-row gap-6">
+      <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0 flex flex-col md:flex-row gap-6 text-right">
         <div className="flex-1">
           <header className="flex items-center justify-between mb-8 sticky top-10 z-30 bg-background/80 backdrop-blur-md py-4 border-b">
             <div className="flex items-center gap-3">
@@ -209,7 +210,7 @@ export default function AdsPage() {
               </Button>
               <div className="flex flex-col text-right">
                 <h1 className="text-sm font-bold text-primary">سوق القصص والأرباح</h1>
-                <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-bold">متاح للموثقين بـ 500+ متابع</span>
+                <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-bold">يتطلب 500 متابع + توثيق</span>
               </div>
             </div>
             
@@ -252,8 +253,13 @@ export default function AdsPage() {
             </div>
           </header>
 
-          <div className="mb-6">
-            <AadsUnit />
+          <div className="mb-6 space-y-4">
+            <AadsUnitSmall />
+            <div className="bg-red-50/50 p-4 border border-red-100 rounded-lg text-center">
+              <p className="text-[10px] text-red-700 font-bold leading-relaxed">
+                ⚠️ تنبيه: نظام الربح مفعل فقط للحسابات الموثقة التي تملك 500 متابع حقيقي أو أكثر. يمكنك مشاهدة الإعلانات لدعم المجتمع ولكن لن يتم إضافة رصيد لحسابك إذا لم تستوفِ الشروط.
+              </p>
+            </div>
           </div>
 
           {isLoading ? (
@@ -320,8 +326,9 @@ export default function AdsPage() {
         </div>
         
         <aside className="hidden lg:block w-40 shrink-0">
-          <div className="sticky top-24">
+          <div className="sticky top-24 space-y-4">
             <AadsUnit />
+            <AadsUnitSmall />
           </div>
         </aside>
       </main>

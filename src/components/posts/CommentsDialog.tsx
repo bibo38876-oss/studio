@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import AadsUnit from '@/components/ads/AadsUnit';
+import AadsUnit, { AadsUnitSmall } from '@/components/ads/AadsUnit';
 
 export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: { postId: string, postAuthorId: string, post: any, onClose: () => void, currentUserProfile?: any }) {
   const [commentText, setCommentText] = useState('');
@@ -176,7 +176,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
         </div>
 
-        <div className="p-4 border-b">
+        <div className="p-4 border-b space-y-2">
+          <AadsUnitSmall />
           <AadsUnit />
         </div>
 
