@@ -17,18 +17,18 @@ service cloud.firestore {
     }
 
     match /ads/{adId} {
-      allow read: if isSignedIn();
+      allow read, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
     match /post_ads/{adId} {
-      allow read: if isSignedIn();
+      allow read, list: if isSignedIn();
       allow write: if isAdmin();
     }
 
     match /admin_banners/{bannerId} {
-      allow read: if isSignedIn();
+      allow read, list: if isSignedIn();
       allow write: if isAdmin();
     }
 

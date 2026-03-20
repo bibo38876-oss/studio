@@ -38,12 +38,11 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     if (!firestore || !postId) return null;
     return query(
       collection(firestore, 'post_ads'),
-      where('postId', '==', postId),
-      where('expiresAt', '>', new Date())
+      where('postId', '==', postId)
     );
   }, [firestore, postId]);
   const { data: postAds } = useCollection(postAdQuery);
-  const activeAd = postAds?.[0];
+  const activeAd = postAds?.find(ad => ad.expiresAt?.toDate() > new Date());
 
   const currentPostVerification: VerificationType = postAuthorProfile?.verificationType || post.authorVerificationType || 'none';
   const isVerifiedAuthor = currentPostVerification === 'blue' || currentPostVerification === 'gold';
