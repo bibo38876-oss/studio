@@ -72,7 +72,7 @@ function SupportContent() {
     if (!isAuto && (content.includes('شراء') || content.includes('باقة'))) {
       setTimeout(() => {
         addDocumentNonBlocking(collection(firestore, 'support_chats', user.uid, 'messages'), {
-          content: `أهلاً بك في مركز دعم تيمقاد! 🏺\n\nيرجى تحويل مبلغ الباقة المطلوبة إلى الحساب التالي:\n\nCCP: 0023456789 / Key: 45\nبإسم: ADEL BENMAZA\n\nبعد التحويل، يرجى رفع صورة واضحة لـ "وصل العمليات" (الاستلام) هنا في هذه الدردشة ليقوم الفريق بتفعيل العملات في خزانتك فوراً.`,
+          content: `أهلاً بك في مركز دعم تيمقاد! 🏺\n\nيرجى تحويل مبلغ الباقة المطلوبة عبر محفظة "فاست باي" (Fast Pay) باستخدام عملة TRX إلى العنوان التالي:\n\nTRX Address: TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2\n\nبعد التحويل، يرجى رفع صورة واضحة لإثبات الدفع (الوصل) هنا في هذه الدردشة.\n\nسيتم شحن عملاتك في غضون 4 ساعات كحد أقصى من استلام الإثبات. شكراً لصبركم!`,
           senderId: 'admin_system',
           senderName: 'إدارة تيمقاد',
           senderAvatar: '',
