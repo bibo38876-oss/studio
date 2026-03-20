@@ -140,7 +140,16 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       toast({ variant: "destructive", description: "تحتاج إلى 5 عملات للترويج." });
       return;
     }
-    if (!isAdmin) updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-5) });
+    if (!isAdmin) {
+      updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-5) });
+      addDocumentNonBlocking(collection(firestore!, 'platform_revenue'), {
+        type: 'promote_fee',
+        amount: 5,
+        fromUserId: user!.uid,
+        postId: post.id,
+        createdAt: serverTimestamp()
+      });
+    }
     updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { promoted: true });
     toast({ title: "منشور مروج! 🚀", description: "سيظهر منشورك في مقدمة التغذية الإخبارية." });
   };
@@ -153,9 +162,22 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     }
     if (!firestore || !user) return;
     
+    // عمولة المنصة 10%
+    const platformFee = amount * 0.1;
+    const netAmount = amount - platformFee;
+
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amount) });
-    updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(amount) });
+    updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(netAmount) });
     
+    // تسجيل الأرباح للمنصة
+    addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
+      type: 'support_fee',
+      amount: platformFee,
+      fromUserId: user.uid,
+      toUserId: post.authorId,
+      createdAt: serverTimestamp()
+    });
+
     setDocumentNonBlocking(doc(firestore, 'users', post.authorId, 'supporters', user.uid), {
       userId: user.uid,
       username: currentUserProfile?.username || 'مبادر من تيمقاد',
@@ -165,27 +187,18 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       lastSupportedAt: serverTimestamp()
     }, { merge: true });
 
-    setDocumentNonBlocking(doc(firestore, 'users', user.uid, 'supportedPeople', post.authorId), {
-      userId: post.authorId,
-      username: authorProfile?.username || post.authorName || 'مبدع تيمقاد',
-      avatar: authorProfile?.profilePictureUrl || post.authorAvatar || '',
-      verificationType: currentVerificationType,
-      totalAmount: increment(amount),
-      lastSupportedAt: serverTimestamp()
-    }, { merge: true });
-
     addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), {
       type: 'support',
       fromUserId: user.uid,
       fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد',
       fromAvatar: currentUserProfile?.profilePictureUrl || '',
-      amount,
+      amount: netAmount,
       postId: post.id,
       createdAt: serverTimestamp(),
       read: false
     });
     
-    toast({ title: "تم الدعم! ☕️", description: `أرسلت ${amount} عملة للمبدع.` });
+    toast({ title: "تم الدعم! ☕️", description: `أرسلت ${netAmount.toFixed(1)} عملة للمبدع بعد عمولة المنصة.` });
     setIsSupportOpen(false);
   };
 
@@ -282,7 +295,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
               </Button>
             ))}
           </div>
-          <p className="text-[9px] text-muted-foreground italic mt-4">سيتم خصم المبلغ من رصيدك فوراً.</p>
+          <p className="text-[9px] text-muted-foreground italic mt-4">سيتم خصم المبلغ وعمولة 10% من رصيدك.</p>
         </DialogContent>
       </Dialog>
 

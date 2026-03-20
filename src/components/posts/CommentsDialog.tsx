@@ -65,14 +65,27 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const handleSupport = (amount: number) => {
     if (isAnonymous) { router.push('/login'); return; }
     if ((currentUserProfile?.coins || 0) < amount) {
-      toast({ variant: "destructive", description: "رصيدك لا يكفي لشراء القهوة." });
+      toast({ variant: "destructive", description: "رصيدك لا يكفي." });
       return;
     }
     if (!firestore || !user) return;
 
+    // عمولة المنصة 10%
+    const platformFee = amount * 0.1;
+    const netAmount = amount - platformFee;
+
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amount) });
-    updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(amount) });
+    updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(netAmount) });
     
+    // تسجيل الأرباح للمنصة
+    addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
+      type: 'support_fee',
+      amount: platformFee,
+      fromUserId: user.uid,
+      toUserId: post.authorId,
+      createdAt: serverTimestamp()
+    });
+
     setDocumentNonBlocking(doc(firestore, 'users', post.authorId, 'supporters', user.uid), {
       userId: user.uid,
       username: currentUserProfile?.username || 'مبادر من تيمقاد',
@@ -82,27 +95,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       lastSupportedAt: serverTimestamp()
     }, { merge: true });
 
-    setDocumentNonBlocking(doc(firestore, 'users', user.uid, 'supportedPeople', post.authorId), {
-      userId: post.authorId,
-      username: postAuthorProfile?.username || post.authorName || 'مبدع تيمقاد',
-      avatar: postAuthorProfile?.profilePictureUrl || post.authorAvatar || '',
-      verificationType: currentPostVerification,
-      totalAmount: increment(amount),
-      lastSupportedAt: serverTimestamp()
-    }, { merge: true });
-
-    addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), {
-      type: 'support',
-      fromUserId: user.uid,
-      fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد',
-      fromAvatar: currentUserProfile?.profilePictureUrl || '',
-      amount,
-      postId: post.id,
-      createdAt: serverTimestamp(),
-      read: false
-    });
-    
-    toast({ title: "شكراً لك! ☕️", description: `لقد أرسلت ${amount} عملة لدعم المبدع.` });
+    toast({ title: "شكراً لك! ☕️", description: `تم إرسال ${netAmount.toFixed(1)} عملة للمبدع بعد عمولة المنصة.` });
     setIsSupportOpen(false);
   };
 
@@ -145,10 +138,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                   ))}
                 </CarouselContent>
                 {post.mediaUrls.length > 1 && (
-                  <div className="flex justify-center gap-2 mt-2">
-                    <CarouselPrevious className="static translate-y-0 h-8 w-8 bg-secondary" />
-                    <CarouselNext className="static translate-y-0 h-8 w-8 bg-secondary" />
-                  </div>
+                  <>
+                    <CarouselPrevious className="right-2 h-8 w-8 bg-black/20 text-white" />
+                    <CarouselNext className="left-2 h-8 w-8 bg-black/20 text-white" />
+                  </>
                 )}
               </Carousel>
             </div>
@@ -180,7 +173,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
         <DialogContent className="sm:max-w-[300px] text-center p-6 rounded-none">
           <DialogTitle className="text-sm font-bold text-primary mb-2">دعم المبدع</DialogTitle>
-          <p className="text-[10px] text-muted-foreground mb-4">اختر كمية العملات لدعم هذا المحتوى</p>
+          <p className="text-[10px] text-muted-foreground mb-4">تأخذ المنصة عمولة 10% من الدعم</p>
           <div className="grid grid-cols-3 gap-3">
             {[1, 5, 10].map((amt) => (
               <Button key={amt} variant="outline" className="h-14 flex flex-col gap-1 rounded-none border-primary/20 hover:bg-primary/5" onClick={() => handleSupport(amt)}>
