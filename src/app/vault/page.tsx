@@ -4,37 +4,100 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { Loader2, Clock, Shield } from 'lucide-react';
+import { Loader2, Clock, Shield, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 export default function VaultPage() {
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
   const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isJoining, setIsJoining] = useState(false);
 
   const jarRef = useMemoFirebase(() => firestore ? doc(firestore, 'vault', 'current_jar') : null, [firestore]);
   const { data: jarData, isLoading: isJarLoading } = useDoc(jarRef);
 
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  const { data: profile } = useDoc(userRef);
+
+  const participationRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'vault', 'current_jar', 'participants', user.uid);
+  }, [firestore, user?.uid]);
+  const { data: participation } = useDoc(participationRef);
+
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
+      // توقيت الجزائر (GMT+1)
       const dzNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3600000));
       const breakTime = new Date(dzNow);
       breakTime.setHours(20, 0, 0, 0);
+      
       const diff = breakTime.getTime() - dzNow.getTime();
       if (diff > 0) {
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
         const s = Math.floor((diff % 60000) / 1000);
         setTimeLeft(`${h}:${m}:${s}`);
-      } else setTimeLeft('انكسرت الجرة!');
+      } else {
+        setTimeLeft('انكسرت الجرة!');
+      }
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleJoinJar = async () => {
+    if (!user || user.isAnonymous) {
+      toast({ description: "يرجى تسجيل الدخول للمشاركة." });
+      return;
+    }
+    if (participation) {
+      toast({ description: "أنت مشارك بالفعل في جرة اليوم!" });
+      return;
+    }
+    if ((profile?.coins || 0) < 3) {
+      toast({ variant: "destructive", description: "رصيدك غير كافٍ للمشاركة (تحتاج 3 عملات)." });
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      // 1. خصم العملات
+      updateDocumentNonBlocking(doc(firestore!, 'users', user.uid), {
+        coins: increment(-3)
+      });
+
+      // 2. إضافة للجرة
+      updateDocumentNonBlocking(doc(firestore!, 'vault', 'current_jar'), {
+        totalCoins: increment(3)
+      });
+
+      // 3. تسجيل المشارك
+      setDocumentNonBlocking(participationRef!, {
+        userId: user.uid,
+        username: profile?.username || 'مستكشف تيمقاد',
+        avatar: profile?.profilePictureUrl || '',
+        aura: (profile?.followerIds?.length || 0) + (profile?.coins || 0),
+        joinedAt: serverTimestamp()
+      }, { merge: true });
+
+      toast({ 
+        title: "تم الانضمام! 🏺", 
+        description: "لقد شاركت في جرة تيمقاد الملكية لليوم. بالتوفيق!" 
+      });
+    } catch (error) {
+      toast({ variant: "destructive", description: "حدث خطأ أثناء المشاركة." });
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#1A0F04] text-[#F3E5AB] flex flex-col items-center relative overflow-hidden">
@@ -42,7 +105,7 @@ export default function VaultPage() {
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(180,83,9,0.15),transparent_70%)]" />
       
       <main className="relative z-10 flex flex-col items-center gap-8 py-20 w-full max-w-2xl px-4 text-center">
-        <motion.div animate={{ y: [-10, 10, -10] }} transition={{ repeat: Infinity, duration: 4 }} className="text-[180px] drop-shadow-[0_0_30px_rgba(180,83,9,0.5)]">🏺</motion.div>
+        <motion.div animate={{ y: [-10, 10, -10] }} transition={{ repeat: Infinity, duration: 4 }} className="text-[180px] drop-shadow-[0_0_30px_rgba(180,83,9,0.5)] select-none">🏺</motion.div>
         
         <div className="space-y-4">
           <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-50">إجمالي الكنز الحالي</h2>
@@ -61,10 +124,23 @@ export default function VaultPage() {
 
         <div className="w-full max-w-sm space-y-4 pt-6">
           <Button 
-            className="w-full rounded-full h-16 bg-[#B45309] text-white font-bold text-md shadow-xl hover:bg-[#D97706] active:scale-95 transition-all" 
-            onClick={() => toast({ title: "قريباً جداً! 🏺", description: "ميزة المشاركة في الجرة الملكية ستفتح خلال الأيام القادمة." })}
+            className={cn(
+              "w-full rounded-full h-16 text-white font-bold text-md shadow-xl active:scale-95 transition-all gap-2",
+              participation ? "bg-green-700 cursor-default" : "bg-[#B45309] hover:bg-[#D97706]"
+            )}
+            onClick={handleJoinJar}
+            disabled={isJoining || !!participation}
           >
-            المشاركة بـ 3 عملات تيمقاد
+            {isJoining ? (
+              <Loader2 className="animate-spin" />
+            ) : participation ? (
+              <>
+                <Trophy size={20} />
+                أنت داخل السحب
+              </>
+            ) : (
+              "المشاركة بـ 3 عملات تيمقاد"
+            )}
           </Button>
           
           <div className="flex items-center justify-center gap-2 opacity-30">

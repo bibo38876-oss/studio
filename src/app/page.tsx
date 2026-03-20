@@ -8,16 +8,18 @@ import LeftSidebar from '@/components/layout/LeftSidebar';
 import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
-import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, where, limit } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, doc, where, limit, serverTimestamp, increment } from 'firebase/firestore';
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
   const [activeTab, setActiveTab] = useState('for-you');
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -32,7 +34,28 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // 1. تجميع المنشورات (Pool Collection) - جلب 150 منشوراً لتطبيق الخوارزمية
+  // نظام المكافأة اليومية (Daily Login Reward)
+  useEffect(() => {
+    if (user && profile && firestore) {
+      const now = new Date();
+      const lastLogin = profile.lastLoginAt ? new Date(profile.lastLoginAt) : new Date(0);
+      const diffMs = now.getTime() - lastLogin.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+
+      if (diffHours >= 24) {
+        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+          coins: increment(1),
+          lastLoginAt: now.toISOString()
+        });
+        toast({
+          title: "🎁 مكافأة الوفاء!",
+          description: "لقد حصلت على 1 عملة تيمقاد لتسجيل دخولك اليومي. استمر في الإبداع!"
+        });
+      }
+    }
+  }, [user, profile, firestore, toast]);
+
+  // 1. تجميع المنشورات (Pool Collection)
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(150));
@@ -41,8 +64,7 @@ export default function Home() {
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
   /**
-   * 2. محرك التقييم (Scoring Engine) بناءً على المعادلة الذهبية:
-   * Score = (Likes * 3) + (Comments * 5) + (FollowingBoost * 4) + (RecencyScore * 2) + (UserInterestScore * 6)
+   * 2. محرك التقييم (Scoring Engine) بناءً على المعادلة الذهبية
    */
   const recommendedPosts = useMemo(() => {
     if (!postsPool) return [];
@@ -76,13 +98,11 @@ export default function Home() {
     .sort((a, b) => {
       // الأولوية المطلقة للمنشورات المروجة (Promoted)
       if (a.promoted !== b.promoted) return a.promoted ? -1 : 1;
-      // ثم الترتيب حسب النتيجة المحسوبة
       return b.calculatedScore - a.calculatedScore;
     })
-    .slice(0, 50); // عرض أفضل 50 نتيجة
+    .slice(0, 50);
   }, [postsPool, profile]);
 
-  // تغذية المتابعة الصرفة
   const followingPostsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
     return query(

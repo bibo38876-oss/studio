@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -194,6 +194,23 @@ function CommentItem({ comment, postId, firestore, user }: any) {
   const verificationType = authorProfile?.verificationType || comment.authorVerificationType || 'none';
   const canDelete = user && (user.uid === comment.authorId || user.email === 'adelbenmaza8@gmail.com');
 
+  const likeRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !postId || !comment.id) return null;
+    return doc(firestore, 'posts', postId, 'comments', comment.id, 'likes', user.uid);
+  }, [firestore, user?.uid, postId, comment.id]);
+  const { data: likeData } = useDoc(likeRef);
+
+  const handleLikeComment = () => {
+    if (!user || !firestore || user.isAnonymous) return;
+    if (likeData) {
+      deleteDocumentNonBlocking(likeRef!);
+      updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id), { likesCount: increment(-1) });
+    } else {
+      setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
+      updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id), { likesCount: increment(1) });
+    }
+  };
+
   return (
     <div className="flex gap-3 justify-end group">
       <div className="flex-1 flex flex-col items-end">
@@ -207,7 +224,10 @@ function CommentItem({ comment, postId, firestore, user }: any) {
           </div>
           <p className="text-xs leading-relaxed mb-2">{comment.content}</p>
           <div className="flex items-center gap-3 pt-1 border-t border-muted/10">
-            <button onClick={() => updateDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id), { likesCount: increment(1) })} className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground hover:text-red-500"><Heart size={10} /><span>{comment.likesCount || 0}</span></button>
+            <button onClick={handleLikeComment} className={cn("flex items-center gap-1 text-[9px] font-bold transition-colors", likeData ? "text-red-500" : "text-muted-foreground hover:text-red-500")}>
+              <Heart size={10} className={likeData ? "fill-current" : ""} />
+              <span>{comment.likesCount || 0}</span>
+            </button>
           </div>
         </div>
         <span className="text-[7px] text-muted-foreground mt-1 px-1">{comment.createdAt?.toDate ? formatDistanceToNow(comment.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
