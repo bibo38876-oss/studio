@@ -176,7 +176,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
         </div>
 
-        {/* إعلانات AADS مدمجة هنا */}
         <div className="p-4 border-b">
           <AadsUnit />
         </div>

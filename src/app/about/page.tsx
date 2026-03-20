@@ -57,10 +57,21 @@ export default function AboutPage() {
           <section className="space-y-6">
             <div className="flex items-center gap-3 text-primary border-r-4 border-blue-500 pr-3">
               <BadgeCheck size={20} className="text-blue-500" />
-              <h2 className="text-xl font-bold font-headline tracking-tighter">التوثيق وتحقيق الدخل</h2>
+              <h2 className="text-xl font-bold font-headline tracking-tighter">التوثيق وشروط الربح الصارمة</h2>
             </div>
             
             <div className="space-y-4">
+              <div className="bg-red-50/30 p-6 border border-red-100 rounded-sm">
+                <h4 className="text-xs font-bold text-red-700 mb-3 flex items-center gap-2">
+                  <AlertCircle size={14} /> القاعدة الذهبية للربح
+                </h4>
+                <p className="text-[10px] text-red-900/80 leading-relaxed font-bold">
+                  لا يحق لأي عضو في تيمقاد تحقيق أي أرباح (سواء من مشاهدة الإعلانات أو من منشوراته) إلا إذا استوفى الشرطين معاً: <br/>
+                  1. امتلاك <span className="underline">500 متابع حقيقي</span> على الأقل. <br/>
+                  2. أن يكون الحساب <span className="underline">موثقاً</span> بالشارة الزرقاء أو الذهبية.
+                </p>
+              </div>
+
               <div className="bg-blue-50/30 p-6 border border-blue-100 rounded-sm">
                 <h4 className="text-xs font-bold text-blue-700 mb-3 flex items-center gap-2">
                   <Sparkles size={14} /> شراء التوثيق الذاتي
@@ -68,26 +79,6 @@ export default function AboutPage() {
                 <p className="text-[10px] text-blue-900/80 leading-relaxed mb-4">
                   يمكن لأي عضو الحصول على الشارة الزرقاء فوراً مقابل <span className="font-bold text-primary">500 عملة تيمقاد</span> عبر المحفظة. التوثيق هو الخطوة الأولى لتفعيل نظام الأرباح.
                 </p>
-              </div>
-
-              <div className="bg-blue-50/30 p-6 border border-blue-100 rounded-sm">
-                <h4 className="text-xs font-bold text-blue-700 mb-3 flex items-center gap-2">
-                  <Star size={14} /> شروط الربح من الإعلانات الإدارية
-                </h4>
-                <ul className="text-[10px] space-y-3 text-blue-900/80">
-                  <li className="flex items-start gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
-                    <span>يجب أن يمتلك العضو <span className="font-bold underline">500 متابع</span> حقيقي على الأقل.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
-                    <span>يجب أن يكون الحساب <span className="font-bold underline">موثقاً</span> (الشارة الزرقاء أو الذهبية).</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
-                    <span>عند استيفاء الشروط، يحصل العضو على <span className="font-bold text-primary">250 عملة (50%)</span> فور وضع الإدارة إعلاناً على منشوره.</span>
-                  </li>
-                </ul>
               </div>
             </div>
           </section>
@@ -103,13 +94,13 @@ export default function AboutPage() {
               <div className="p-4 bg-secondary/20 border-r-2 border-green-600 space-y-2">
                 <h4 className="text-[10px] font-bold text-green-700 uppercase">اربح من المشاهدة</h4>
                 <p className="text-[9px] text-muted-foreground leading-relaxed">
-                  عند مشاهدتك والنقر على القصص الإعلانية في السوق، تحصل فوراً على <span className="text-green-600 font-bold">0.6 عملة</span> عن كل نقرة حقيقية.
+                  إذا كنت مستوفياً لشروط الأهلية، تحصل فوراً على <span className="text-green-600 font-bold">0.6 عملة</span> عن كل نقرة حقيقية على القصص الإعلانية.
                 </p>
               </div>
               <div className="p-4 bg-secondary/20 border-r-2 border-primary space-y-2">
                 <h4 className="text-[10px] font-bold text-primary uppercase">أعلن عن مشروعك</h4>
                 <p className="text-[9px] text-muted-foreground leading-relaxed">
-                  مقابل <span className="text-primary font-bold">100 عملة</span>، يمكنك نشر قصة إعلانية تحصل من خلالها على 100 نقرة حقيقية لموقعك أو حسابك.
+                  مقابل <span className="text-primary font-bold">100 عملة</span>، يمكنك نشر قصة إعلانية تحصل من خلالها على 100 نقرة حقيقية لموقعك أو حسابك من مجتمع تيمقاد.
                 </p>
               </div>
             </div>
@@ -142,11 +133,6 @@ export default function AboutPage() {
                     <td className="p-4 border-l">3 أيام</td>
                     <td className="p-4 font-bold">5 TRX</td>
                   </tr>
-                  <tr>
-                    <td className="p-4 border-l font-medium">ترويج منشور (For You Boost)</td>
-                    <td className="p-4 border-l">--</td>
-                    <td className="p-4 italic text-muted-foreground">قريباً</td>
-                  </tr>
                 </tbody>
               </table>
             </div>
@@ -161,12 +147,8 @@ export default function AboutPage() {
             
             <div className="bg-amber-50/30 p-6 border border-amber-100 space-y-4">
               <p className="text-[10px] text-amber-900/80 leading-relaxed italic">
-                "سجل الكرم" هو لوحة شرف دائمة في ملفك الشخصي تخلد أسماء من دعموا محتواك بفناجين القهوة.
+                "سجل الكرم" هو لوحة شرف دائمة في ملفك الشخصي تخلد أسماء من دعموا محتواك بفناجين القهوة. تقتطع المنصة عمولة صيانة <span className="font-bold">10%</span> من قيمة كل دعم يتم إرساله.
               </p>
-              <div className="flex items-start gap-3">
-                <AlertCircle size={14} className="text-amber-600 mt-0.5 shrink-0" />
-                <p className="text-[9px] text-amber-800">تقتطع المنصة عمولة صيانة <span className="font-bold">10%</span> من قيمة كل دعم يتم إرساله للمبدع.</p>
-              </div>
             </div>
           </section>
 
@@ -183,7 +165,7 @@ export default function AboutPage() {
                 <div className="space-y-1">
                   <h4 className="text-[11px] font-bold text-red-700 uppercase">حظر الروابط الخارجية</h4>
                   <p className="text-[10px] text-red-600/80 leading-relaxed">
-                    يُمنع منعاً باتاً وضع روابط خارجية (http, www) داخل المنشورات أو التعليقات. تهدف هذه السياسة لمنع الروابط الاحتيالية والحفاظ على جودة المحتوى.
+                    يُمنع منعاً باتاً وضع روابط خارجية (http, www) داخل المنشورات أو التعليقات لمنع الاحتيال.
                   </p>
                 </div>
               </div>

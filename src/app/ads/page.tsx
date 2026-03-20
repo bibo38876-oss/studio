@@ -144,6 +144,21 @@ export default function AdsPage() {
 
     if (isPosting) return;
 
+    // فحص أهلية الربح: 500 متابع + توثيق
+    const isVerified = profile?.verificationType === 'blue' || profile?.verificationType === 'gold';
+    const hasMinFollowers = (profile?.followerIds?.length || 0) >= 500;
+
+    if (!isVerified || !hasMinFollowers) {
+      toast({ 
+        variant: "destructive", 
+        title: "حساب غير مؤهل للربح", 
+        description: "للربح من مشاهدة الإعلانات، يجب أن تملك 500 متابع وحساباً موثقاً (شارة زرقاء/ذهبية)." 
+      });
+      // توجيه المستخدم للرابط ولكن بدون رصيد
+      window.location.href = ad.link;
+      return;
+    }
+
     const clickRef = doc(firestore!, 'adClicks', `${ad.id}_${user.uid}`);
     
     setIsPosting(true);
@@ -194,7 +209,7 @@ export default function AdsPage() {
               </Button>
               <div className="flex flex-col text-right">
                 <h1 className="text-sm font-bold text-primary">سوق القصص والأرباح</h1>
-                <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-bold">اربح 0.6 عملة عن كل مشاهدة</span>
+                <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-bold">متاح للموثقين بـ 500+ متابع</span>
               </div>
             </div>
             
@@ -236,6 +251,10 @@ export default function AdsPage() {
               </Dialog>
             </div>
           </header>
+
+          <div className="mb-6">
+            <AadsUnit />
+          </div>
 
           {isLoading ? (
             <div className="grid grid-cols-3 gap-2">
