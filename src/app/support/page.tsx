@@ -28,6 +28,7 @@ function SupportContent() {
 
   const initialPackage = searchParams.get('package');
   const initialAmount = searchParams.get('amount');
+  const initialPrice = searchParams.get('price');
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -49,7 +50,7 @@ function SupportContent() {
   // إرسال طلب شراء تلقائي عند الدخول من صفحة المحفظة
   useEffect(() => {
     if (initialPackage && user && messages && messages.length === 0) {
-      handleSendMessage(`أريد شراء باقة: ${initialPackage} (${initialAmount} عملة ذهبية)`);
+      handleSendMessage(`أريد شراء باقة: ${initialPackage} (${initialAmount} عملة ذهبية) بسعر ${initialPrice}`);
     }
   }, [initialPackage, user, messages]);
 
@@ -72,7 +73,7 @@ function SupportContent() {
     if (!isAuto && (content.includes('شراء') || content.includes('باقة'))) {
       setTimeout(() => {
         addDocumentNonBlocking(collection(firestore, 'support_chats', user.uid, 'messages'), {
-          content: `أهلاً بك في مركز دعم تيمقاد! 🏺\n\nيرجى تحويل مبلغ الباقة المطلوبة عبر محفظة "فاست باي" (Fast Pay) باستخدام عملة TRX إلى العنوان التالي:\n\nTRX Address: TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2\n\nبعد التحويل، يرجى رفع صورة واضحة لإثبات الدفع (الوصل) هنا في هذه الدردشة.\n\nسيتم شحن عملاتك في غضون 4 ساعات كحد أقصى من استلام الإثبات. شكراً لصبركم!`,
+          content: `أهلاً بك في مركز دعم تيمقاد! 🏺\n\nيرجى تحويل مبلغ الباقة المطلوبة (100 عملة = 1 TRX) عبر محفظة "فاست باي" (Fast Pay) باستخدام عملة TRX إلى العنوان التالي:\n\nTRX Address: TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2\n\nبعد التحويل، يرجى رفع صورة واضحة لإثبات الدفع (الوصل) هنا في هذه الدردشة.\n\nسيتم شحن عملاتك في غضون 4 ساعات كحد أقصى من استلام الإثبات. شكراً لصبركم!`,
           senderId: 'admin_system',
           senderName: 'إدارة تيمقاد',
           senderAvatar: '',
@@ -157,7 +158,7 @@ function SupportContent() {
             <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center mx-auto">
               <ShieldCheck size={32} className="text-primary/20" />
             </div>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">تحدث مع الإدارة حول مشترياتك أو أي استفسار</p>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">تحدث مع الإدارة حول مشترياتك (100 عملة = 1 TRX)</p>
           </div>
         )}
       </main>

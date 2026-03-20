@@ -65,17 +65,35 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const handleSupport = (amount: number) => {
     if (isAnonymous) { router.push('/login'); return; }
     if ((currentUserProfile?.coins || 0) < amount) {
-      toast({ variant: "destructive", description: "رصيدك لا يكفي." });
+      toast({ variant: "destructive", description: "رصيدك لا يكفي لشراء القهوة." });
       return;
     }
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
-    updateDocumentNonBlocking(doc(firestore, 'users', user!.uid), { coins: increment(-amount) });
+    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amount) });
     updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(amount) });
     
+    setDocumentNonBlocking(doc(firestore, 'users', post.authorId, 'supporters', user.uid), {
+      userId: user.uid,
+      username: currentUserProfile?.username || 'مبادر من تيمقاد',
+      avatar: currentUserProfile?.profilePictureUrl || '',
+      verificationType: currentUserProfile?.verificationType || 'none',
+      totalAmount: increment(amount),
+      lastSupportedAt: serverTimestamp()
+    }, { merge: true });
+
+    setDocumentNonBlocking(doc(firestore, 'users', user.uid, 'supportedPeople', post.authorId), {
+      userId: post.authorId,
+      username: postAuthorProfile?.username || post.authorName || 'مبدع تيمقاد',
+      avatar: postAuthorProfile?.profilePictureUrl || post.authorAvatar || '',
+      verificationType: currentPostVerification,
+      totalAmount: increment(amount),
+      lastSupportedAt: serverTimestamp()
+    }, { merge: true });
+
     addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), {
       type: 'support',
-      fromUserId: user!.uid,
+      fromUserId: user.uid,
       fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد',
       fromAvatar: currentUserProfile?.profilePictureUrl || '',
       amount,
@@ -84,7 +102,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       read: false
     });
     
-    toast({ title: "تم الدعم!", description: `أرسلت ${amount} عملة للمبدع.` });
+    toast({ title: "شكراً لك! ☕️", description: `لقد أرسلت ${amount} عملة لدعم المبدع.` });
     setIsSupportOpen(false);
   };
 
@@ -92,7 +110,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     <div className="flex flex-col h-full bg-background text-right">
       <div className="flex items-center gap-3 p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-50 h-10">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full"><ChevronRight size={20} /></Button>
-        <span className="text-[11px] font-bold text-primary">تفاصيل المنشور</span>
+        <span className="text-[11px] font-bold text-primary">تفاعل في تيمقاد</span>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-20">
@@ -109,28 +127,28 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
           
           <div className="text-sm leading-relaxed mb-4 whitespace-pre-wrap text-right font-medium">
-            {post.content.split(/(#[^\s#]+)/g).map((part, i) => (
+            {post.content.split(/(#[^\s#]+)/g).map((part: string, i: number) => (
               part.startsWith('#') ? <span key={i} className="text-accent font-bold">{part}</span> : part
             ))}
           </div>
           
           {post.mediaUrls && post.mediaUrls.length > 0 && (
-            <div className="mb-4 relative px-4">
+            <div className="mb-4 relative">
               <Carousel className="w-full" opts={{ direction: 'rtl' }}>
                 <CarouselContent>
-                  {post.mediaUrls.map((url, index) => (
-                    <CarouselItem key={url}>
-                      <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full h-full">
-                        <img src={url} alt="Media" className="absolute inset-0 w-full h-full object-cover" />
+                  {post.mediaUrls.map((url: string, index: number) => (
+                    <CarouselItem key={index}>
+                      <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full">
+                        <img src={url} alt="Media content" className="absolute inset-0 w-full h-full object-cover" />
                       </div>
                     </CarouselItem>
                   ))}
                 </CarouselContent>
                 {post.mediaUrls.length > 1 && (
-                  <>
-                    <CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
-                    <CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
-                  </>
+                  <div className="flex justify-center gap-2 mt-2">
+                    <CarouselPrevious className="static translate-y-0 h-8 w-8 bg-secondary" />
+                    <CarouselNext className="static translate-y-0 h-8 w-8 bg-secondary" />
+                  </div>
                 )}
               </Carousel>
             </div>
@@ -138,10 +156,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           
           <div className="flex justify-between items-center py-3 border-t border-muted/10">
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-1.5 text-muted-foreground"><Heart size={20} /> <span className="text-[11px] font-bold">{post.likesCount || 0}</span></div>
-              <div className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareText size={20} /> <span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
-              {isVerifiedAuthor && <motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsSupportOpen(true)} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700"><Coffee size={20} /><span className="text-[10px] font-bold">دعم</span></motion.button>}
-              <div className="flex items-center gap-1.5 text-muted-foreground"><BarChart3 size={20} /> <span className="text-[11px] font-bold">{post.viewsCount || 0}</span></div>
+              <div className="flex items-center gap-1.5 text-muted-foreground"><Heart size={18} /> <span className="text-[11px] font-bold">{post.likesCount || 0}</span></div>
+              <div className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareText size={18} /> <span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
+              {isVerifiedAuthor && <motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsSupportOpen(true)} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700"><Coffee size={18} /><span className="text-[10px] font-bold">دعم</span></motion.button>}
+              <div className="flex items-center gap-1.5 text-muted-foreground"><BarChart3 size={18} /> <span className="text-[11px] font-bold">{post.viewsCount || 0}</span></div>
             </div>
           </div>
         </div>
@@ -154,20 +172,20 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
               <CommentItem key={c.id} comment={c} postId={postId} firestore={firestore} user={user} />
             ))
           ) : (
-            <div className="text-center py-10 opacity-40"><p className="text-[10px] font-bold">لا توجد تعليقات بعد.</p></div>
+            <div className="text-center py-10 opacity-40"><p className="text-[10px] font-bold">لا توجد نقاشات بعد.</p></div>
           )}
         </div>
       </div>
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
-        <DialogContent className="sm:max-w-[300px] text-center p-6">
-          <DialogTitle className="sr-only">دعم المبدع</DialogTitle>
-          <div className="text-md font-bold text-primary mb-4">دعم المبدع</div>
-          <div className="grid grid-cols-3 gap-3 py-6">
+        <DialogContent className="sm:max-w-[300px] text-center p-6 rounded-none">
+          <DialogTitle className="text-sm font-bold text-primary mb-2">دعم المبدع</DialogTitle>
+          <p className="text-[10px] text-muted-foreground mb-4">اختر كمية العملات لدعم هذا المحتوى</p>
+          <div className="grid grid-cols-3 gap-3">
             {[1, 5, 10].map((amt) => (
-              <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>
+              <Button key={amt} variant="outline" className="h-14 flex flex-col gap-1 rounded-none border-primary/20 hover:bg-primary/5" onClick={() => handleSupport(amt)}>
                 <span className="text-sm font-bold">{amt}</span>
-                <TimgadCoin size={14} />
+                <TimgadCoin size={16} />
               </Button>
             ))}
           </div>
@@ -176,7 +194,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
       <div className="p-3 border-t bg-background sticky bottom-0">
         <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-10">
-          <Input placeholder="اكتب تعليقاً..." className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs text-right h-full p-0" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddComment()} />
+          <Input placeholder="أضف تعليقك..." className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs text-right h-full p-0" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddComment()} />
           <Button variant="ghost" size="icon" onClick={handleAddComment} disabled={!commentText.trim()} className="h-8 w-8 rounded-full text-primary"><Send size={16} /></Button>
         </div>
       </div>
@@ -214,7 +232,7 @@ function CommentItem({ comment, postId, firestore, user }: any) {
   return (
     <div className="flex gap-3 justify-end group">
       <div className="flex-1 flex flex-col items-end">
-        <div className="bg-secondary/20 p-2.5 rounded-2xl rounded-tr-none text-right relative w-full">
+        <div className="bg-secondary/20 p-3 rounded-2xl rounded-tr-none text-right relative w-full border border-transparent hover:border-primary/10 transition-colors">
           <div className="flex justify-between items-start mb-1">
             <div className="flex items-center gap-2">
               {canDelete && <button onClick={() => deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', comment.id))} className="text-destructive/40 hover:text-destructive transition-colors"><Trash2 size={12} /></button>}

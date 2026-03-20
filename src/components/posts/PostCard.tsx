@@ -123,42 +123,60 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     e.stopPropagation();
     if (isAnonymous) { router.push('/login'); return; }
     updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { reportsCount: increment(1) });
-    toast({ title: "شكراً لبلاغك", description: "سنقوم بمراجعة المنشور." });
+    toast({ title: "تم الإبلاغ", description: "سنراجع هذا المنشور فوراً." });
   };
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAdmin && !isOwner) return;
     deleteDocumentNonBlocking(doc(firestore!, 'posts', post.id));
-    toast({ description: "تم الحذف بنجاح." });
+    toast({ description: "تم حذف المنشور." });
   };
 
   const handlePromote = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isVerifiedAuthor && !isAdmin) return;
     if (!isAdmin && (currentUserProfile?.coins || 0) < 5) {
-      toast({ variant: "destructive", description: "الترويج يكلف 5 عملات." });
+      toast({ variant: "destructive", description: "تحتاج إلى 5 عملات للترويج." });
       return;
     }
     if (!isAdmin) updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-5) });
     updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { promoted: true });
-    toast({ title: "تم الترويج!", description: "سيكون لمنشورك أولوية ظهور قصوى." });
+    toast({ title: "منشور مروج! 🚀", description: "سيظهر منشورك في مقدمة التغذية الإخبارية." });
   };
 
   const handleSupport = (amount: number) => {
     if (isAnonymous) { router.push('/login'); return; }
     if ((currentUserProfile?.coins || 0) < amount) {
-      toast({ variant: "destructive", description: "رصيدك لا يكفي." });
+      toast({ variant: "destructive", description: "رصيدك غير كافٍ." });
       return;
     }
-    if (!firestore) return;
+    if (!firestore || !user) return;
     
-    updateDocumentNonBlocking(doc(firestore, 'users', user!.uid), { coins: increment(-amount) });
+    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amount) });
     updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(amount) });
     
+    setDocumentNonBlocking(doc(firestore, 'users', post.authorId, 'supporters', user.uid), {
+      userId: user.uid,
+      username: currentUserProfile?.username || 'مبادر من تيمقاد',
+      avatar: currentUserProfile?.profilePictureUrl || '',
+      verificationType: currentUserProfile?.verificationType || 'none',
+      totalAmount: increment(amount),
+      lastSupportedAt: serverTimestamp()
+    }, { merge: true });
+
+    setDocumentNonBlocking(doc(firestore, 'users', user.uid, 'supportedPeople', post.authorId), {
+      userId: post.authorId,
+      username: authorProfile?.username || post.authorName || 'مبدع تيمقاد',
+      avatar: authorProfile?.profilePictureUrl || post.authorAvatar || '',
+      verificationType: currentVerificationType,
+      totalAmount: increment(amount),
+      lastSupportedAt: serverTimestamp()
+    }, { merge: true });
+
     addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), {
       type: 'support',
-      fromUserId: user!.uid,
+      fromUserId: user.uid,
       fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد',
       fromAvatar: currentUserProfile?.profilePictureUrl || '',
       amount,
@@ -167,33 +185,8 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       read: false
     });
     
-    toast({ title: "تم الدعم!", description: `أرسلت ${amount} عملة للمبدع.` });
+    toast({ title: "تم الدعم! ☕️", description: `أرسلت ${amount} عملة للمبدع.` });
     setIsSupportOpen(false);
-  };
-
-  const renderContent = (text: string) => {
-    if (!text) return null;
-    const shouldTruncate = text.length > 200 && !isExpanded;
-    const displayText = shouldTruncate ? text.substring(0, 200) + "..." : text;
-    const parts = displayText.split(/(#[^\s#]+)/g);
-    
-    return (
-      <div className="flex flex-col items-start w-full">
-        <div className="text-sm leading-relaxed whitespace-pre-wrap text-right font-medium w-full">
-          {parts.map((part, i) => (
-            part.startsWith('#') ? <span key={i} className="text-accent font-bold hover:underline">{part}</span> : part
-          ))}
-        </div>
-        {text.length > 200 && (
-          <button 
-            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-            className="text-accent text-[11px] font-bold mt-1 hover:underline"
-          >
-            {isExpanded ? "عرض أقل" : "إقرأ المزيد"}
-          </button>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -204,7 +197,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
             {post.promoted && <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1 ml-2"><Rocket size={10} /><span className="text-[8px] font-bold">مروج</span></div>}
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground"><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuContent align="end" className="w-40 rounded-none">
                 <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer" onClick={handleReport}><AlertTriangle size={14} /> إبلاغ</DropdownMenuItem>
                 {(isVerifiedAuthor || isAdmin) && !post.promoted && <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer text-primary" onClick={handlePromote}><Rocket size={14} /> ترويج (5 عملات)</DropdownMenuItem>}
                 {(isOwner || isAdmin) && <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer text-destructive" onClick={handleDelete}><Trash2 size={14} /> حذف المنشور</DropdownMenuItem>}
@@ -225,15 +218,27 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
         </CardHeader>
 
         <CardContent className="px-4 py-1 text-right">
-          {renderContent(post.content)}
+          <div className="flex flex-col items-start w-full">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap text-right font-medium w-full">
+              {(isExpanded || post.content.length <= 200 ? post.content : post.content.substring(0, 200) + "...").split(/(#[^\s#]+)/g).map((part, i) => (
+                part.startsWith('#') ? <span key={i} className="text-accent font-bold hover:underline">{part}</span> : part
+              ))}
+            </div>
+            {post.content.length > 200 && (
+              <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="text-accent text-[11px] font-bold mt-1 hover:underline">
+                {isExpanded ? "عرض أقل" : "إقرأ المزيد"}
+              </button>
+            )}
+          </div>
+          
           {post.mediaUrls && post.mediaUrls.length > 0 && (
             <div className="mt-3 relative" onClick={(e) => e.stopPropagation()}>
               <Carousel className="w-full" opts={{ direction: 'rtl' }}>
                 <CarouselContent>
                   {post.mediaUrls.map((url, i) => (
-                    <CarouselItem key={url}>
-                      <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full h-full">
-                        <img src={url} alt="Media" className="absolute inset-0 w-full h-full object-cover" />
+                    <CarouselItem key={i}>
+                      <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full">
+                        <img src={url} alt="Post media" className="absolute inset-0 w-full h-full object-cover" />
                       </div>
                     </CarouselItem>
                   ))}
@@ -251,34 +256,39 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
 
         <CardFooter className="p-4 py-3 border-t border-muted/5 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleLike(e); }} className={cn("flex items-center gap-1.5 transition-colors", likeData ? "text-red-500" : "text-muted-foreground hover:text-red-500")}><Heart size={18} className={likeData ? "fill-current" : ""} /><span className="text-[11px] font-bold">{post.likesCount || 0}</span></motion.button>
+            <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleLike(e); }} className={cn("flex items-center gap-1.5 transition-colors", likeData ? "text-red-500" : "text-muted-foreground hover:text-red-500")}>
+              <Heart size={18} className={likeData ? "fill-current" : ""} />
+              <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
+            </motion.button>
             <div className="flex items-center gap-1.5 text-muted-foreground"><MessageCircle size={18} /><span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
             {isVerifiedAuthor && <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); setIsSupportOpen(true); }} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors"><Coffee size={18} /><span className="text-[10px] font-bold">دعم</span></motion.button>}
             <div className="flex items-center gap-1.5 text-muted-foreground"><BarChart3 size={18} /><span className="text-[11px] font-bold">{post.viewsCount || 0}</span></div>
           </div>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleBookmark(e); }} className={cn("flex items-center gap-1.5 transition-colors", bookmarkData ? "text-blue-500" : "text-muted-foreground hover:text-blue-500")}><Bookmark size={18} className={bookmarkData ? "fill-current" : ""} /><span className="text-[11px] font-bold">{post.bookmarksCount || 0}</span></motion.button>
+          <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleBookmark(e); }} className={cn("flex items-center gap-1.5 transition-colors", bookmarkData ? "text-blue-500" : "text-muted-foreground hover:text-blue-500")}>
+            <Bookmark size={18} className={bookmarkData ? "fill-current" : ""} />
+            <span className="text-[11px] font-bold">{post.bookmarksCount || 0}</span>
+          </motion.button>
         </CardFooter>
       </Card>
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
-        <DialogContent className="sm:max-w-[300px] text-center p-6">
-          <DialogTitle className="sr-only">دعم المبدع</DialogTitle>
-          <div className="text-md font-bold text-primary mb-4">دعم المحتوى المتميز</div>
-          <div className="grid grid-cols-3 gap-3 py-6">
+        <DialogContent className="sm:max-w-[300px] text-center p-6 rounded-none">
+          <DialogTitle className="text-sm font-bold text-primary mb-4">دعم المبدع</DialogTitle>
+          <div className="grid grid-cols-3 gap-3">
             {[1, 5, 10].map((amt) => (
-              <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-xl" onClick={() => handleSupport(amt)}>
+              <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-none" onClick={() => handleSupport(amt)}>
                 <span className="text-sm font-bold">{amt}</span>
                 <TimgadCoin size={14} />
               </Button>
             ))}
           </div>
-          <p className="text-[9px] text-muted-foreground italic">سيتم خصم المبلغ من رصيدك فوراً.</p>
+          <p className="text-[9px] text-muted-foreground italic mt-4">سيتم خصم المبلغ من رصيدك فوراً.</p>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
         <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[95vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col [&>button]:hidden">
-          <DialogTitle className="sr-only">التفاصيل والتعليقات</DialogTitle>
+          <DialogTitle className="sr-only">تفاصيل المنشور والتعليقات</DialogTitle>
           <CommentsDialog postId={post.id} postAuthorId={post.authorId} post={post} onClose={() => setIsCommentsOpen(false)} currentUserProfile={currentUserProfile} />
         </DialogContent>
       </Dialog>

@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, BadgeCheck, Coins, Trophy, Wallet } from 'lucide-react';
+import { ChevronRight, BadgeCheck, Coins, Trophy, Wallet, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
@@ -12,10 +12,10 @@ import { doc } from 'firebase/firestore';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 
 const PACKAGES = [
-  { id: "pkg_1", amount: 100, price: "1.00", label: "حقيبة البداية", color: "bg-blue-500/20 text-blue-300" },
-  { id: "pkg_2", amount: 500, price: "4.00", label: "صندوق النشاط", color: "bg-green-500/20 text-green-300" },
-  { id: "pkg_3", amount: 1000, price: "7.00", label: "خزانة التميز", color: "bg-purple-500/20 text-purple-300" },
-  { id: "pkg_4", amount: 5000, price: "30.00", label: "كنز الريادة", color: "bg-amber-500/20 text-[#FBBF24]" }
+  { id: "pkg_1", amount: 100, price: "1 TRX", label: "حقيبة البداية" },
+  { id: "pkg_2", amount: 500, price: "5 TRX", label: "صندوق النشاط" },
+  { id: "pkg_3", amount: 1000, price: "10 TRX", label: "خزانة التميز" },
+  { id: "pkg_4", amount: 5000, price: "50 TRX", label: "كنز الريادة" }
 ];
 
 export default function WalletPage() {
@@ -33,8 +33,8 @@ export default function WalletPage() {
   const { data: profile } = useDoc(userRef);
 
   const handlePackageSelect = (pkg: any) => {
-    // التحويل إلى صفحة الدعم مع تمرير معلومات الباقة
-    router.push(`/support?package=${encodeURIComponent(pkg.label)}&amount=${pkg.amount}`);
+    // توجيه لصفحة الدعم مع تفاصيل الباقة
+    router.push(`/support?package=${encodeURIComponent(pkg.label)}&amount=${pkg.amount}&price=${encodeURIComponent(pkg.price)}`);
   };
 
   return (
@@ -48,7 +48,7 @@ export default function WalletPage() {
           </Button>
           <div className="flex flex-col flex-1">
             <h1 className="text-sm font-bold text-[#FBBF24] uppercase tracking-tighter">خزانة تيمقاد الملكية {isInfiniteAdmin && '∞'}</h1>
-            <span className="text-[8px] text-[#FBBF24]/60 uppercase tracking-[0.2em] font-medium">نظام شحن العملات اليدوي</span>
+            <span className="text-[8px] text-[#FBBF24]/60 uppercase tracking-[0.2em] font-medium">نظام شحن العملات اليدوي (100 عملة = 1 TRX)</span>
           </div>
         </div>
 
@@ -78,7 +78,7 @@ export default function WalletPage() {
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
                 <p className="text-3xl font-bold text-[#F3E5AB]">
-                  {profile?.verificationType === 'gold' ? 'نخبة' : profile?.verificationType === 'blue' ? 'موثق' : 'مستكشف'}
+                  {profile?.verificationType === 'gold' ? 'نخبة تيمقاد' : profile?.verificationType === 'blue' ? 'عضو موثق' : 'مستكشف'}
                 </p>
               </CardContent>
             </Card>
@@ -87,24 +87,32 @@ export default function WalletPage() {
           <section className="w-full text-right space-y-6 pt-6">
             <div className="flex items-center justify-end gap-3 text-[#FBBF24] border-r-4 border-[#FBBF24] pr-3">
               <Wallet size={18} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">باقات الكنوز (فاست باي)</h3>
+              <h3 className="font-bold text-md uppercase tracking-tighter">باقات الشحن عبر فاست باي</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {PACKAGES.map((pkg) => (
-                <Card key={pkg.id} className="bg-[#451A03] border-[#B45309]/30 rounded-none overflow-hidden hover:border-[#FBBF24] transition-colors">
+                <Card key={pkg.id} className="bg-[#451A03] border-[#B45309]/30 rounded-none overflow-hidden hover:border-[#FBBF24] transition-colors group">
                   <CardContent className="p-6 flex flex-col items-center gap-4">
-                    <TimgadCoin size={48} />
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-[#FBBF24]">{pkg.amount} ذهبية</p>
-                      <p className="text-[10px] text-[#FBBF24] mt-1">السعر التقريبي: {pkg.price} USD</p>
+                    <div className="relative">
+                      <TimgadCoin size={48} className="group-hover:scale-110 transition-transform" />
+                      <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-[7px] px-1 rounded-full font-bold">SALE</div>
                     </div>
-                    <Button className="w-full rounded-none font-bold h-9 bg-primary text-white text-[10px]" onClick={() => handlePackageSelect(pkg)}>شراء الآن</Button>
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-[#FBBF24]">{pkg.amount} عملة</p>
+                      <p className="text-[10px] text-[#FBBF24]/60 mt-1">القيمة: {pkg.price} (TRX)</p>
+                    </div>
+                    <Button className="w-full rounded-none font-bold h-9 bg-primary text-white text-[10px] hover:bg-primary/90" onClick={() => handlePackageSelect(pkg)}>اطلب الباقة الآن</Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </section>
+
+          <div className="flex items-center gap-2 py-10 opacity-40">
+            <ShieldCheck size={14} />
+            <span className="text-[8px] font-bold uppercase tracking-widest">جميع المعاملات تتم يدوياً لضمان الأمان</span>
+          </div>
         </div>
       </main>
     </div>
