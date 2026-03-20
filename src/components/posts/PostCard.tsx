@@ -133,25 +133,9 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     toast({ description: "تم حذف المنشور." });
   };
 
-  const handlePromote = (e: React.MouseEvent) => {
+  const handlePromotePlaceholder = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isVerifiedAuthor && !isAdmin) return;
-    if (!isAdmin && (currentUserProfile?.coins || 0) < 5) {
-      toast({ variant: "destructive", description: "تحتاج إلى 5 عملات للترويج." });
-      return;
-    }
-    if (!isAdmin) {
-      updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-5) });
-      addDocumentNonBlocking(collection(firestore!, 'platform_revenue'), {
-        type: 'promote_fee',
-        amount: 5,
-        fromUserId: user!.uid,
-        postId: post.id,
-        createdAt: serverTimestamp()
-      });
-    }
-    updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { promoted: true });
-    toast({ title: "منشور مروج! 🚀", description: "سيظهر منشورك في مقدمة التغذية الإخبارية." });
+    toast({ title: "قريباً جداً! 🚀", description: "ميزة ترويج المنشورات ستتوفر في التحديث القادم." });
   };
 
   const handleSupport = (amount: number) => {
@@ -162,14 +146,12 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     }
     if (!firestore || !user) return;
     
-    // عمولة المنصة 10%
     const platformFee = amount * 0.1;
     const netAmount = amount - platformFee;
 
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amount) });
     updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(netAmount) });
     
-    // تسجيل الأرباح للمنصة
     addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
       type: 'support_fee',
       amount: platformFee,
@@ -212,7 +194,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground"><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40 rounded-none">
                 <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer" onClick={handleReport}><AlertTriangle size={14} /> إبلاغ</DropdownMenuItem>
-                {(isVerifiedAuthor || isAdmin) && !post.promoted && <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer text-primary" onClick={handlePromote}><Rocket size={14} /> ترويج (5 عملات)</DropdownMenuItem>}
+                {(isVerifiedAuthor || isAdmin) && !post.promoted && <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer text-primary opacity-60" onClick={handlePromotePlaceholder}><Rocket size={14} /> ترويج (قريباً)</DropdownMenuItem>}
                 {(isOwner || isAdmin) && <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer text-destructive" onClick={handleDelete}><Trash2 size={14} /> حذف المنشور</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>

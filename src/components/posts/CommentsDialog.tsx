@@ -34,7 +34,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   }, [firestore, postAuthorId]);
   const { data: postAuthorProfile } = useDoc(postAuthorProfileRef);
 
-  // جلب إعلان المنشور المخصص (إن وجد)
   const postAdQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
     return query(
@@ -59,6 +58,17 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const handleAddComment = () => {
     if (isAnonymous) { router.push('/login'); return; }
     if (!commentText.trim() || !user || !firestore) return;
+
+    // منع الروابط الخارجية
+    const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+/gi;
+    if (urlRegex.test(commentText)) {
+      return toast({ 
+        variant: "destructive", 
+        title: "مخالفة السياسة", 
+        description: "عذراً، يمنع وضع الروابط الخارجية في التعليقات." 
+      });
+    }
+
     const content = commentText.trim();
     setCommentText('');
     addDocumentNonBlocking(collection(firestore, 'posts', postId, 'comments'), {
@@ -167,7 +177,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
         </div>
 
-        {/* مساحة إعلان الإدارة المخصصة للمنشور */}
         {activeAd && (
           <div 
             className="m-4 p-4 bg-primary/5 border border-primary/10 rounded-lg relative group cursor-pointer overflow-hidden"

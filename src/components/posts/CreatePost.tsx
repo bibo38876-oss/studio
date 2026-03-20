@@ -74,6 +74,17 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     if (isPosting) return;
     if (!content.trim() && mediaUrls.length === 0) return;
     if (content.length > charLimit) return toast({ variant: "destructive", description: `تجاوزت الحد (${charLimit} حرف).` });
+    
+    // منع الروابط الخارجية
+    const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+/gi;
+    if (urlRegex.test(content)) {
+      return toast({ 
+        variant: "destructive", 
+        title: "مخالفة السياسة", 
+        description: "عذراً، يمنع وضع الروابط الخارجية في المنشورات للحفاظ على أمان المجتمع." 
+      });
+    }
+
     if (!db || !user) return;
 
     setIsPosting(true);
