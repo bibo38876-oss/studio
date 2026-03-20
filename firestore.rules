@@ -41,6 +41,7 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.userId) || isAdmin();
       allow create: if isSignedIn();
       allow delete: if isAdmin();
+      allow update: if isAdmin();
     }
 
     match /posts/{postId} {
@@ -96,6 +97,10 @@ service cloud.firestore {
       match /supporters/{targetUserId} {
         allow read: if isSignedIn();
         allow write: if isSignedIn();
+      }
+      
+      match /groupInvites/{inviteId} {
+        allow read, write: if isOwner(userId);
       }
     }
 
