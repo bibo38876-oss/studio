@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info } from 'lucide-react';
+import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Sparkles, LayoutGrid } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -145,8 +145,31 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        <div className="space-y-2">
+          <h2 className="text-[10px] font-bold text-primary uppercase px-1 mb-1">فرص تيمقاد</h2>
+          <Link href="/ads">
+            <Card className="border-none shadow-sm rounded-none bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group overflow-hidden border-r-4 border-r-primary">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                    <LayoutGrid size={18} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-primary">سوق القصص والأرباح</span>
+                    <span className="text-[9px] text-muted-foreground">شاهد الإعلانات وحقق أرباحاً حقيقية</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-green-500 text-[8px] h-4">جديد</Badge>
+                  <ChevronLeft size={14} className="text-primary/30" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
         {isAdmin && (
-          <div className="space-y-2">
+          <div className="space-y-2 pt-2">
             <h2 className="text-[10px] font-bold text-accent uppercase px-1 mb-1">لوحة التحكم</h2>
             <Link href="/admin">
               <Card className="border-none shadow-sm rounded-none bg-accent/5 hover:bg-accent/10 transition-colors cursor-pointer group overflow-hidden border-r-4 border-r-accent">
@@ -257,28 +280,6 @@ export default function SettingsPage() {
               </Card>
             </Link>
           </div>
-
-          <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mt-4 mb-1">عام</h2>
-          {[
-            { icon: <Bell size={16} />, label: 'التنبيهات', desc: 'إدارة الإشعارات' },
-            { icon: <HelpCircle size={16} />, label: 'المساعدة', desc: 'مركز الدعم' },
-          ].map((option, i) => (
-            <Card key={i} className="border-none shadow-sm rounded-none bg-card opacity-60 cursor-not-allowed group">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">{option.icon}</div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-primary">{option.label}</span>
-                      <Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 border-primary/20 text-primary/70 rounded-none">قيد التطوير</Badge>
-                    </div>
-                    <span className="text-[9px] text-muted-foreground">{option.desc}</span>
-                  </div>
-                </div>
-                <ChevronLeft size={14} className="text-muted-foreground/30" />
-              </CardContent>
-            </Card>
-          ))}
         </div>
 
         <Card className="border-none shadow-sm rounded-none bg-card mt-8 hover:bg-red-50 transition-colors cursor-pointer border-r-4 border-r-destructive overflow-hidden">

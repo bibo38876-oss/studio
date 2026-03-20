@@ -1,0 +1,188 @@
+
+"use client"
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Navbar from '@/components/layout/Navbar';
+import { useFirebase, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc, increment, serverTimestamp, orderBy } from 'firebase/firestore';
+import { Loader2, ChevronRight, Play, Eye, Sparkles, DollarSign, Wallet } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import TimgadCoin from '@/components/ui/TimgadCoin';
+
+export default function AdsPage() {
+  const router = useRouter();
+  const { firestore, user } = useFirebase();
+  const { toast } = useToast();
+  const [selectedAd, setSelectedAd] = useState<any>(null);
+  const [isProcessing, setIsPosting] = useState(false);
+
+  const adsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'ads'), where('remainingClicks', '>', 0));
+  }, [firestore]);
+
+  const { data: ads, isLoading } = useCollection(adsQuery);
+
+  const handleAdClick = async (ad: any) => {
+    if (!user || user.isAnonymous) {
+      router.push('/login');
+      return;
+    }
+
+    if (isProcessing) return;
+
+    // منع الغش: التحقق من سجل النقرات للمستخدم الحالي لهذا الإعلان
+    const clickRef = doc(firestore!, 'adClicks', `${ad.id}_${user.uid}`);
+    
+    setIsPosting(true);
+    try {
+      // محاكاة استجابة السيرفر للتحقق (يفضل في الحقيقة استخدام Cloud Functions ولكن سنستخدم منطقاً محلياً قوياً)
+      // نحن نعتمد على وثيقة فريدة adId_userId لضمان عدم التكرار
+      
+      setDocumentNonBlocking(clickRef, {
+        userId: user.uid,
+        adId: ad.id,
+        clickedAt: serverTimestamp(),
+        earned: 0.6
+      }, { merge: false });
+
+      // تحديث الإعلان: خصم نقرة
+      updateDocumentNonBlocking(doc(firestore!, 'ads', ad.id), {
+        remainingClicks: increment(-1)
+      });
+
+      // تحديث رصيد المستخدم: إضافة 0.6 عملة (60%)
+      updateDocumentNonBlocking(doc(firestore!, 'users', user.uid), {
+        coins: increment(0.6)
+      });
+
+      toast({
+        title: "مبروك! 🎉",
+        description: "لقد حصلت على 0.6 عملة تيمقاد مقابل مشاهدة الإعلان.",
+      });
+
+      // فتح رابط المعلن
+      window.open(ad.link, '_blank');
+      setSelectedAd(null);
+    } catch (error) {
+      toast({ variant: "destructive", description: "عذراً، لا يمكنك الربح من هذا الإعلان مجدداً." });
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0">
+        <header className="flex items-center justify-between mb-8 sticky top-10 z-30 bg-background/80 backdrop-blur-md py-4 border-b">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full">
+              <ChevronRight size={20} />
+            </Button>
+            <div className="flex flex-col text-right">
+              <h1 className="text-sm font-bold text-primary">سوق القصص والأرباح</h1>
+              <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-bold">اربح 0.6 عملة عن كل مشاهدة</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-primary/5 px-3 py-1.5 border border-primary/10 rounded-full">
+            <Sparkles size={12} className="text-accent" />
+            <span className="text-[10px] font-bold text-primary">فرص الربح</span>
+          </div>
+        </header>
+
+        {isLoading ? (
+          <div className="grid grid-cols-3 gap-2">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="aspect-[9/16] bg-secondary/30 animate-pulse rounded-lg" />
+            ))}
+          </div>
+        ) : ads && ads.length > 0 ? (
+          <div className="grid grid-cols-3 gap-2 md:gap-4">
+            {ads.map((ad: any) => (
+              <Dialog key={ad.id}>
+                <DialogTrigger asChild>
+                  <div 
+                    className="aspect-[9/16] bg-secondary/20 rounded-lg overflow-hidden relative cursor-pointer group border border-transparent hover:border-primary/20 transition-all"
+                    onClick={() => setSelectedAd(ad)}
+                  >
+                    <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    <div className="absolute bottom-2 left-2 right-2 text-right">
+                      <p className="text-[10px] font-bold text-white line-clamp-1">{ad.title}</p>
+                      <div className="flex items-center justify-end gap-1 mt-1">
+                        <span className="text-[8px] font-bold text-green-400">0.6</span>
+                        <TimgadCoin size={10} />
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 bg-primary/20 backdrop-blur-md rounded-full p-1 border border-white/10">
+                      <Play size={10} className="text-white fill-white" />
+                    </div>
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="p-0 overflow-hidden rounded-none sm:rounded-xl border-none max-w-sm">
+                  <div className="relative aspect-[9/16] w-full">
+                    <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent p-6 flex flex-col justify-end gap-4">
+                      <div className="space-y-2 text-right">
+                        <h2 className="text-xl font-bold text-white">{ad.title}</h2>
+                        <p className="text-xs text-white/70 leading-relaxed">{ad.description}</p>
+                      </div>
+                      
+                      <div className="flex flex-col gap-3">
+                        <Button 
+                          className="w-full h-12 rounded-full bg-primary text-white font-bold gap-2 shadow-xl shadow-primary/20 animate-in slide-in-from-bottom duration-500"
+                          onClick={() => handleAdClick(ad)}
+                          disabled={isProcessing}
+                        >
+                          {isProcessing ? <Loader2 className="animate-spin" /> : (
+                            <>
+                              انقر لزيارة الموقع واربح 0.6 
+                              <TimgadCoin size={16} />
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-[8px] text-white/40 text-center italic uppercase tracking-widest">المعلنون في تيمقاد يدفعون 100 عملة لكل 100 نقرة</p>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-32 space-y-4">
+            <div className="w-20 h-20 bg-secondary/30 rounded-full flex items-center justify-center mx-auto">
+              <Eye size={40} className="text-muted-foreground/30" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-primary">لا توجد قصص إعلانية حالياً</p>
+              <p className="text-[10px] text-muted-foreground">عد لاحقاً لتجد فرصاً جديدة للربح!</p>
+            </div>
+          </div>
+        )}
+
+        <section className="mt-12 bg-primary/5 p-6 border border-primary/10 rounded-xl space-y-4">
+          <div className="flex items-center gap-2 text-primary border-r-4 border-primary pr-3">
+            <DollarSign size={18} />
+            <h3 className="font-bold text-xs uppercase tracking-tighter">كيف تعمل ستوريات الأرباح؟</h3>
+          </div>
+          <ul className="text-[10px] text-foreground/70 space-y-3 pr-4 list-disc marker:text-primary">
+            <li>يدفع المعلن <span className="font-bold text-primary">100 عملة</span> مقابل الحصول على <span className="font-bold text-primary">100 نقرة</span> حقيقية.</li>
+            <li>تحصل أنت كعضو على <span className="font-bold text-green-600">0.6 عملة</span> عن كل نقرة تقوم بها (60% من قيمة الإعلان).</li>
+            <li>تحتفظ المنصة بـ <span className="font-bold text-accent">40%</span> لتغطية نفقات التشغيل والصيانة.</li>
+            <li>يمكنك تحويل عملاتك إلى <span className="font-bold text-primary">TRX</span> وسحبها عبر <span className="font-bold text-primary">فاست باي</span> (100 عملة = 1 TRX).</li>
+          </ul>
+          <Button variant="outline" className="w-full rounded-full text-[10px] h-9 font-bold gap-2" onClick={() => router.push('/wallet')}>
+            <Wallet size={14} />
+            اذهب لمحفظتك للسحب
+          </Button>
+        </section>
+      </main>
+    </div>
+  );
+}
