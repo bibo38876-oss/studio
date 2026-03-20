@@ -22,6 +22,11 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /post_ads/{adId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     match /admin_banners/{bannerId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
