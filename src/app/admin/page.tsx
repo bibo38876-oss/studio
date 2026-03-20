@@ -113,6 +113,7 @@ export default function AdminPage() {
       const authorSnap = await getDoc(doc(firestore, 'users', authorId));
       const authorData = authorSnap.data();
       
+      // فحص الأهلية: 500 متابع + توثيق
       const isVerified = authorData?.verificationType === 'blue' || authorData?.verificationType === 'gold';
       const hasMinFollowers = (authorData?.followerIds?.length || 0) >= 500;
       const isEligible = isVerified && hasMinFollowers;

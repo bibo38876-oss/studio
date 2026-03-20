@@ -32,7 +32,7 @@ const PACKAGES = [
 ];
 
 const VERIFICATION_COST = 500;
-const CONVERSION_RATE = 100; // 100 coins = 1 TRX
+const CONVERSION_RATE = 100; 
 const MIN_WITHDRAW_TRX = 20; 
 const CONVERSION_FEE_PERCENT = 3;
 
@@ -69,6 +69,8 @@ export default function WalletPage() {
   }, [withdrawAmount]);
 
   const handlePackageSelect = (pkg: any) => {
+    // استخدام window.location.href للتوجيه المباشر كخيار دفع سريع إذا توفر الرابط
+    // حالياً نوجه لصفحة الدعم مع البارامترات لتسجيل الطلب يدوياً كما هو متفق عليه
     router.push(`/support?package=${encodeURIComponent(pkg.label)}&amount=${pkg.amount}&price=${encodeURIComponent(pkg.price)}`);
   };
 
@@ -91,13 +93,11 @@ export default function WalletPage() {
 
     setIsPurchasingVerification(true);
     try {
-      // 1. خصم العملات وتحديث نوع التوثيق
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
         coins: increment(-VERIFICATION_COST),
         verificationType: 'blue'
       });
 
-      // 2. تسجيل الإيراد للمنصة
       addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
         type: 'verification_purchase',
         amount: VERIFICATION_COST,
@@ -105,10 +105,9 @@ export default function WalletPage() {
         createdAt: serverTimestamp()
       });
 
-      // 3. إرسال تنبيه للعضو
       addDocumentNonBlocking(collection(firestore, 'users', user.uid, 'notifications'), {
         type: 'system',
-        message: "🎉 مبروك! تم توثيق حسابك بنجاح. يمكنك الآن الاستفادة من ميزات المبدعين الموثقين.",
+        message: "🎉 مبروك! تم توثيق حسابك بنجاح. يمكنك الآن الاستفادة من ميزات المبدعين الموثقين وتحقيق الدخل عند وصولك لـ 500 متابع.",
         createdAt: serverTimestamp(),
         read: false
       });
@@ -156,18 +155,10 @@ export default function WalletPage() {
         createdAt: serverTimestamp()
       });
 
-      // تسجيل الطلب في دردشة الدعم أيضاً للمتابعة
-      await addDocumentNonBlocking(collection(firestore!, 'support_chats', user!.uid, 'messages'), {
-        content: `طلب سحب أرباح: ${amount} عملة (${calculatedTRX.raw} TRX).\nرسوم التحويل (3%): ${calculatedTRX.fee.toFixed(2)} TRX.\nالصافي المستحق: ${calculatedTRX.final.toFixed(2)} TRX.\nالعنوان: ${fastPayAddress.trim()}`,
-        senderId: 'system',
-        senderName: 'نظام السحب',
-        isAdmin: true,
-        createdAt: serverTimestamp()
-      });
-
+      // توجيه المستخدم لرسالة تأكيد في الدعم
       toast({
         title: "تم استلام طلبك! ⏳",
-        description: `سيتم مراجعة الطلب وتحويل ${calculatedTRX.final.toFixed(2)} TRX خلال 4-12 ساعة.`,
+        description: `سيتم مراجعة الطلب وتحويل ${calculatedTRX.final.toFixed(2)} TRX قريباً.`,
       });
       setIsWithdrawOpen(false);
       setWithdrawAmount('');
@@ -191,7 +182,7 @@ export default function WalletPage() {
             </Button>
             <div className="flex flex-col">
               <h1 className="text-sm font-bold text-[#FBBF24] uppercase tracking-tighter">خزانة تيمقاد الملكية</h1>
-              <span className="text-[8px] text-[#FBBF24]/60 uppercase tracking-[0.2em] font-medium">نظام الشحن والسحب اليدوي</span>
+              <span className="text-[8px] text-[#FBBF24]/60 uppercase tracking-[0.2em] font-medium">إدارة الأصول الرقمية</span>
             </div>
           </div>
           
@@ -199,29 +190,29 @@ export default function WalletPage() {
             <DialogTrigger asChild>
               <Button variant="outline" className="h-8 rounded-full border-[#FBBF24]/30 text-[#FBBF24] hover:bg-[#B45309] text-[10px] font-bold gap-2">
                 <ArrowDownToLine size={14} />
-                سحب الأرباح (Min: 20 TRX)
+                سحب (Min: 20 TRX)
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#2D1606] text-[#F3E5AB] border-[#B45309]">
               <DialogHeader>
-                <DialogTitle className="text-sm font-bold text-[#FBBF24]">سحب أرباحك إلى TRX</DialogTitle>
+                <DialogTitle className="text-sm font-bold text-[#FBBF24]">سحب الأرباح إلى TRX</DialogTitle>
                 <DialogDescription className="text-[10px] text-[#F3E5AB]/60">100 عملة = 1 TRX | رسوم تحويل 3%</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-1 text-right">
-                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">كمية العملات (الحد الأدنى: 2000)</label>
+                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">كمية العملات (Min: 2000)</label>
                   <Input 
                     type="number" 
-                    placeholder="مثال: 2000" 
+                    placeholder="2000" 
                     className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right"
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1 text-right">
-                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">عنوان محفظة فاست باي (TRX)</label>
+                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">عنوان محفظة TRX</label>
                   <Input 
-                    placeholder="أدخل عنوان TRX الخاص بك" 
+                    placeholder="عنوان المحفظة..." 
                     className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right"
                     value={fastPayAddress}
                     onChange={(e) => setFastPayAddress(e.target.value)}
@@ -232,23 +223,18 @@ export default function WalletPage() {
                   <div className="bg-primary/10 p-3 border border-primary/20 space-y-2">
                     <div className="flex justify-between items-center text-[10px] font-bold">
                       <span className="text-[#FBBF24]">{calculatedTRX.raw.toFixed(2)} TRX</span>
-                      <span className="text-[#F3E5AB]/60">القيمة الإجمالية:</span>
+                      <span className="text-[#F3E5AB]/60">القيمة:</span>
                     </div>
                     <div className="flex justify-between items-center text-[10px] font-bold">
                       <span className="text-red-400">-{calculatedTRX.fee.toFixed(2)} TRX</span>
-                      <span className="text-[#F3E5AB]/60">رسوم التحويل (3%):</span>
+                      <span className="text-[#F3E5AB]/60">الرسوم (3%):</span>
                     </div>
                     <div className="border-t border-white/10 pt-2 flex justify-between items-center text-xs font-bold">
                       <span className="text-green-400">{calculatedTRX.final.toFixed(2)} TRX</span>
-                      <span className="text-[#FBBF24]">الصافي الذي ستتلقاه:</span>
+                      <span className="text-[#FBBF24]">الصافي المستلم:</span>
                     </div>
                   </div>
                 )}
-
-                <div className="bg-[#451A03] p-3 rounded-lg border border-[#B45309]/30 flex gap-2 items-start">
-                  <AlertCircle size={14} className="text-[#FBBF24] shrink-0 mt-0.5" />
-                  <p className="text-[9px] leading-relaxed italic text-right">تبدأ مراجعة الطلبات فوراً. يرجى التأكد من صحة العنوان، حيث لا يمكن استرداد العملات بعد التحويل.</p>
-                </div>
               </div>
               <DialogFooter>
                 <Button 
@@ -256,7 +242,7 @@ export default function WalletPage() {
                   onClick={handleWithdrawRequest}
                   disabled={isWithdrawing}
                 >
-                  {isWithdrawing ? <Loader2 className="animate-spin" /> : "تأكيد طلب السحب"}
+                  {isWithdrawing ? <Loader2 className="animate-spin" /> : "تأكيد السحب"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -274,7 +260,7 @@ export default function WalletPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
             <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-[#FBBF24]">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-[#FBBF24]">رصيد الخزانة</CardTitle>
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-[#FBBF24]">الرصيد الحالي</CardTitle>
                 <Coins size={14} className="text-[#FBBF24]" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
@@ -284,7 +270,7 @@ export default function WalletPage() {
 
             <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-blue-500">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-400">رتبة العضوية</CardTitle>
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-400">مرتبة الحساب</CardTitle>
                 <Trophy size={14} className="text-blue-400" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right">
@@ -298,23 +284,22 @@ export default function WalletPage() {
             </Card>
           </div>
 
-          {/* نظام شراء التوثيق الآلي */}
           {(!profile?.verificationType || profile?.verificationType === 'none') && (
             <Card className="w-full bg-blue-500/10 border border-blue-500/30 rounded-none overflow-hidden group">
               <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-4 text-right">
-                  <div className="h-14 w-14 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                  <div className="h-14 w-14 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shrink-0">
                     <BadgeCheck size={32} className="text-white" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-md font-bold text-blue-400">احصل على الشارة الزرقاء</h3>
+                    <h3 className="text-md font-bold text-blue-400">وثق حسابك الآن</h3>
                     <p className="text-[10px] text-[#F3E5AB]/60 leading-relaxed">
-                      وثق حسابك فوراً بـ 500 عملة لتفعيل ميزات الربح من المنشورات وبناء موثوقية عالية في مجتمع تيمقاد.
+                      احصل على الشارة الزرقاء بـ 500 عملة لتفعيل الربح من منشوراتك (يتطلب 500 متابع).
                     </p>
                   </div>
                 </div>
                 <Button 
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 px-8 rounded-full shadow-xl shadow-blue-600/20 shrink-0 gap-2 transition-all active:scale-95"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 px-8 rounded-full shadow-xl shrink-0 gap-2"
                   onClick={handlePurchaseVerification}
                   disabled={isPurchasingVerification || (profile?.coins || 0) < VERIFICATION_COST}
                 >
@@ -328,7 +313,7 @@ export default function WalletPage() {
           <section className="w-full text-right space-y-6 pt-6">
             <div className="flex items-center justify-end gap-3 text-[#FBBF24] border-r-4 border-[#FBBF24] pr-3">
               <Wallet size={18} />
-              <h3 className="font-bold text-md uppercase tracking-tighter">باقات الشحن عبر فاست باي</h3>
+              <h3 className="font-bold text-md uppercase tracking-tighter">باقات الشحن السريع</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -337,13 +322,12 @@ export default function WalletPage() {
                   <CardContent className="p-6 flex flex-col items-center gap-4">
                     <div className="relative">
                       <TimgadCoin size={48} className="group-hover:scale-110 transition-transform" />
-                      <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-[7px] px-1 rounded-full font-bold">SALE</div>
                     </div>
                     <div className="text-center">
                       <p className="text-xl font-bold text-[#FBBF24]">{pkg.amount} عملة</p>
-                      <p className="text-[10px] text-[#FBBF24]/60 mt-1">القيمة: {pkg.price} (TRX)</p>
+                      <p className="text-[10px] text-[#FBBF24]/60 mt-1">السعر: {pkg.price} (TRX)</p>
                     </div>
-                    <Button className="w-full rounded-none font-bold h-9 bg-primary text-white text-[10px] hover:bg-primary/90" onClick={() => handlePackageSelect(pkg)}>اطلب الباقة الآن</Button>
+                    <Button className="w-full rounded-none font-bold h-9 bg-primary text-white text-[10px] hover:bg-primary/90" onClick={() => handlePackageSelect(pkg)}>اطلب وشحن الآن</Button>
                   </CardContent>
                 </Card>
               ))}
@@ -352,7 +336,7 @@ export default function WalletPage() {
 
           <div className="flex items-center gap-2 py-10 opacity-40">
             <ShieldCheck size={14} />
-            <span className="text-[8px] font-bold uppercase tracking-widest">جميع المعاملات تتم يدوياً لضمان الأمان</span>
+            <span className="text-[8px] font-bold uppercase tracking-widest">Powered by Timgad Royal Treasury Protocols</span>
           </div>
         </div>
       </main>

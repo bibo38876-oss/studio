@@ -9,7 +9,7 @@ import { collection, query, orderBy, limit, serverTimestamp, doc } from 'firebas
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, ShieldCheck, ImageIcon, CheckCircle2 } from 'lucide-react';
+import { Loader2, Send, ChevronRight, ShieldCheck, ImageIcon, CheckCircle2, Wallet } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +30,8 @@ function SupportContent() {
   const initialAmount = searchParams.get('amount');
   const initialPrice = searchParams.get('price');
 
+  const WALLET_ADDRESS = "TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2";
+
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -47,7 +49,6 @@ function SupportContent() {
     }
   }, [messages]);
 
-  // إرسال طلب شراء تلقائي عند الدخول من صفحة المحفظة
   useEffect(() => {
     if (initialPackage && user && messages && messages.length === 0) {
       handleSendMessage(`أريد شراء باقة: ${initialPackage} (${initialAmount} عملة ذهبية) بسعر ${initialPrice}`);
@@ -69,11 +70,10 @@ function SupportContent() {
       createdAt: serverTimestamp(),
     });
 
-    // الرد الآلي من الإدارة في حال كان الطلب يتعلق بالشراء
     if (!isAuto && (content.includes('شراء') || content.includes('باقة'))) {
       setTimeout(() => {
         addDocumentNonBlocking(collection(firestore, 'support_chats', user.uid, 'messages'), {
-          content: `أهلاً بك في مركز دعم تيمقاد! 🏺\n\nيرجى تحويل مبلغ الباقة المطلوبة (100 عملة = 1 TRX) عبر محفظة "فاست باي" (Fast Pay) باستخدام عملة TRX إلى العنوان التالي:\n\nTRX Address: TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2\n\nبعد التحويل، يرجى رفع صورة واضحة لإثبات الدفع (الوصل) هنا في هذه الدردشة.\n\nسيتم شحن عملاتك في غضون 4 ساعات كحد أقصى من استلام الإثبات. شكراً لصبركم!`,
+          content: `أهلاً بك! لإتمام العملية، يرجى تحويل مبلغ TRX إلى العنوان التالي عبر فاست باي:\n\n${WALLET_ADDRESS}\n\nبعد التحويل، ارفع صورة الوصل هنا.`,
           senderId: 'admin_system',
           senderName: 'إدارة تيمقاد',
           senderAvatar: '',
@@ -100,6 +100,13 @@ function SupportContent() {
     }
   };
 
+  const handleDirectPay = () => {
+    // استخدام window.location.href لفتح المحفظة مباشرة أو رابط الدفع
+    // يمكن استبداله برابط TronLink أو أي بوابة دفع TRX
+    window.location.href = `tron:${WALLET_ADDRESS}?amount=${initialPrice?.split(' ')[0] || 0}`;
+    toast({ description: "جاري محاولة فتح تطبيق المحفظة..." });
+  };
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   return (
@@ -115,14 +122,16 @@ function SupportContent() {
             </div>
             <div className="flex flex-col text-right">
               <span className="text-xs font-bold text-white leading-tight">مركز دعم تيمقاد</span>
-              <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-[8px] text-white/70 font-bold uppercase tracking-widest">إدارة المنصة</span>
-              </div>
+              <span className="text-[8px] text-white/70 font-bold uppercase tracking-widest leading-none">الإدارة الرقمية</span>
             </div>
           </div>
         </div>
-        <ShieldCheck size={20} className="text-white/40" />
+        {initialPackage && (
+          <Button variant="outline" size="sm" className="h-7 text-[9px] bg-white/10 border-white/20 text-white hover:bg-white/20 gap-1.5" onClick={handleDirectPay}>
+            <Wallet size={12} />
+            دفع سريع
+          </Button>
+        )}
       </div>
 
       <main className="flex-1 overflow-y-auto pt-16 pb-20 px-4 container max-w-xl mx-auto flex flex-col gap-4 scroll-smooth" ref={scrollRef}>
@@ -137,7 +146,7 @@ function SupportContent() {
                   </div>
                 )}
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  {!isMe && <span className="text-[8px] font-bold text-primary mb-1 ml-1">فريق الإدارة</span>}
+                  {!isMe && <span className="text-[8px] font-bold text-primary mb-1 ml-1">الدعم الفني</span>}
                   <div className={`px-4 py-2 text-xs leading-relaxed shadow-sm break-words whitespace-pre-wrap ${isMe ? 'bg-primary text-white rounded-l-2xl rounded-tr-2xl' : 'bg-secondary/50 border text-foreground rounded-r-2xl rounded-tl-2xl'}`}>
                     {msg.content}
                     {msg.mediaUrl && (
@@ -154,11 +163,9 @@ function SupportContent() {
             );
           })
         ) : (
-          <div className="text-center py-20 space-y-4">
-            <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center mx-auto">
-              <ShieldCheck size={32} className="text-primary/20" />
-            </div>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">تحدث مع الإدارة حول مشترياتك (100 عملة = 1 TRX)</p>
+          <div className="text-center py-20 opacity-40">
+            <ShieldCheck size={32} className="mx-auto mb-2" />
+            <p className="text-[10px] font-bold uppercase tracking-widest">تحدث مع الإدارة حول استفساراتك</p>
           </div>
         )}
       </main>
@@ -172,7 +179,7 @@ function SupportContent() {
           
           <div className="flex-1 bg-secondary/50 rounded-full px-4 h-10 flex items-center">
             <Input 
-              placeholder="اكتب رسالتك للإدارة..." 
+              placeholder="اكتب رسالة..." 
               className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
