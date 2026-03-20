@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { cn } from '@/lib/utils';
+import AadsUnit from '@/components/ads/AadsUnit';
 
 export default function AdsPage() {
   const router = useRouter();
@@ -171,7 +172,6 @@ export default function AdsPage() {
       });
 
       toast({ title: "مبروك! 🎉", description: "حصلت على 0.6 عملة مقابل مشاهدة الإعلان." });
-      // استخدام التوجيه المباشر للمعلن
       window.location.href = ad.link;
     } catch (error) {
       toast({ variant: "destructive", description: "لا يمكنك الربح من هذا الإعلان مجدداً." });
@@ -185,121 +185,126 @@ export default function AdsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0">
-        <header className="flex items-center justify-between mb-8 sticky top-10 z-30 bg-background/80 backdrop-blur-md py-4 border-b">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full">
-              <ChevronRight size={20} />
-            </Button>
-            <div className="flex flex-col text-right">
-              <h1 className="text-sm font-bold text-primary">سوق القصص والأرباح</h1>
-              <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-bold">اربح 0.6 عملة عن كل مشاهدة</span>
+      <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0 flex flex-col md:flex-row gap-6">
+        <div className="flex-1">
+          <header className="flex items-center justify-between mb-8 sticky top-10 z-30 bg-background/80 backdrop-blur-md py-4 border-b">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full">
+                <ChevronRight size={20} />
+              </Button>
+              <div className="flex flex-col text-right">
+                <h1 className="text-sm font-bold text-primary">سوق القصص والأرباح</h1>
+                <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-bold">اربح 0.6 عملة عن كل مشاهدة</span>
+              </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-accent hover:bg-accent/10" onClick={() => router.push('/support?package=إعلان_بانر&price=5_TRX')}>
-              <MessageCircle size={20} />
-            </Button>
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-              <DialogTrigger asChild>
-                <Button className="h-8 rounded-full bg-accent hover:bg-accent/90 text-white text-[10px] font-bold gap-1.5 shadow-lg shadow-accent/20">
-                  <Plus size={14} />
-                  انشر (100 عملة)
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle className="text-sm font-bold text-primary">إنشاء قصة إعلانية (100 نقرة)</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-1 text-right">
-                    <label className="text-[10px] font-bold uppercase text-muted-foreground">عنوان الإعلان</label>
-                    <Input placeholder="مثال: خصم 50% على خدماتنا" className="h-10 text-xs rounded-none bg-secondary/30 border-none" value={adTitle} onChange={(e) => setAdTitle(e.target.value)} />
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <label className="text-[10px] font-bold uppercase text-muted-foreground">رابط المعلن</label>
-                    <Input placeholder="https://example.com" className="h-10 text-xs rounded-none bg-secondary/30 border-none" value={adLink} onChange={(e) => setAdLink(e.target.value)} />
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <label className="text-[10px] font-bold uppercase text-muted-foreground">صورة القصة</label>
-                    <div className="h-32 bg-secondary/30 border-2 border-dashed border-muted-foreground/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden" onClick={() => fileInputRef.current?.click()}>
-                      {adImage ? <img src={adImage} className="w-full h-full object-cover" alt="Preview" /> : <ImageIcon size={24} className="text-muted-foreground/40" />}
-                    </div>
-                    <input type="file" hidden ref={fileInputRef} onChange={handleFileUpload} accept="image/*" />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button className="w-full h-10 rounded-full font-bold text-xs" onClick={handleCreateAd} disabled={isPosting || isUploading}>
-                    {isPosting ? <Loader2 className="animate-spin" /> : "تأكيد والنشر الآن"}
+            
+            <div className="flex items-center gap-2">
+              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogTrigger asChild>
+                  <Button className="h-8 rounded-full bg-accent hover:bg-accent/90 text-white text-[10px] font-bold gap-1.5 shadow-lg shadow-accent/20">
+                    <Plus size={14} />
+                    انشر (100 عملة)
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </header>
-
-        {isLoading ? (
-          <div className="grid grid-cols-3 gap-2">
-            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="aspect-[9/16] bg-secondary/30 animate-pulse rounded-lg" />)}
-          </div>
-        ) : combinedItems.length > 0 ? (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-3 gap-2 md:gap-4">
-              {combinedItems.map((item, idx) => {
-                if (item.type === 'banner') {
-                  return (
-                    <div key={`banner-${item.data.id}-${idx}`} className="col-span-3 h-24 bg-primary/5 border border-primary/10 rounded-lg overflow-hidden relative cursor-pointer group" onClick={() => window.location.href = item.data.link}>
-                      <img src={item.data.imageUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" alt="Ad Banner" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center p-6">
-                        <div className="text-right">
-                          <p className="text-[10px] font-bold text-white uppercase tracking-widest">إعلان مميز</p>
-                          <h3 className="text-sm font-bold text-white">{item.data.title}</h3>
-                        </div>
-                      </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm font-bold text-primary">إنشاء قصة إعلانية (100 نقرة)</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-1 text-right">
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground">عنوان الإعلان</label>
+                      <Input placeholder="مثال: خصم 50% على خدماتنا" className="h-10 text-xs rounded-none bg-secondary/30 border-none" value={adTitle} onChange={(e) => setAdTitle(e.target.value)} />
                     </div>
-                  );
-                }
-
-                const ad = item.data;
-                return (
-                  <Dialog key={`story-${ad.id}-${idx}`}>
-                    <DialogTrigger asChild>
-                      <div className="aspect-[9/16] bg-secondary/20 rounded-lg overflow-hidden relative cursor-pointer group">
-                        <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                        <div className="absolute bottom-2 left-2 right-2 text-right">
-                          <p className="text-[10px] font-bold text-white line-clamp-1">{ad.title}</p>
-                          <div className="flex items-center justify-end gap-1 mt-1">
-                            <span className="text-[8px] font-bold text-green-400">0.6</span>
-                            <TimgadCoin size={10} />
-                          </div>
-                        </div>
+                    <div className="space-y-1 text-right">
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground">رابط المعلن</label>
+                      <Input placeholder="https://example.com" className="h-10 text-xs rounded-none bg-secondary/30 border-none" value={adLink} onChange={(e) => setAdLink(e.target.value)} />
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground">صورة القصة</label>
+                      <div className="h-32 bg-secondary/30 border-2 border-dashed border-muted-foreground/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer overflow-hidden" onClick={() => fileInputRef.current?.click()}>
+                        {adImage ? <img src={adImage} className="w-full h-full object-cover" alt="Preview" /> : <ImageIcon size={24} className="text-muted-foreground/40" />}
                       </div>
-                    </DialogTrigger>
-                    <DialogContent className="p-0 overflow-hidden border-none max-w-sm">
-                      <DialogTitle className="sr-only">{ad.title}</DialogTitle>
-                      <div className="relative aspect-[9/16] w-full">
-                        <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent p-6 flex flex-col justify-end gap-4">
-                          <div className="space-y-2 text-right text-white">
-                            <h2 className="text-xl font-bold">{ad.title}</h2>
-                            <p className="text-xs opacity-70">{ad.description}</p>
-                          </div>
-                          <Button className="w-full h-12 rounded-full bg-primary font-bold gap-2" onClick={() => handleAdClick(ad)} disabled={isPosting}>
-                            {isPosting ? <Loader2 className="animate-spin" /> : <>انقر واربح 0.6 <TimgadCoin size={16} /></>}
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                );
-              })}
+                      <input type="file" hidden ref={fileInputRef} onChange={handleFileUpload} accept="image/*" />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button className="w-full h-10 rounded-full font-bold text-xs" onClick={handleCreateAd} disabled={isPosting || isUploading}>
+                      {isPosting ? <Loader2 className="animate-spin" /> : "تأكيد والنشر الآن"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
+          </header>
+
+          {isLoading ? (
+            <div className="grid grid-cols-3 gap-2">
+              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="aspect-[9/16] bg-secondary/30 animate-pulse rounded-lg" />)}
+            </div>
+          ) : combinedItems.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-3 gap-2 md:gap-4">
+                {combinedItems.map((item, idx) => {
+                  if (item.type === 'banner') {
+                    return (
+                      <div key={`banner-${item.data.id}-${idx}`} className="col-span-3 h-24 bg-primary/5 border border-primary/10 rounded-lg overflow-hidden relative cursor-pointer group" onClick={() => window.location.href = item.data.link}>
+                        <img src={item.data.imageUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" alt="Ad Banner" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center p-6">
+                          <div className="text-right">
+                            <p className="text-[10px] font-bold text-white uppercase tracking-widest">إعلان مميز</p>
+                            <h3 className="text-sm font-bold text-white">{item.data.title}</h3>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const ad = item.data;
+                  return (
+                    <Dialog key={`story-${ad.id}-${idx}`}>
+                      <DialogTrigger asChild>
+                        <div className="aspect-[9/16] bg-secondary/20 rounded-lg overflow-hidden relative cursor-pointer group">
+                          <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                          <div className="absolute bottom-2 left-2 right-2 text-right">
+                            <p className="text-[10px] font-bold text-white line-clamp-1">{ad.title}</p>
+                            <div className="flex items-center justify-end gap-1 mt-1">
+                              <span className="text-[8px] font-bold text-green-400">0.6</span>
+                              <TimgadCoin size={10} />
+                            </div>
+                          </div>
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="p-0 overflow-hidden border-none max-w-sm">
+                        <DialogTitle className="sr-only">{ad.title}</DialogTitle>
+                        <div className="relative aspect-[9/16] w-full">
+                          <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent p-6 flex flex-col justify-end gap-4">
+                            <div className="space-y-2 text-right text-white">
+                              <h2 className="text-xl font-bold">{ad.title}</h2>
+                              <p className="text-xs opacity-70">{ad.description}</p>
+                            </div>
+                            <Button className="w-full h-12 rounded-full bg-primary font-bold gap-2" onClick={() => handleAdClick(ad)} disabled={isPosting}>
+                              {isPosting ? <Loader2 className="animate-spin" /> : <>انقر واربح 0.6 <TimgadCoin size={16} /></>}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-32 opacity-40">لا توجد قصص إعلانية حالياً.</div>
+          )}
+        </div>
+        
+        <aside className="hidden lg:block w-40 shrink-0">
+          <div className="sticky top-24">
+            <AadsUnit />
           </div>
-        ) : (
-          <div className="text-center py-32 opacity-40">لا توجد قصص إعلانية حالياً.</div>
-        )}
+        </aside>
       </main>
     </div>
   );

@@ -130,11 +130,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     toast({ description: "تم حذف المنشور." });
   };
 
-  const handlePromotePlaceholder = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    toast({ title: "قريباً جداً! 🚀", description: "ميزة ترويج المنشورات ستتوفر في التحديث القادم." });
-  };
-
   const handleSupport = (amount: number) => {
     if (isAnonymous) { router.push('/login'); return; }
     if ((currentUserProfile?.coins || 0) < amount) {
@@ -163,7 +158,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground"><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40 rounded-none">
                 <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer" onClick={handleReport}><AlertTriangle size={14} /> إبلاغ</DropdownMenuItem>
-                {(isVerifiedAuthor || isAdmin) && !post.promoted && <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer text-primary opacity-60" onClick={handlePromotePlaceholder}><Rocket size={14} /> ترويج (قريباً)</DropdownMenuItem>}
                 {(isOwner || isAdmin) && <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer text-destructive" onClick={handleDelete}><Trash2 size={14} /> حذف المنشور</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>

@@ -10,6 +10,7 @@ import { Loader2, BadgeCheck, UserRoundPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import AadsUnit from '@/components/ads/AadsUnit';
 
 export default function RightSidebar() {
   const { firestore, user: currentUser } = useFirebase();
@@ -108,6 +109,12 @@ export default function RightSidebar() {
           )}
         </CardContent>
       </Card>
+
+      {/* إعلان AADS في الشريط الجانبي */}
+      <div className="p-4 bg-card rounded-none border border-muted/10 shadow-sm">
+        <h3 className="text-[10px] font-bold text-muted-foreground uppercase mb-4 text-center">إعلان مميز</h3>
+        <AadsUnit />
+      </div>
     </aside>
   );
 }

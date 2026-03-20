@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import AadsUnit from '@/components/ads/AadsUnit';
 
 export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: { postId: string, postAuthorId: string, post: any, onClose: () => void, currentUserProfile?: any }) {
   const [commentText, setCommentText] = useState('');
@@ -58,7 +59,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     if (isAnonymous) { router.push('/login'); return; }
     if (!commentText.trim() || !user || !firestore) return;
 
-    // منع الروابط الخارجية
     const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+/gi;
     if (urlRegex.test(commentText)) {
       return toast({ 
@@ -174,6 +174,11 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
               <div className="flex items-center gap-1.5 text-muted-foreground"><BarChart3 size={18} /> <span className="text-[11px] font-bold">{post.viewsCount || 0}</span></div>
             </div>
           </div>
+        </div>
+
+        {/* إعلانات AADS مدمجة هنا */}
+        <div className="p-4 border-b">
+          <AadsUnit />
         </div>
 
         {activeAd && (
