@@ -21,7 +21,7 @@ export default function AdsPage() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
   const [selectedAd, setSelectedAd] = useState<any>(null);
-  const [isProcessing, setIsPosting] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const [adTitle, setAdTitle] = useState('');
@@ -141,7 +141,7 @@ export default function AdsPage() {
       return;
     }
 
-    if (isProcessing) return;
+    if (isPosting) return;
 
     const clickRef = doc(firestore!, 'adClicks', `${ad.id}_${user.uid}`);
     
@@ -285,8 +285,8 @@ export default function AdsPage() {
                             <h2 className="text-xl font-bold">{ad.title}</h2>
                             <p className="text-xs opacity-70">{ad.description}</p>
                           </div>
-                          <Button className="w-full h-12 rounded-full bg-primary font-bold gap-2" onClick={() => handleAdClick(ad)} disabled={isProcessing}>
-                            {isProcessing ? <Loader2 className="animate-spin" /> : <>انقر واربح 0.6 <TimgadCoin size={16} /></>}
+                          <Button className="w-full h-12 rounded-full bg-primary font-bold gap-2" onClick={() => handleAdClick(ad)} disabled={isPosting}>
+                            {isPosting ? <Loader2 className="animate-spin" /> : <>انقر واربح 0.6 <TimgadCoin size={16} /></>}
                           </Button>
                         </div>
                       </div>

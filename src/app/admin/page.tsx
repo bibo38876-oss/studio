@@ -9,7 +9,7 @@ import { collection, query, doc, limit, where, serverTimestamp, orderBy, increme
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp, LayoutGrid, Plus, Calendar as CalendarIcon, ImageIcon, Megaphone } from 'lucide-react';
+import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp, LayoutGrid, Plus, Calendar as CalendarIcon, ImageIcon, Megaphone, ArrowDownToLine, Wallet } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -69,10 +69,16 @@ export default function AdminPage() {
     return query(collection(firestore, 'admin_banners'), orderBy('createdAt', 'desc'));
   }, [firestore, isAdminUser]);
 
+  const withdrawalsQuery = useMemoFirebase(() => {
+    if (!firestore || !isAdminUser) return null;
+    return query(collection(firestore, 'withdrawal_requests'), orderBy('createdAt', 'desc'));
+  }, [firestore, isAdminUser]);
+
   const { data: users } = useCollection(usersQuery);
   const { data: postAds } = useCollection(postAdsQuery);
   const { data: revenue } = useCollection(revenueQuery);
   const { data: banners } = useCollection(bannersQuery);
+  const { data: withdrawals } = useCollection(withdrawalsQuery);
 
   const stats = useMemo(() => {
     if (!users || !revenue) return { totalUsers: 0, totalRevenue: 0, totalCoins: 0 };
@@ -184,6 +190,23 @@ export default function AdminPage() {
     finally { setIsUploading(false); }
   };
 
+  const handleCompleteWithdrawal = async (id: string, userId: string, coins: number) => {
+    if (!firestore) return;
+    try {
+      // 1. خصم العملات من المستخدم (لو لم تُخصم عند الطلب)
+      // في المنطق الحالي، يفضل خصمها عند طلب السحب لضمان عدم إنفاقها.
+      // هنا نقوم بتحديث الحالة فقط
+      updateDocumentNonBlocking(doc(firestore, 'withdrawal_requests', id), {
+        status: 'completed',
+        completedAt: serverTimestamp()
+      });
+
+      toast({ description: "تم تعليم الطلب كمكتمل بنجاح." });
+    } catch (e) {
+      toast({ variant: "destructive", description: "فشل تحديث الحالة." });
+    }
+  };
+
   if (isUserLoading || !isAdminUser) return null;
 
   return (
@@ -195,7 +218,7 @@ export default function AdminPage() {
             <ShieldCheck size={24} className="text-white" />
             <div className="text-right">
               <h1 className="text-xl font-bold text-white uppercase">مركز قيادة تيمقاد</h1>
-              <p className="text-[10px] text-white/60">Revenue & Ad Control</p>
+              <p className="text-[10px] text-white/60">Revenue & Withdrawal Control</p>
             </div>
           </div>
         </header>
@@ -203,6 +226,7 @@ export default function AdminPage() {
         <Tabs defaultValue="analytics" className="w-full">
           <TabsList className="w-full bg-secondary/30 mb-8 rounded-none p-1 border-b h-12 overflow-x-auto no-scrollbar">
             <TabsTrigger value="analytics" className="flex-1 text-[11px] font-bold gap-2">الإحصائيات</TabsTrigger>
+            <TabsTrigger value="withdrawals" className="flex-1 text-[11px] font-bold gap-2 text-accent">طلبات السحب</TabsTrigger>
             <TabsTrigger value="users" className="flex-1 text-[11px] font-bold gap-2">الأعضاء</TabsTrigger>
             <TabsTrigger value="banners" className="flex-1 text-[11px] font-bold gap-2">مستطيلات السوق</TabsTrigger>
             <TabsTrigger value="post_ads" className="flex-1 text-[11px] font-bold gap-2">إعلانات المنشورات</TabsTrigger>
@@ -214,6 +238,42 @@ export default function AdminPage() {
               <Card className="bg-primary/5 border-r-4 border-r-primary"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">إجمالي المستخدمين</CardTitle></CardHeader><CardContent className="p-4 pt-0 text-2xl font-bold text-primary">{stats.totalUsers}</CardContent></Card>
               <Card className="bg-accent/5 border-r-4 border-r-accent"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">أرباح المنصة (العمولات)</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-accent">{stats.totalRevenue.toFixed(1)} <TimgadCoin size={20} /></CardContent></Card>
               <Card className="bg-yellow-500/5 border-r-4 border-r-yellow-600"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">العملات المتداولة</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-yellow-600">{stats.totalCoins.toFixed(0)} <TimgadCoin size={20} /></CardContent></Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="withdrawals" className="space-y-4">
+            <h3 className="text-sm font-bold flex items-center gap-2 mb-4"><ArrowDownToLine size={16} className="text-accent" /> طلبات سحب الأرباح (TRX)</h3>
+            <div className="grid gap-4">
+              {withdrawals?.map((req: any) => (
+                <Card key={req.id} className={cn("p-4 border-r-4", req.status === 'completed' ? "border-r-green-500 opacity-60" : "border-r-accent")}>
+                  <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-primary">{req.username}</span>
+                        <span className="text-[8px] px-1.5 py-0.5 bg-secondary rounded text-muted-foreground">{req.email}</span>
+                      </div>
+                      <p className="text-[10px] font-bold text-accent">المبلغ: {req.amount} عملة ({req.finalTRX.toFixed(2)} TRX الصافي)</p>
+                      <div className="flex items-center gap-2 bg-secondary/50 p-2 rounded mt-2">
+                        <Wallet size={12} className="text-muted-foreground" />
+                        <code className="text-[10px] font-mono select-all">{req.address}</code>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {req.status !== 'completed' ? (
+                        <>
+                          <Button size="sm" className="h-8 text-[10px] font-bold bg-green-600" onClick={() => handleCompleteWithdrawal(req.id, req.userId, req.amount)}>إتمام التحويل</Button>
+                          <Button size="sm" variant="ghost" className="h-8 text-[10px] font-bold text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'withdrawal_requests', req.id))}>رفض/حذف</Button>
+                        </>
+                      ) : (
+                        <span className="text-[10px] font-bold text-green-600 flex items-center gap-1"><CheckCircle2 size={12} /> تم التحويل</span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              {(!withdrawals || withdrawals.length === 0) && (
+                <div className="text-center py-20 opacity-40 text-xs">لا توجد طلبات سحب حالياً.</div>
+              )}
             </div>
           </TabsContent>
 
