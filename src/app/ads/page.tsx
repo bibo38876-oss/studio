@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -10,7 +10,6 @@ import { Loader2, ChevronRight, Play, Eye, Sparkles, DollarSign, Wallet, Plus, I
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
@@ -22,6 +21,7 @@ export default function AdsPage() {
   const { toast } = useToast();
   const [isPosting, setIsPosting] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const [adTitle, setAdTitle] = useState('');
   const [adDesc, setAdDesc] = useState('');
@@ -29,6 +29,10 @@ export default function AdsPage() {
   const [adImage, setAdImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const adsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -38,9 +42,9 @@ export default function AdsPage() {
   const { data: ads, isLoading } = useCollection(adsQuery);
 
   const bannersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !mounted) return null;
     return query(collection(firestore, 'admin_banners'), where('expiresAt', '>', new Date()));
-  }, [firestore]);
+  }, [firestore, mounted]);
 
   const { data: banners } = useCollection(bannersQuery);
 
@@ -175,10 +179,11 @@ export default function AdsPage() {
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
       <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0">
         <header className="flex items-center justify-between mb-8 sticky top-10 z-30 bg-background/80 backdrop-blur-md py-4 border-b">
           <div className="flex items-center gap-3">

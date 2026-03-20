@@ -99,10 +99,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     } else {
       setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
       updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { likesCount: increment(1) });
-      
-      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
-        interactedAuthorIds: arrayUnion(post.authorId)
-      });
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { interactedAuthorIds: arrayUnion(post.authorId) });
     }
   };
 
@@ -145,41 +142,13 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       return;
     }
     if (!firestore || !user) return;
-    
     const platformFee = amount * 0.1;
     const netAmount = amount - platformFee;
-
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amount) });
     updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(netAmount) });
-    
-    addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
-      type: 'support_fee',
-      amount: platformFee,
-      fromUserId: user.uid,
-      toUserId: post.authorId,
-      createdAt: serverTimestamp()
-    });
-
-    setDocumentNonBlocking(doc(firestore, 'users', post.authorId, 'supporters', user.uid), {
-      userId: user.uid,
-      username: currentUserProfile?.username || 'مبادر من تيمقاد',
-      avatar: currentUserProfile?.profilePictureUrl || '',
-      verificationType: currentUserProfile?.verificationType || 'none',
-      totalAmount: increment(amount),
-      lastSupportedAt: serverTimestamp()
-    }, { merge: true });
-
-    addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), {
-      type: 'support',
-      fromUserId: user.uid,
-      fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد',
-      fromAvatar: currentUserProfile?.profilePictureUrl || '',
-      amount: netAmount,
-      postId: post.id,
-      createdAt: serverTimestamp(),
-      read: false
-    });
-    
+    addDocumentNonBlocking(collection(firestore, 'platform_revenue'), { type: 'support_fee', amount: platformFee, fromUserId: user.uid, toUserId: post.authorId, createdAt: serverTimestamp() });
+    setDocumentNonBlocking(doc(firestore, 'users', post.authorId, 'supporters', user.uid), { userId: user.uid, username: currentUserProfile?.username || 'مبادر من تيمقاد', avatar: currentUserProfile?.profilePictureUrl || '', verificationType: currentUserProfile?.verificationType || 'none', totalAmount: increment(amount), lastSupportedAt: serverTimestamp() }, { merge: true });
+    addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), { type: 'support', fromUserId: user.uid, fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد', fromAvatar: currentUserProfile?.profilePictureUrl || '', amount: netAmount, postId: post.id, createdAt: serverTimestamp(), read: false });
     toast({ title: "تم الدعم! ☕️", description: `أرسلت ${netAmount.toFixed(1)} عملة للمبدع بعد عمولة المنصة.` });
     setIsSupportOpen(false);
   };

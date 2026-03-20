@@ -14,8 +14,9 @@ import { cn } from '@/lib/utils';
 export default function VaultPage() {
   const { toast } = useToast();
   const { firestore, user } = useFirebase();
-  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [timeLeft, setTimeLeft] = useState<string>('جاري الحساب...');
   const [isJoining, setIsJoining] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const jarRef = useMemoFirebase(() => firestore ? doc(firestore, 'vault', 'current_jar') : null, [firestore]);
   const { data: jarData, isLoading: isJarLoading } = useDoc(jarRef);
@@ -33,6 +34,7 @@ export default function VaultPage() {
   const { data: participation } = useDoc(participationRef);
 
   useEffect(() => {
+    setMounted(true);
     const interval = setInterval(() => {
       const now = new Date();
       // توقيت الجزائر (GMT+1)
@@ -69,22 +71,18 @@ export default function VaultPage() {
 
     setIsJoining(true);
     try {
-      // 1. خصم العملات
       updateDocumentNonBlocking(doc(firestore!, 'users', user.uid), {
         coins: increment(-3)
       });
 
-      // 2. إضافة للجرة
       updateDocumentNonBlocking(doc(firestore!, 'vault', 'current_jar'), {
         totalCoins: increment(3)
       });
 
-      // 3. تسجيل المشارك
       setDocumentNonBlocking(participationRef!, {
         userId: user.uid,
         username: profile?.username || 'مستكشف تيمقاد',
         avatar: profile?.profilePictureUrl || '',
-        aura: (profile?.followerIds?.length || 0) + (profile?.coins || 0),
         joinedAt: serverTimestamp()
       }, { merge: true });
 
@@ -98,6 +96,8 @@ export default function VaultPage() {
       setIsJoining(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-[#1A0F04] text-[#F3E5AB] flex flex-col items-center relative overflow-hidden">
