@@ -4,7 +4,7 @@
     "User": {
       "title": "User",
       "type": "object",
-      "description": "Represents a user profile in Timgad.",
+      "description": "يمثل ملف تعريف المستخدم في تيمقاد مع الرصيد والتوثيق.",
       "properties": {
         "id": { "type": "string" },
         "username": { "type": "string" },
@@ -14,46 +14,102 @@
         "coins": { "type": "number", "default": 0 },
         "isPrivate": { "type": "boolean", "default": false },
         "followingIds": { "type": "array", "items": { "type": "string" } },
-        "followerIds": { "type": "array", "items": { "type": "string" } }
+        "followerIds": { "type": "array", "items": { "type": "string" } },
+        "interactedAuthorIds": { "type": "array", "items": { "type": "string" } }
       }
     },
     "Ad": {
       "title": "Ad",
       "type": "object",
-      "description": "Represents a user story ad.",
+      "description": "يمثل قصة إعلانية في سوق القصص (100 عملة = 100 نقرة).",
       "properties": {
         "id": { "type": "string" },
         "authorId": { "type": "string" },
         "title": { "type": "string" },
         "link": { "type": "string" },
         "imageUrl": { "type": "string" },
-        "remainingClicks": { "type": "number", "default": 100 }
+        "remainingClicks": { "type": "number", "default": 100 },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     },
     "Post": {
       "title": "Post",
       "type": "object",
-      "description": "Represents a social post.",
+      "description": "يمثل منشور اجتماعي في تيمقاد.",
       "properties": {
         "id": { "type": "string" },
         "authorId": { "type": "string" },
         "content": { "type": "string" },
         "reportsCount": { "type": "number", "default": 0 },
-        "promoted": { "type": "boolean", "default": false }
+        "promoted": { "type": "boolean", "default": false },
+        "likesCount": { "type": "number" },
+        "commentsCount": { "type": "number" },
+        "viewsCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "AdminBanner": {
+      "title": "AdminBanner",
+      "type": "object",
+      "description": "المستطيلات الإعلانية التي تضعها الإدارة بين الستوريات.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "link": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "PostAd": {
+      "title": "PostAd",
+      "type": "object",
+      "description": "الإعلانات التي توضع فوق التعليقات داخل المنشورات.",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "title": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "link": { "type": "string" },
+        "expiresAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "PlatformRevenue": {
+      "title": "PlatformRevenue",
+      "type": "object",
+      "description": "سجل إيرادات المنصة من العمولات والإعلانات والتوثيق.",
+      "properties": {
+        "type": { "type": "string", "enum": ["ad_creation", "ad_click_commission", "support_fee", "verification_purchase", "post_ad_share", "post_ad_full"] },
+        "amount": { "type": "number" },
+        "fromUserId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     },
     "WithdrawalRequest": {
       "title": "WithdrawalRequest",
       "type": "object",
-      "description": "Represents a TRX withdrawal request.",
+      "description": "طلبات سحب الأرباح إلى عملة TRX عبر فاست باي.",
       "properties": {
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "amount": { "type": "number" },
         "finalTRX": { "type": "number" },
         "address": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "completed"] }
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "بيانات المستخدمين" },
+    "/ads/{adId}": { "schema": "Ad", "description": "قصص الإعلانات" },
+    "/posts/{postId}": { "schema": "Post", "description": "المنشورات الاجتماعية" },
+    "/admin_banners/{bannerId}": { "schema": "AdminBanner", "description": "بانرات السوق" },
+    "/post_ads/{adId}": { "schema": "PostAd", "description": "إعلانات نافذة التعليقات" },
+    "/platform_revenue/{revId}": { "schema": "PlatformRevenue", "description": "سجل الأرباح" },
+    "/withdrawal_requests/{reqId}": { "schema": "WithdrawalRequest", "description": "طلبات السحب" }
   }
 }
