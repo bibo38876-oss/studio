@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, useDoc } from '@/firebase';
-import { collection, query, doc, limit, where, serverTimestamp, orderBy, increment } from 'firebase/firestore';
+import { collection, query, doc, limit, where, serverTimestamp, orderBy, increment, getDoc } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -88,20 +88,61 @@ export default function AdminPage() {
 
   const handleCreatePostAd = async () => {
     if (!postAdId || !postAdTitle || !postAdImage || !firestore) return;
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 3); // 3 أيام كما هو مطلوب
+    
+    setIsUploading(true);
+    try {
+      // 1. جلب بيانات المنشور لمعرفة الكاتب
+      const postSnap = await getDoc(doc(firestore, 'posts', postAdId));
+      if (!postSnap.exists()) {
+        toast({ variant: "destructive", description: "المنشور غير موجود." });
+        return;
+      }
+      const postData = postSnap.data();
+      const authorId = postData.authorId;
 
-    await addDocumentNonBlocking(collection(firestore, 'post_ads'), {
-      postId: postAdId,
-      title: postAdTitle,
-      link: postAdLink,
-      imageUrl: postAdImage,
-      expiresAt: expiresAt,
-      createdAt: serverTimestamp()
-    });
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 3); 
 
-    toast({ description: "تم ربط الإعلان بالمنشور بنجاح." });
-    setPostAdId(''); setPostAdIdTitle(''); setPostAdIdImage(null);
+      // 2. إنشاء الإعلان
+      await addDocumentNonBlocking(collection(firestore, 'post_ads'), {
+        postId: postAdId,
+        title: postAdTitle,
+        link: postAdLink,
+        imageUrl: postAdImage,
+        expiresAt: expiresAt,
+        createdAt: serverTimestamp()
+      });
+
+      // 3. توزيع الأرباح (50% لصاحب المنشور كعملات تيمقاد)
+      // تكلفة الإعلان 5 TRX = 500 عملة. 50% = 250 عملة.
+      const rewardAmount = 250;
+      updateDocumentNonBlocking(doc(firestore, 'users', authorId), {
+        coins: increment(rewardAmount)
+      });
+
+      addDocumentNonBlocking(collection(firestore, 'users', authorId, 'notifications'), {
+        type: 'system',
+        message: `🎉 مبروك! لقد تم وضع إعلان على منشورك، وحصلت على ${rewardAmount} عملة تيمقاد (50% من الأرباح).`,
+        createdAt: serverTimestamp(),
+        read: false
+      });
+
+      // 4. تسجيل إيرادات المنصة (الـ 50% الأخرى = 2.5 TRX = 250 عملة)
+      addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
+        type: 'post_ad_share',
+        amount: 250,
+        postId: postAdId,
+        fromUserId: authorId,
+        createdAt: serverTimestamp()
+      });
+
+      toast({ description: `تم النشر بنجاح وتوزيع ${rewardAmount} عملة لصاحب المنشور.` });
+      setPostAdId(''); setPostAdIdTitle(''); setPostAdIdImage(null);
+    } catch (e) {
+      toast({ variant: "destructive", description: "فشل إنشاء الإعلان." });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handlePostAdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,7 +219,8 @@ export default function AdminPage() {
 
           <TabsContent value="post_ads" className="space-y-6">
             <Card className="p-6">
-              <h3 className="text-sm font-bold mb-4 flex items-center gap-2"><Megaphone size={16} className="text-primary" /> إضافة إعلان لمنشور معين (3 أيام - 5 TRX)</h3>
+              <h3 className="text-sm font-bold mb-4 flex items-center gap-2"><Megaphone size={16} className="text-primary" /> إضافة إعلان لمنشور (3 أيام - 5 TRX)</h3>
+              <p className="text-[10px] text-muted-foreground mb-4 font-bold">ملاحظة: سيحصل صاحب المنشور تلقائياً على 250 عملة (50% من الأرباح).</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input placeholder="معرف المنشور (Post ID)" value={postAdId} onChange={e => setPostAdId(e.target.value)} className="h-10 text-xs" />
                 <Input placeholder="عنوان الإعلان" value={postAdTitle} onChange={e => setPostAdIdTitle(e.target.value)} className="h-10 text-xs" />
@@ -189,7 +231,9 @@ export default function AdminPage() {
                     {postAdImage ? "تم اختيار صورة" : "رفع بانر المنشور"}
                   </Button>
                   <input type="file" hidden ref={postAdFileRef} onChange={handlePostAdUpload} accept="image/*" />
-                  <Button className="h-10 text-xs font-bold px-8" onClick={handleCreatePostAd} disabled={!postAdImage}>نشر الإعلان</Button>
+                  <Button className="h-10 text-xs font-bold px-8" onClick={handleCreatePostAd} disabled={!postAdImage || isUploading}>
+                    {isUploading ? <Loader2 className="animate-spin" size={14} /> : "نشر الإعلان ومكافأة العضو"}
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -228,7 +272,7 @@ export default function AdminPage() {
                   </Button>
                   <input type="file" hidden ref={fileInputRef} onChange={handleBannerUpload} accept="image/*" />
                 </div>
-                <Button className="h-10 text-xs font-bold" onClick={handleCreateBanner} disabled={!bannerImage}>حفظ ونشر البانر</Button>
+                <Button className="h-10 text-xs font-bold" onClick={handleCreateBanner} disabled={!bannerImage || isUploading}>حفظ ونشر البانر</Button>
               </div>
             </Card>
 
@@ -284,7 +328,7 @@ export default function AdminPage() {
                 <div key={rev.id} className="p-3 bg-secondary/20 flex justify-between items-center border-r-4 border-r-accent">
                   <div className="text-right">
                     <span className="text-[10px] font-bold text-accent">
-                      {rev.type === 'support_fee' ? 'عمولة دعم' : rev.type === 'ad_click_commission' ? 'عمولة إعلان' : rev.type === 'promote_fee' ? 'رسوم ترويج' : 'رسوم شحن/إعلان'}
+                      {rev.type === 'support_fee' ? 'عمولة دعم' : rev.type === 'ad_click_commission' ? 'عمولة إعلان' : rev.type === 'promote_fee' ? 'رسوم ترويج' : rev.type === 'post_ad_share' ? 'رسوم إعلان منشور (50%)' : 'رسوم شحن/إعلان'}
                     </span>
                     <p className="text-[8px] text-muted-foreground">{rev.createdAt?.toDate?.()?.toLocaleString('ar-SA')}</p>
                   </div>

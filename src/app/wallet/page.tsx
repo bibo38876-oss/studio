@@ -1,11 +1,11 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, BadgeCheck, Coins, Trophy, Wallet, ShieldCheck, ArrowDownToLine, Loader2, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, BadgeCheck, Coins, Trophy, Wallet, ShieldCheck, ArrowDownToLine, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
@@ -30,6 +30,10 @@ const PACKAGES = [
   { id: "pkg_4", amount: 5000, price: "50 TRX", label: "كنز الريادة" }
 ];
 
+const CONVERSION_RATE = 100; // 100 coins = 1 TRX
+const MIN_WITHDRAW_TRX = 20; 
+const CONVERSION_FEE_PERCENT = 3;
+
 export default function WalletPage() {
   const router = useRouter();
   const { firestore, user } = useFirebase();
@@ -50,14 +54,27 @@ export default function WalletPage() {
 
   const { data: profile } = useDoc(userRef);
 
+  const calculatedTRX = useMemo(() => {
+    const amount = parseInt(withdrawAmount) || 0;
+    const trx = amount / CONVERSION_RATE;
+    const fee = (trx * CONVERSION_FEE_PERCENT) / 100;
+    return {
+      raw: trx,
+      fee: fee,
+      final: Math.max(0, trx - fee)
+    };
+  }, [withdrawAmount]);
+
   const handlePackageSelect = (pkg: any) => {
     router.push(`/support?package=${encodeURIComponent(pkg.label)}&amount=${pkg.amount}&price=${encodeURIComponent(pkg.price)}`);
   };
 
   const handleWithdrawRequest = async () => {
     const amount = parseInt(withdrawAmount);
-    if (!amount || amount < 100) {
-      toast({ variant: "destructive", description: "الحد الأدنى للسحب هو 100 عملة (1 TRX)." });
+    const minCoins = MIN_WITHDRAW_TRX * CONVERSION_RATE;
+
+    if (!amount || amount < minCoins) {
+      toast({ variant: "destructive", description: `الحد الأدنى للسحب هو ${minCoins} عملة (${MIN_WITHDRAW_TRX} TRX).` });
       return;
     }
     if (amount > (profile?.coins || 0)) {
@@ -71,21 +88,21 @@ export default function WalletPage() {
 
     setIsWithdrawing(true);
     try {
-      // تسجيل طلب السحب يدوياً للإدارة
       await addDocumentNonBlocking(collection(firestore!, 'withdrawal_requests'), {
         userId: user!.uid,
         username: profile?.username || 'مستخدم تيمقاد',
         email: user!.email,
         amount: amount,
-        trxAmount: amount / 100,
+        trxAmount: calculatedTRX.raw,
+        feeTRX: calculatedTRX.fee,
+        finalTRX: calculatedTRX.final,
         address: fastPayAddress.trim(),
         status: 'pending',
         createdAt: serverTimestamp()
       });
 
-      // إرسال رسالة دعم تلقائية للتوثيق
       await addDocumentNonBlocking(collection(firestore!, 'support_chats', user!.uid, 'messages'), {
-        content: `طلب سحب أرباح: ${amount} عملة (${amount/100} TRX) إلى العنوان: ${fastPayAddress.trim()}`,
+        content: `طلب سحب أرباح: ${amount} عملة (${calculatedTRX.raw} TRX).\nرسوم التحويل (3%): ${calculatedTRX.fee.toFixed(2)} TRX.\nالصافي المستحق: ${calculatedTRX.final.toFixed(2)} TRX.\nالعنوان: ${fastPayAddress.trim()}`,
         senderId: 'system',
         senderName: 'نظام السحب',
         isAdmin: true,
@@ -94,7 +111,7 @@ export default function WalletPage() {
 
       toast({
         title: "تم استلام طلبك! ⏳",
-        description: "سيتم مراجعة طلب السحب وتحويل الـ TRX خلال 4-12 ساعة.",
+        description: `سيتم مراجعة الطلب وتحويل ${calculatedTRX.final.toFixed(2)} TRX خلال 4-12 ساعة.`,
       });
       setIsWithdrawOpen(false);
       setWithdrawAmount('');
@@ -126,20 +143,20 @@ export default function WalletPage() {
             <DialogTrigger asChild>
               <Button variant="outline" className="h-8 rounded-full border-[#FBBF24]/30 text-[#FBBF24] hover:bg-[#B45309] text-[10px] font-bold gap-2">
                 <ArrowDownToLine size={14} />
-                سحب الأرباح
+                سحب الأرباح (Min: 20 TRX)
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#2D1606] text-[#F3E5AB] border-[#B45309]">
               <DialogHeader>
                 <DialogTitle className="text-sm font-bold text-[#FBBF24]">سحب أرباحك إلى TRX</DialogTitle>
-                <DialogDescription className="text-[10px] text-[#F3E5AB]/60">100 عملة تيمقاد = 1 TRX (عبر فاست باي)</DialogDescription>
+                <DialogDescription className="text-[10px] text-[#F3E5AB]/60">100 عملة = 1 TRX | رسوم تحويل 3%</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-1 text-right">
-                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">كمية العملات (Min: 100)</label>
+                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">كمية العملات (الحد الأدنى: 2000)</label>
                   <Input 
                     type="number" 
-                    placeholder="مثال: 100" 
+                    placeholder="مثال: 2000" 
                     className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right"
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
@@ -154,8 +171,27 @@ export default function WalletPage() {
                     onChange={(e) => setFastPayAddress(e.target.value)}
                   />
                 </div>
-                <div className="bg-[#451A03] p-3 rounded-lg border border-[#B45309]/30">
-                  <p className="text-[9px] leading-relaxed italic text-right">سيتم خصم العملات من رصيدك فور مراجعة الطلب من الإدارة وتحويل الـ TRX لمحفظتك.</p>
+
+                {parseInt(withdrawAmount) >= 2000 && (
+                  <div className="bg-primary/10 p-3 border border-primary/20 space-y-2">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="text-[#FBBF24]">{calculatedTRX.raw.toFixed(2)} TRX</span>
+                      <span className="text-[#F3E5AB]/60">القيمة الإجمالية:</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="text-red-400">-{calculatedTRX.fee.toFixed(2)} TRX</span>
+                      <span className="text-[#F3E5AB]/60">رسوم التحويل (3%):</span>
+                    </div>
+                    <div className="border-t border-white/10 pt-2 flex justify-between items-center text-xs font-bold">
+                      <span className="text-green-400">{calculatedTRX.final.toFixed(2)} TRX</span>
+                      <span className="text-[#FBBF24]">الصافي الذي ستتلقاه:</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-[#451A03] p-3 rounded-lg border border-[#B45309]/30 flex gap-2 items-start">
+                  <AlertCircle size={14} className="text-[#FBBF24] shrink-0 mt-0.5" />
+                  <p className="text-[9px] leading-relaxed italic text-right">تبدأ مراجعة الطلبات فوراً. يرجى التأكد من صحة العنوان، حيث لا يمكن استرداد العملات بعد التحويل.</p>
                 </div>
               </div>
               <DialogFooter>
