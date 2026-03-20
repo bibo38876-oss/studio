@@ -171,7 +171,8 @@ export default function AdsPage() {
       });
 
       toast({ title: "مبروك! 🎉", description: "حصلت على 0.6 عملة مقابل مشاهدة الإعلان." });
-      window.open(ad.link, '_blank');
+      // استخدام التوجيه المباشر للمعلن
+      window.location.href = ad.link;
     } catch (error) {
       toast({ variant: "destructive", description: "لا يمكنك الربح من هذا الإعلان مجدداً." });
     } finally {
@@ -248,7 +249,7 @@ export default function AdsPage() {
               {combinedItems.map((item, idx) => {
                 if (item.type === 'banner') {
                   return (
-                    <div key={`banner-${item.data.id}-${idx}`} className="col-span-3 h-24 bg-primary/5 border border-primary/10 rounded-lg overflow-hidden relative cursor-pointer group" onClick={() => window.open(item.data.link, '_blank')}>
+                    <div key={`banner-${item.data.id}-${idx}`} className="col-span-3 h-24 bg-primary/5 border border-primary/10 rounded-lg overflow-hidden relative cursor-pointer group" onClick={() => window.location.href = item.data.link}>
                       <img src={item.data.imageUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" alt="Ad Banner" />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center p-6">
                         <div className="text-right">

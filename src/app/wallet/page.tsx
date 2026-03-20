@@ -35,6 +35,7 @@ const VERIFICATION_COST = 500;
 const CONVERSION_RATE = 100; 
 const MIN_WITHDRAW_TRX = 20; 
 const CONVERSION_FEE_PERCENT = 3;
+const WALLET_ADDRESS = "TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2";
 
 export default function WalletPage() {
   const router = useRouter();
@@ -69,9 +70,14 @@ export default function WalletPage() {
   }, [withdrawAmount]);
 
   const handlePackageSelect = (pkg: any) => {
-    // استخدام window.location.href للتوجيه المباشر كخيار دفع سريع إذا توفر الرابط
-    // حالياً نوجه لصفحة الدعم مع البارامترات لتسجيل الطلب يدوياً كما هو متفق عليه
-    router.push(`/support?package=${encodeURIComponent(pkg.label)}&amount=${pkg.amount}&price=${encodeURIComponent(pkg.price)}`);
+    // توجيه مباشر للدفع أو صفحة الدعم
+    const priceAmount = pkg.price.split(' ')[0];
+    window.location.href = `tron:${WALLET_ADDRESS}?amount=${priceAmount}`;
+    toast({ description: "جاري فتح المحفظة للدفع المباشر..." });
+    // للتأكد، نفتح صفحة الدعم في خلفية العمل إذا لم تدعم البيئة روابط البروتوكول
+    setTimeout(() => {
+      router.push(`/support?package=${encodeURIComponent(pkg.label)}&amount=${pkg.amount}&price=${encodeURIComponent(pkg.price)}`);
+    }, 2000);
   };
 
   const handlePurchaseVerification = async () => {
@@ -136,7 +142,7 @@ export default function WalletPage() {
       return;
     }
     if (!fastPayAddress.trim()) {
-      toast({ variant: "destructive", description: "يرجى إدخال عنوان محفظة فاست باي." });
+      toast({ variant: "destructive", description: "يرجى إدخال عنوان محفظة TRX." });
       return;
     }
 
@@ -155,7 +161,6 @@ export default function WalletPage() {
         createdAt: serverTimestamp()
       });
 
-      // توجيه المستخدم لرسالة تأكيد في الدعم
       toast({
         title: "تم استلام طلبك! ⏳",
         description: `سيتم مراجعة الطلب وتحويل ${calculatedTRX.final.toFixed(2)} TRX قريباً.`,

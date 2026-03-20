@@ -179,7 +179,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         {activeAd && (
           <div 
             className="m-4 p-4 bg-primary/5 border border-primary/10 rounded-lg relative group cursor-pointer overflow-hidden"
-            onClick={() => window.open(activeAd.link, '_blank')}
+            onClick={() => window.location.href = activeAd.link}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-[8px] font-bold text-primary uppercase tracking-[0.2em]">إعلان مميز</span>
