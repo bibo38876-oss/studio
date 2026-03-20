@@ -13,25 +13,41 @@
         "profilePictureUrl": { "type": "string", "format": "uri" },
         "bannerUrl": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "lastLoginAt": { "type": "string", "format": "date-time", "description": "Used for daily login rewards." },
+        "lastLoginAt": { "type": "string", "format": "date-time" },
         "lastPollCreatedAt": { "type": "string", "format": "date-time" },
         "followingIds": { "type": "array", "items": { "type": "string" } },
         "followerIds": { "type": "array", "items": { "type": "string" } },
-        "interactedAuthorIds": { "type": "array", "items": { "type": "string" }, "description": "List of author UIDs this user has interacted with for recommendation scoring." },
+        "interactedAuthorIds": { "type": "array", "items": { "type": "string" } },
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["user", "admin"] },
         "verificationType": { "type": "string", "enum": ["none", "blue", "gold"] },
-        "verificationExpiresAt": { "type": "string", "format": "date-time" },
         "isPrivate": { "type": "boolean", "default": false },
         "coins": { "type": "number", "default": 0 }
       },
       "required": ["id", "username", "createdAt"]
     },
+    "Ad": {
+      "title": "Ad",
+      "type": "object",
+      "description": "Represents a story advertisement.",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "link": { "type": "string", "format": "uri" },
+        "totalClicks": { "type": "number", "default": 100 },
+        "remainingClicks": { "type": "number", "default": 100 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "title", "imageUrl", "link"]
+    },
     "Post": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Post",
       "type": "object",
-      "description": "Represents a user post in Timgad, potentially including a poll.",
+      "description": "Represents a user post in Timgad.",
       "properties": {
         "id": { "type": "string" },
         "authorId": { "type": "string" },
@@ -39,36 +55,11 @@
         "authorAvatar": { "type": "string" },
         "content": { "type": "string" },
         "mediaUrls": { "type": "array", "items": { "type": "string" } },
-        "mediaType": { "type": "string", "enum": ["image", "video"] },
-        "poll": {
-          "type": "object",
-          "properties": {
-            "question": { "type": "string" },
-            "options": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "text": { "type": "string" },
-                  "imageUrl": { "type": "string", "format": "uri" },
-                  "votes": { "type": "number", "default": 0 }
-                }
-              }
-            },
-            "totalVotes": { "type": "number", "default": 0 },
-            "expiresAt": { "type": "string", "format": "date-time" }
-          }
-        },
         "createdAt": { "type": "string", "format": "date-time" },
         "hashtags": { "type": "array", "items": { "type": "string" } },
         "likesCount": { "type": "number", "default": 0 },
         "commentsCount": { "type": "number", "default": 0 },
-        "repostsCount": { "type": "number", "default": 0 },
-        "bookmarksCount": { "type": "number", "default": 0 },
-        "viewsCount": { "type": "number", "default": 0 },
-        "reportsCount": { "type": "number", "default": 0 },
         "promoted": { "type": "boolean" },
-        "impressions_left": { "type": "number" },
         "authorVerificationType": { "type": "string" }
       },
       "required": ["id", "authorId", "content", "createdAt"]

@@ -18,12 +18,13 @@ service cloud.firestore {
 
     match /ads/{adId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
     }
 
     match /adClicks/{clickId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && !exists(/databases/$(database)/documents/adClicks/$(clickId));
+      allow create: if isSignedIn();
     }
 
     match /withdrawal_requests/{reqId} {
@@ -53,11 +54,6 @@ service cloud.firestore {
         allow update: if isSignedIn();
         allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isAdmin());
       }
-
-      match /pollVotes/{userId} {
-        allow read: if isSignedIn();
-        allow write: if isOwner(userId);
-      }
     }
 
     match /users/{userId} {
@@ -73,11 +69,6 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
-      match /followers/{followerId} {
-        allow read: if isSignedIn();
-        allow write: if isSignedIn();
-      }
-      
       match /bookmarks/{postId} {
         allow read, write: if isOwner(userId);
       }
@@ -96,6 +87,28 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow write: if isSignedIn();
       }
+      
+      match /groupInvites/{inviteId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /support_chats/{userId}/messages/{msgId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    match /groups/{groupId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn();
+      
+      match /messages/{msgId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
+    match /direct_chats/{chatId}/messages/{msgId} {
+      allow read, write: if isSignedIn();
     }
 
     match /vault/{docId} {
@@ -105,6 +118,11 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow write: if isOwner(userId);
       }
+    }
+    
+    match /vault_history/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

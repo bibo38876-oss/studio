@@ -1,16 +1,19 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
-import { useFirebase, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, increment, serverTimestamp, orderBy } from 'firebase/firestore';
-import { Loader2, ChevronRight, Play, Eye, Sparkles, DollarSign, Wallet } from 'lucide-react';
+import { Loader2, ChevronRight, Play, Eye, Sparkles, DollarSign, Wallet, Plus, ImageIcon, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import TimgadCoin from '@/components/ui/TimgadCoin';
+import { uploadImageToCloudinary } from '@/lib/cloudinary';
 
 export default function AdsPage() {
   const router = useRouter();
@@ -18,13 +21,91 @@ export default function AdsPage() {
   const { toast } = useToast();
   const [selectedAd, setSelectedAd] = useState<any>(null);
   const [isProcessing, setIsPosting] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  // فورم الإعلان الجديد
+  const [adTitle, setAdTitle] = useState('');
+  const [adDesc, setAdDesc] = useState('');
+  const [adLink, setAdLink] = useState('');
+  const [adImage, setAdImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const adsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'ads'), where('remainingClicks', '>', 0));
+    return query(collection(firestore, 'ads'), where('remainingClicks', '>', 0), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
   const { data: ads, isLoading } = useCollection(adsQuery);
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  const { data: profile } = useDoc(userProfileRef);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setAdImage(url);
+      toast({ description: "تم رفع صورة الإعلان بنجاح." });
+    } catch (error) {
+      toast({ variant: "destructive", description: "فشل رفع الصورة." });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleCreateAd = async () => {
+    if (!user || user.isAnonymous) {
+      router.push('/login');
+      return;
+    }
+
+    if ((profile?.coins || 0) < 100) {
+      toast({ variant: "destructive", title: "رصيدك غير كافٍ", description: "تحتاج إلى 100 عملة لنشر قصة إعلانية (100 نقرة)." });
+      return;
+    }
+
+    if (!adTitle || !adLink || !adImage) {
+      toast({ variant: "destructive", description: "يرجى ملء جميع الحقول المطلوبة." });
+      return;
+    }
+
+    setIsPosting(true);
+    try {
+      // 1. خصم العملات
+      updateDocumentNonBlocking(doc(firestore!, 'users', user.uid), {
+        coins: increment(-100)
+      });
+
+      // 2. إنشاء الإعلان
+      await addDocumentNonBlocking(collection(firestore!, 'ads'), {
+        authorId: user.uid,
+        title: adTitle,
+        description: adDesc,
+        link: adLink,
+        imageUrl: adImage,
+        totalClicks: 100,
+        remainingClicks: 100,
+        createdAt: serverTimestamp()
+      });
+
+      toast({ title: "تم النشر! 🚀", description: "إعلانك نشط الآن في سوق تيمقاد." });
+      setIsCreateOpen(false);
+      setAdTitle('');
+      setAdDesc('');
+      setAdLink('');
+      setAdImage(null);
+    } catch (error) {
+      toast({ variant: "destructive", description: "حدث خطأ أثناء النشر." });
+    } finally {
+      setIsPosting(false);
+    }
+  };
 
   const handleAdClick = async (ad: any) => {
     if (!user || user.isAnonymous) {
@@ -34,27 +115,25 @@ export default function AdsPage() {
 
     if (isProcessing) return;
 
-    // منع الغش: التحقق من سجل النقرات للمستخدم الحالي لهذا الإعلان
+    // منع الغش: التحقق من سجل النقرات
     const clickRef = doc(firestore!, 'adClicks', `${ad.id}_${user.uid}`);
     
     setIsPosting(true);
     try {
-      // محاكاة استجابة السيرفر للتحقق (يفضل في الحقيقة استخدام Cloud Functions ولكن سنستخدم منطقاً محلياً قوياً)
-      // نحن نعتمد على وثيقة فريدة adId_userId لضمان عدم التكرار
-      
-      setDocumentNonBlocking(clickRef, {
+      // محاولة تسجيل النقرة
+      await setDocumentNonBlocking(clickRef, {
         userId: user.uid,
         adId: ad.id,
         clickedAt: serverTimestamp(),
         earned: 0.6
       }, { merge: false });
 
-      // تحديث الإعلان: خصم نقرة
+      // تحديث الإعلان
       updateDocumentNonBlocking(doc(firestore!, 'ads', ad.id), {
         remainingClicks: increment(-1)
       });
 
-      // تحديث رصيد المستخدم: إضافة 0.6 عملة (60%)
+      // إضافة الربح للمستخدم (60%)
       updateDocumentNonBlocking(doc(firestore!, 'users', user.uid), {
         coins: increment(0.6)
       });
@@ -64,7 +143,6 @@ export default function AdsPage() {
         description: "لقد حصلت على 0.6 عملة تيمقاد مقابل مشاهدة الإعلان.",
       });
 
-      // فتح رابط المعلن
       window.open(ad.link, '_blank');
       setSelectedAd(null);
     } catch (error) {
@@ -89,10 +167,82 @@ export default function AdsPage() {
               <span className="text-[8px] text-muted-foreground uppercase tracking-widest font-bold">اربح 0.6 عملة عن كل مشاهدة</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-primary/5 px-3 py-1.5 border border-primary/10 rounded-full">
-            <Sparkles size={12} className="text-accent" />
-            <span className="text-[10px] font-bold text-primary">فرص الربح</span>
-          </div>
+          
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="h-8 rounded-full bg-accent hover:bg-accent/90 text-white text-[10px] font-bold gap-1.5 shadow-lg shadow-accent/20">
+                <Plus size={14} />
+                انشر قصتك (100 عملة)
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="text-sm font-bold text-primary">إنشاء قصة إعلانية (100 نقرة)</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-1 text-right">
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground">عنوان الإعلان</label>
+                  <Input 
+                    placeholder="مثال: خصم 50% على خدماتنا" 
+                    className="h-10 text-xs rounded-none bg-secondary/30 border-none"
+                    value={adTitle}
+                    onChange={(e) => setAdTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1 text-right">
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground">وصف قصير</label>
+                  <Textarea 
+                    placeholder="اشرح ميزات موقعك أو عرضك..." 
+                    className="min-h-[80px] text-xs rounded-none bg-secondary/30 border-none resize-none"
+                    value={adDesc}
+                    onChange={(e) => setAdDesc(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1 text-right">
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground">رابط المعلن (URL)</label>
+                  <div className="relative">
+                    <LinkIcon size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input 
+                      placeholder="https://example.com" 
+                      className="h-10 text-xs rounded-none bg-secondary/30 border-none pr-10"
+                      value={adLink}
+                      onChange={(e) => setAdLink(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1 text-right">
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground">صورة القصة (Vertical)</label>
+                  <div 
+                    className="h-32 bg-secondary/30 border-2 border-dashed border-muted-foreground/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-secondary/50 transition-colors overflow-hidden"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {adImage ? (
+                      <img src={adImage} className="w-full h-full object-cover" alt="Ad preview" />
+                    ) : (
+                      <>
+                        <ImageIcon size={24} className="text-muted-foreground/40" />
+                        <span className="text-[9px] text-muted-foreground">اضغط لرفع صورة الإعلان</span>
+                      </>
+                    )}
+                  </div>
+                  <input type="file" hidden ref={fileInputRef} onChange={handleFileUpload} accept="image/*" />
+                </div>
+                <div className="bg-primary/5 p-3 flex items-start gap-2 border border-primary/10">
+                  <AlertCircle size={14} className="text-primary mt-0.5" />
+                  <p className="text-[9px] text-primary font-medium leading-relaxed">سيتم خصم 100 عملة من رصيدك مقابل 100 نقرة حقيقية. الإعلانات المخالفة سيتم حذفها دون تعويض.</p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button 
+                  className="w-full h-10 rounded-full font-bold text-xs shadow-xl shadow-primary/20"
+                  onClick={handleCreateAd}
+                  disabled={isPosting || isUploading}
+                >
+                  {isPosting ? <Loader2 className="animate-spin" /> : "تأكيد والنشر الآن"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </header>
 
         {isLoading ? (
