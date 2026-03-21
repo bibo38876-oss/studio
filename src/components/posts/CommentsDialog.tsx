@@ -8,7 +8,7 @@ import { collection, query, orderBy, serverTimestamp, doc, increment, where } fr
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Bookmark, BarChart3, Trash2, Coffee, Flag, ExternalLink } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, Heart, BarChart3, Trash2, Coffee, Flag, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
@@ -49,7 +49,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   });
 
   const currentPostVerification: VerificationType = postAuthorProfile?.verificationType || post.authorVerificationType || 'none';
-  const isVerifiedAuthor = currentPostVerification === 'blue' || currentPostVerification === 'gold';
 
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId) return null;
@@ -89,7 +88,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const handleSupport = (amount: number) => {
     if (isAnonymous) { router.push('/login'); return; }
     if ((currentUserProfile?.coins || 0) < amount) {
-      toast({ variant: "destructive", description: "رصيدك لا يكفي." });
+      toast({ variant: "destructive", description: "رصيدك غير كافٍ." });
       return;
     }
     if (!firestore || !user) return;
@@ -116,6 +115,17 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       totalAmount: increment(amount),
       lastSupportedAt: serverTimestamp()
     }, { merge: true });
+
+    addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), {
+      type: 'support',
+      fromUserId: user.uid,
+      fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد',
+      fromAvatar: currentUserProfile?.profilePictureUrl || '',
+      amount: netAmount,
+      postId: post.id,
+      createdAt: serverTimestamp(),
+      read: false
+    });
 
     toast({ title: "شكراً لك! ☕️", description: `تم إرسال ${netAmount.toFixed(1)} عملة للمبدع بعد عمولة المنصة.` });
     setIsSupportOpen(false);
@@ -173,7 +183,11 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-1.5 text-muted-foreground"><Heart size={18} /> <span className="text-[11px] font-bold">{post.likesCount || 0}</span></div>
               <div className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareText size={18} /> <span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
-              {isVerifiedAuthor && <motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsSupportOpen(true)} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700"><Coffee size={18} /><span className="text-[10px] font-bold">دعم</span></motion.button>}
+              {/* الدعم متاح للجميع الآن */}
+              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsSupportOpen(true)} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700">
+                <Coffee size={18} />
+                <span className="text-[10px] font-bold">دعم</span>
+              </motion.button>
               <div className="flex items-center gap-1.5 text-muted-foreground"><BarChart3 size={18} /> <span className="text-[11px] font-bold">{post.viewsCount || 0}</span></div>
             </div>
           </div>
@@ -217,8 +231,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         <DialogContent className="sm:max-w-[300px] text-center p-6 rounded-none">
           <DialogTitle className="text-sm font-bold text-primary mb-2">دعم المبدع</DialogTitle>
           <p className="text-[10px] text-muted-foreground mb-4">تأخذ المنصة عمولة 10% من الدعم</p>
-          <div className="grid grid-cols-3 gap-3">
-            {[1, 5, 10].map((amt) => (
+          <div className="grid grid-cols-2 gap-3">
+            {[3, 7, 10, 20].map((amt) => (
               <Button key={amt} variant="outline" className="h-14 flex flex-col gap-1 rounded-none border-primary/20 hover:bg-primary/5" onClick={() => handleSupport(amt)}>
                 <span className="text-sm font-bold">{amt}</span>
                 <TimgadCoin size={16} />
@@ -238,7 +252,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   );
 }
 
-function CommentItem({ comment, postId, firestore, user, currentUserProfile }: any) {
+function CommentItem({ comment, postId, firestore, user }: any) {
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !comment.authorId) return null;
     return doc(firestore, 'users', comment.authorId);

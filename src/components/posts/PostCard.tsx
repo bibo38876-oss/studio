@@ -62,7 +62,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   const { data: authorProfile } = useDoc(authorRef);
   
   const currentVerificationType: VerificationType = authorProfile?.verificationType || post.authorVerificationType || 'none';
-  const isVerifiedAuthor = currentVerificationType === 'blue' || currentVerificationType === 'gold';
 
   const likeRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !post.id) return null;
@@ -219,7 +218,11 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
               <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
             </motion.button>
             <div className="flex items-center gap-1.5 text-muted-foreground"><MessageCircle size={18} /><span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
-            {isVerifiedAuthor && <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); setIsSupportOpen(true); }} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors"><Coffee size={18} /><span className="text-[10px] font-bold">دعم</span></motion.button>}
+            {/* الدعم متاح للجميع الآن بناءً على طلب المستخدم */}
+            <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); setIsSupportOpen(true); }} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors">
+              <Coffee size={18} />
+              <span className="text-[10px] font-bold">دعم</span>
+            </motion.button>
             <div className="flex items-center gap-1.5 text-muted-foreground"><BarChart3 size={18} /><span className="text-[11px] font-bold">{post.viewsCount || 0}</span></div>
           </div>
           <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleBookmark(e); }} className={cn("flex items-center gap-1.5 transition-colors", bookmarkData ? "text-blue-500" : "text-muted-foreground hover:text-blue-500")}>
@@ -232,9 +235,9 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
         <DialogContent className="sm:max-w-[300px] text-center p-6 rounded-none">
           <DialogTitle className="text-sm font-bold text-primary mb-4">دعم المبدع</DialogTitle>
-          <div className="grid grid-cols-3 gap-3">
-            {[1, 5, 10].map((amt) => (
-              <Button key={amt} variant="outline" className="h-12 flex flex-col gap-1 rounded-none" onClick={() => handleSupport(amt)}>
+          <div className="grid grid-cols-2 gap-3">
+            {[3, 7, 10, 20].map((amt) => (
+              <Button key={amt} variant="outline" className="h-14 flex flex-col gap-1 rounded-none border-primary/20 hover:bg-primary/5" onClick={() => handleSupport(amt)}>
                 <span className="text-sm font-bold">{amt}</span>
                 <TimgadCoin size={14} />
               </Button>

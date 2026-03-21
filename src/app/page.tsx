@@ -8,19 +8,17 @@ import LeftSidebar from '@/components/layout/LeftSidebar';
 import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
-import { useCollection, useFirebase, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, doc, where, limit, serverTimestamp, increment } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, doc, where, limit } from 'firebase/firestore';
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToast } from '@/hooks/use-toast';
 import { AadsUnitInside } from '@/components/ads/AadsUnit';
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
   const [activeTab, setActiveTab] = useState('for-you');
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -35,25 +33,7 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  useEffect(() => {
-    if (user && profile && firestore) {
-      const now = new Date();
-      const lastLogin = profile.lastLoginAt ? new Date(profile.lastLoginAt) : new Date(0);
-      const diffMs = now.getTime() - lastLogin.getTime();
-      const diffHours = diffMs / (1000 * 60 * 60);
-
-      if (diffHours >= 24) {
-        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
-          coins: increment(1),
-          lastLoginAt: now.toISOString()
-        });
-        toast({
-          title: "🎁 مكافأة الوفاء!",
-          description: "لقد حصلت على 1 عملة تيمقاد لتسجيل دخولك اليومي. استمر في الإبداع!"
-        });
-      }
-    }
-  }, [user, profile, firestore, toast]);
+  // تم إزالة مكافأة الدخول اليومي بناءً على طلب المستخدم لضبط الاقتصاد
 
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -118,7 +98,7 @@ export default function Home() {
     const elements = [];
     for (let i = 0; i < posts.length; i++) {
       elements.push(<PostCard key={posts[i].id} post={posts[i]} currentUserProfile={profile} />);
-      // تغيير التردد إلى كل 4 منشورات بناءً على طلب المستخدم
+      // الإعلانات تظهر كل 4 منشورات
       if ((i + 1) % 4 === 0) {
         elements.push(<AadsUnitInside key={`ad-${i}`} />);
       }

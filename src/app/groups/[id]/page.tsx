@@ -29,8 +29,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import { AadsUnitInside } from '@/components/ads/AadsUnit';
 
 export default function GroupChatPage() {
   const params = useParams();
@@ -155,7 +156,7 @@ export default function GroupChatPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <div className="fixed top-7 left-0 right-0 z-40 bg-background/80 backdrop-blur-md border-b flex items-center justify-between p-2 h-10 container max-w-xl mx-auto">
+      <div className="fixed top-10 left-0 right-0 z-40 bg-background/80 backdrop-blur-md border-b flex items-center justify-between p-2 h-10 container max-w-xl mx-auto">
         <div className="flex items-center gap-2 overflow-hidden">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full">
             <ChevronRight size={20} />
@@ -174,11 +175,9 @@ export default function GroupChatPage() {
         <div className="flex items-center gap-1">
           {isCreator && (
             <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-primary hover:bg-primary/5">
-                  <UserPlus size={16} />
-                </Button>
-              </DialogTrigger>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-primary hover:bg-primary/5" onClick={() => setIsInviteOpen(true)}>
+                <UserPlus size={16} />
+              </Button>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle className="text-sm font-bold">دعوة المتابعين</DialogTitle>
@@ -242,9 +241,11 @@ export default function GroupChatPage() {
       </div>
 
       <main 
-        className="flex-1 overflow-y-auto pt-20 pb-20 px-4 container max-w-xl mx-auto flex flex-col gap-4 scroll-smooth" 
+        className="flex-1 overflow-y-auto pt-24 pb-20 px-4 container max-w-xl mx-auto flex flex-col gap-4 scroll-smooth" 
         ref={scrollRef}
       >
+        <AadsUnitInside />
+        
         {isMessagesLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
         ) : messages && messages.length > 0 ? (

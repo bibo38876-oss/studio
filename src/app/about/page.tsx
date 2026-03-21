@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Zap, Coins, Trophy, BadgeCheck, Scale, History, ShieldCheck, Info, Globe, Heart, Coffee, Star, Gavel, AlertCircle, Megaphone, Wallet, LayoutGrid, Sparkles } from 'lucide-react';
+import { ChevronRight, Coins, BadgeCheck, Scale, History, ShieldCheck, Info, Globe, Heart, Coffee, Star, Gavel, AlertCircle, Megaphone, Wallet, LayoutGrid, Sparkles } from 'lucide-react';
 import TimgadLogo from '@/components/ui/Logo';
 
 export default function AboutPage() {
@@ -63,21 +63,21 @@ export default function AboutPage() {
             <div className="space-y-4">
               <div className="bg-red-50/30 p-6 border border-red-100 rounded-sm">
                 <h4 className="text-xs font-bold text-red-700 mb-3 flex items-center gap-2">
-                  <AlertCircle size={14} /> القاعدة الذهبية للربح
+                  <AlertCircle size={14} /> القاعدة الذهبية للربح (العوائد)
                 </h4>
                 <p className="text-[10px] text-red-900/80 leading-relaxed font-bold">
-                  لا يحق لأي عضو في تيمقاد تحقيق أي أرباح (سواء من مشاهدة الإعلانات أو من منشوراته) إلا إذا استوفى الشرطين معاً: <br/>
+                  لا يحق لأي عضو في تيمقاد تحقيق أي أرباح (سواء من مشاهدة الإعلانات أو من وضع إعلان على منشوره) إلا إذا استوفى الشرطين معاً: <br/>
                   1. امتلاك <span className="underline">500 متابع حقيقي</span> على الأقل. <br/>
                   2. أن يكون الحساب <span className="underline">موثقاً</span> بالشارة الزرقاء أو الذهبية.
                 </p>
               </div>
 
-              <div className="bg-blue-50/30 p-6 border border-blue-100 rounded-sm">
-                <h4 className="text-xs font-bold text-blue-700 mb-3 flex items-center gap-2">
-                  <Sparkles size={14} /> شراء التوثيق الذاتي
+              <div className="bg-amber-50/30 p-6 border border-amber-100 rounded-sm">
+                <h4 className="text-xs font-bold text-amber-700 mb-3 flex items-center gap-2">
+                  <Coffee size={14} /> الدعم المفتوح (القهوة)
                 </h4>
-                <p className="text-[10px] text-blue-900/80 leading-relaxed mb-4">
-                  يمكن لأي عضو الحصول على الشارة الزرقاء فوراً مقابل <span className="font-bold text-primary">500 عملة تيمقاد</span> عبر المحفظة. التوثيق هو الخطوة الأولى لتفعيل نظام الأرباح.
+                <p className="text-[10px] text-amber-900/80 leading-relaxed">
+                  على عكس الأرباح الإدارية، نظام "فناجين القهوة" متاح للجميع! يمكن لأي عضو دعم أي مبدع بـ [3، 7، 10، 20] عملة تشجيعاً لإبداعه، وتقتطع المنصة 10% كعمولة صيانة.
                 </p>
               </div>
             </div>
@@ -94,7 +94,7 @@ export default function AboutPage() {
               <div className="p-4 bg-secondary/20 border-r-2 border-green-600 space-y-2">
                 <h4 className="text-[10px] font-bold text-green-700 uppercase">اربح من المشاهدة</h4>
                 <p className="text-[9px] text-muted-foreground leading-relaxed">
-                  إذا كنت مستوفياً لشروط الأهلية، تحصل فوراً على <span className="text-green-600 font-bold">0.6 عملة</span> عن كل نقرة حقيقية على القصص الإعلانية.
+                  إذا كنت مستوفياً لشروط الأهلية (500+ متابع وتوثيق)، تحصل فوراً على <span className="text-green-600 font-bold">0.6 عملة</span> عن كل نقرة حقيقية على القصص الإعلانية.
                 </p>
               </div>
               <div className="p-4 bg-secondary/20 border-r-2 border-primary space-y-2">
@@ -138,21 +138,7 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* 5. سجل تيمقاد للكرم */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3 text-primary border-r-4 border-amber-800 pr-3">
-              <Coffee size={20} className="text-amber-800" />
-              <h2 className="text-xl font-bold font-headline tracking-tighter">سجل الكرم (أبطال تيمقاد)</h2>
-            </div>
-            
-            <div className="bg-amber-50/30 p-6 border border-amber-100 space-y-4">
-              <p className="text-[10px] text-amber-900/80 leading-relaxed italic">
-                "سجل الكرم" هو لوحة شرف دائمة في ملفك الشخصي تخلد أسماء من دعموا محتواك بفناجين القهوة. تقتطع المنصة عمولة صيانة <span className="font-bold">10%</span> من قيمة كل دعم يتم إرساله.
-              </p>
-            </div>
-          </section>
-
-          {/* 6. سياسة المحتوى والأمان */}
+          {/* 5. سياسة المحتوى والأمان */}
           <section className="space-y-6">
             <div className="flex items-center gap-3 text-red-600 border-r-4 border-red-600 pr-3">
               <ShieldCheck size={20} />
@@ -165,7 +151,7 @@ export default function AboutPage() {
                 <div className="space-y-1">
                   <h4 className="text-[11px] font-bold text-red-700 uppercase">حظر الروابط الخارجية</h4>
                   <p className="text-[10px] text-red-600/80 leading-relaxed">
-                    يُمنع منعاً باتاً وضع روابط خارجية (http, www) داخل المنشورات أو التعليقات لمنع الاحتيال.
+                    يُمنع منعاً باتاً وضع روابط خارجية (http, www) داخل المنشورات أو التعليقات لمنع الاحتيال وللحفاظ على بيئة تيمقاد السيادية.
                   </p>
                 </div>
               </div>
