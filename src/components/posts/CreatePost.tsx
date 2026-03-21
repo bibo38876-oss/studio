@@ -116,7 +116,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
       };
 
       await addDocumentNonBlocking(collection(db, 'posts'), postData);
-      toast({ title: "تم النشر بنجاح في تيمقاد!" });
+      toast({ title: "تم النشر بنجاح in Timgad!" });
       if (onSuccess) onSuccess();
     } catch (error: any) {
       toast({ variant: "destructive", title: "فشل النشر", description: "حدث خطأ غير متوقع." });
