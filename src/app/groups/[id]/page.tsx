@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
-import { AadsUnitInside } from '@/components/ads/AadsUnit';
+import { AadsUnitBanner } from '@/components/ads/AadsUnit';
 
 export default function GroupChatPage() {
   const params = useParams();
@@ -244,7 +244,8 @@ export default function GroupChatPage() {
         className="flex-1 overflow-y-auto pt-24 pb-20 px-4 container max-w-xl mx-auto flex flex-col gap-4 scroll-smooth" 
         ref={scrollRef}
       >
-        <AadsUnitInside />
+        {/* وحدة الإعلانات الجديدة العريضة في المجموعات */}
+        <AadsUnitBanner />
         
         {isMessagesLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>

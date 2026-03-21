@@ -13,7 +13,7 @@ import { collection, query, orderBy, doc, where, limit } from 'firebase/firestor
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AadsUnitInside } from '@/components/ads/AadsUnit';
+import { AadsUnitBanner } from '@/components/ads/AadsUnit';
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
@@ -98,9 +98,9 @@ export default function Home() {
     const elements = [];
     for (let i = 0; i < posts.length; i++) {
       elements.push(<PostCard key={posts[i].id} post={posts[i]} currentUserProfile={profile} />);
-      // الإعلانات تظهر كل 4 منشورات بناءً على الطلب
+      // الإعلانات تظهر كل 4 منشورات بناءً على الطلب (استخدام البانر العريض الجديد)
       if ((i + 1) % 4 === 0) {
-        elements.push(<AadsUnitInside key={`ad-${i}`} />);
+        elements.push(<AadsUnitBanner key={`ad-${i}`} />);
       }
     }
     return elements;

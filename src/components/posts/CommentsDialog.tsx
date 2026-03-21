@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { AadsUnitInside } from '@/components/ads/AadsUnit';
+import { AadsUnitBanner } from '@/components/ads/AadsUnit';
 
 export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: { postId: string, postAuthorId: string, post: any, onClose: () => void, currentUserProfile?: any }) {
   const [commentText, setCommentText] = useState('');
@@ -29,7 +29,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
   const isAnonymous = !user || user.isAnonymous;
 
-  // احتساب مشاهدة عند فتح التفاصيل لضمان الدقة
+  // احتساب مشاهدة عند فتح التفاصيل لضمان الدقة المطلقة
   useEffect(() => {
     if (firestore && postId) {
       updateDocumentNonBlocking(doc(firestore, 'posts', postId), { viewsCount: increment(1) });
@@ -199,7 +199,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
         </div>
 
-        <AadsUnitInside />
+        {/* وحدة الإعلانات الجديدة داخل التعليقات */}
+        <AadsUnitBanner />
 
         {activeAd && (
           <div 

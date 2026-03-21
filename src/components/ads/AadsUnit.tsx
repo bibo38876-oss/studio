@@ -47,3 +47,20 @@ export function AadsUnitInside() {
     </div>
   );
 }
+
+/**
+ * وحدة إعلانات البانر العريضة الجديدة (320x50)
+ */
+export function AadsUnitBanner() {
+  return (
+    <div className="flex justify-center my-4 overflow-hidden w-full">
+      <div id="frame" style={{ width: '320px', margin: 'auto', zIndex: 99998, height: 'auto' }}>
+        <iframe 
+          data-aa='2431236' 
+          src='https://ad.a-ads.com/2431236/?size=320x50&background_color=7c1818&title_hover_color=7a6666&link_color=NaNNaNNaN'
+          style={{ border: 0, padding: 0, width: '320px', height: '50px', overflow: 'hidden', display: 'block', margin: 'auto' }}
+        ></iframe>
+      </div>
+    </div>
+  );
+}
