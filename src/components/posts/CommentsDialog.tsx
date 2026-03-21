@@ -29,7 +29,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
   const isAnonymous = !user || user.isAnonymous;
 
-  // احتساب مشاهدة عند فتح التفاصيل لضمان الدقة المطلقة
+  // احتساب مشاهدة مؤكدة عند فتح التفاصيل لضمان الدقة المطلقة
   useEffect(() => {
     if (firestore && postId) {
       updateDocumentNonBlocking(doc(firestore, 'posts', postId), { viewsCount: increment(1) });
@@ -138,6 +138,28 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     setIsSupportOpen(false);
   };
 
+  const renderCommentsWithAds = () => {
+    if (!rawComments) return null;
+    const elements = [];
+    for (let i = 0; i < rawComments.length; i++) {
+      elements.push(
+        <CommentItem 
+          key={rawComments[i].id} 
+          comment={rawComments[i]} 
+          postId={postId} 
+          firestore={firestore} 
+          user={user} 
+          currentUserProfile={currentUserProfile} 
+        />
+      );
+      // ظهور إعلان بعد كل 5 تعليقات لتعظيم الربح
+      if ((i + 1) % 5 === 0) {
+        elements.push(<AadsUnitBanner key={`comment-ad-${i}`} />);
+      }
+    }
+    return elements;
+  };
+
   return (
     <div className="flex flex-col h-full bg-background text-right">
       <div className="flex items-center gap-3 p-2 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-50 h-10">
@@ -178,8 +200,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                 </CarouselContent>
                 {post.mediaUrls.length > 1 && (
                   <>
-                    <CarouselPrevious className="right-2 h-8 w-8 bg-black/20 text-white" />
-                    <CarouselNext className="left-2 h-8 w-8 bg-black/20 text-white" />
+                    <CarouselPrevious className="right-2 h-8 w-8 bg-black/20 text-white border-none z-10" />
+                    <CarouselNext className="left-2 h-8 w-8 bg-black/20 text-white border-none z-10" />
                   </>
                 )}
               </Carousel>
@@ -199,7 +221,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
         </div>
 
-        {/* وحدة الإعلانات الجديدة داخل التعليقات */}
+        {/* وحدة الإعلانات الرئيسية فوق التعليقات */}
         <AadsUnitBanner />
 
         {activeAd && (
@@ -225,9 +247,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : rawComments && rawComments.length > 0 ? (
-            rawComments.map((c: any) => (
-              <CommentItem key={c.id} comment={c} postId={postId} firestore={firestore} user={user} currentUserProfile={currentUserProfile} />
-            ))
+            renderCommentsWithAds()
           ) : (
             <div className="text-center py-10 opacity-40"><p className="text-[10px] font-bold">لا توجد نقاشات بعد.</p></div>
           )}
