@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import AadsUnit, { AadsUnitSmall } from '@/components/ads/AadsUnit';
+import { AadsUnitInside } from '@/components/ads/AadsUnit';
 
 export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: { postId: string, postAuthorId: string, post: any, onClose: () => void, currentUserProfile?: any }) {
   const [commentText, setCommentText] = useState('');
@@ -43,7 +43,10 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     );
   }, [firestore, postId]);
   const { data: postAds } = useCollection(postAdQuery);
-  const activeAd = postAds?.find(ad => ad.expiresAt?.toDate() > new Date());
+  const activeAd = postAds?.find(ad => {
+    const expiry = ad.expiresAt?.toDate?.() || new Date(0);
+    return expiry > new Date();
+  });
 
   const currentPostVerification: VerificationType = postAuthorProfile?.verificationType || post.authorVerificationType || 'none';
   const isVerifiedAuthor = currentPostVerification === 'blue' || currentPostVerification === 'gold';
@@ -176,10 +179,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
         </div>
 
-        <div className="p-4 border-b space-y-2">
-          <AadsUnitSmall />
-          <AadsUnit />
-        </div>
+        <AadsUnitInside />
 
         {activeAd && (
           <div 
@@ -205,7 +205,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : rawComments && rawComments.length > 0 ? (
             rawComments.map((c: any) => (
-              <CommentItem key={c.id} comment={c} postId={postId} firestore={firestore} user={user} />
+              <CommentItem key={c.id} comment={c} postId={postId} firestore={firestore} user={user} currentUserProfile={currentUserProfile} />
             ))
           ) : (
             <div className="text-center py-10 opacity-40"><p className="text-[10px] font-bold">لا توجد نقاشات بعد.</p></div>
@@ -238,7 +238,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   );
 }
 
-function CommentItem({ comment, postId, firestore, user }: any) {
+function CommentItem({ comment, postId, firestore, user, currentUserProfile }: any) {
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !comment.authorId) return null;
     return doc(firestore, 'users', comment.authorId);

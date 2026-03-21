@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { cn } from '@/lib/utils';
-import AadsUnit, { AadsUnitSmall } from '@/components/ads/AadsUnit';
+import AadsUnit, { AadsUnitSmall, AadsUnitInside } from '@/components/ads/AadsUnit';
 
 export default function AdsPage() {
   const router = useRouter();
@@ -144,7 +144,7 @@ export default function AdsPage() {
 
     if (isPosting) return;
 
-    // فحص أهلية الربح: 500 متابع + توثيق
+    // فحص أهلية الربح الصارم: 500 متابع + توثيق
     const isVerified = profile?.verificationType === 'blue' || profile?.verificationType === 'gold';
     const hasMinFollowers = (profile?.followerIds?.length || 0) >= 500;
 
@@ -154,7 +154,6 @@ export default function AdsPage() {
         title: "حساب غير مؤهل للربح", 
         description: "للربح من مشاهدة الإعلانات، يجب أن تملك 500 متابع وحساباً موثقاً (شارة زرقاء/ذهبية)." 
       });
-      // توجيه المستخدم للرابط ولكن بدون رصيد
       window.location.href = ad.link;
       return;
     }
@@ -254,7 +253,7 @@ export default function AdsPage() {
           </header>
 
           <div className="mb-6 space-y-4">
-            <AadsUnitSmall />
+            <AadsUnitInside />
             <div className="bg-red-50/50 p-4 border border-red-100 rounded-lg text-center">
               <p className="text-[10px] text-red-700 font-bold leading-relaxed">
                 ⚠️ تنبيه: نظام الربح مفعل فقط للحسابات الموثقة التي تملك 500 متابع حقيقي أو أكثر. يمكنك مشاهدة الإعلانات لدعم المجتمع ولكن لن يتم إضافة رصيد لحسابك إذا لم تستوفِ الشروط.
@@ -329,6 +328,7 @@ export default function AdsPage() {
           <div className="sticky top-24 space-y-4">
             <AadsUnit />
             <AadsUnitSmall />
+            <AadsUnitInside />
           </div>
         </aside>
       </main>

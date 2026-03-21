@@ -33,3 +33,17 @@ export function AadsUnitSmall() {
     </div>
   );
 }
+
+export function AadsUnitInside() {
+  return (
+    <div className="flex justify-center my-4 overflow-hidden w-full border-y border-primary/5 py-4 bg-primary/[0.02]">
+      <div id="frame" style={{ width: '120px', margin: 'auto', zIndex: 99998, height: 'auto' }}>
+        <iframe 
+          data-aa='2431219' 
+          src='https://ad.a-ads.com/2431219/?size=120x60'
+          style={{ border: 0, padding: 0, width: '120px', height: '60px', overflow: 'hidden', display: 'block', margin: 'auto' }}
+        ></iframe>
+      </div>
+    </div>
+  );
+}

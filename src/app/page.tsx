@@ -14,6 +14,7 @@ import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { AadsUnitInside } from '@/components/ads/AadsUnit';
 
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
@@ -34,7 +35,6 @@ export default function Home() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // نظام المكافأة اليومية (Daily Login Reward)
   useEffect(() => {
     if (user && profile && firestore) {
       const now = new Date();
@@ -55,7 +55,6 @@ export default function Home() {
     }
   }, [user, profile, firestore, toast]);
 
-  // 1. تجميع المنشورات (Pool Collection)
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'), limit(150));
@@ -63,9 +62,6 @@ export default function Home() {
 
   const { data: postsPool, isLoading: isPoolLoading } = useCollection(feedPoolQuery);
 
-  /**
-   * 2. محرك التقييم (Scoring Engine) بناءً على المعادلة الذهبية
-   */
   const recommendedPosts = useMemo(() => {
     if (!postsPool) return [];
     
@@ -75,28 +71,23 @@ export default function Home() {
       const createdAt = post.createdAt?.toMillis ? post.createdAt.toMillis() : now;
       const diffHours = (now - createdAt) / (1000 * 60 * 60);
 
-      // أ. التفاعل الأساسي
       score += (post.likesCount || 0) * 3;
       score += (post.commentsCount || 0) * 5;
 
-      // ب. دعم المتابعة (FollowingBoost: +20 raw points * 4 weight = +80)
       const isFollowing = profile?.followingIds?.includes(post.authorId);
       if (isFollowing) score += (20 * 4);
 
-      // ج. حداثة المنشور (RecencyScore)
       let recencyBase = 5; 
       if (diffHours < 1) recencyBase = 30;
       else if (diffHours < 24) recencyBase = 15;
       score += (recencyBase * 2);
 
-      // د. اهتمام المستخدم بالكاتب (UserInterestScore: +25 points * 6 weight = +150)
       const hasInteractedBefore = profile?.interactedAuthorIds?.includes(post.authorId);
       if (hasInteractedBefore) score += (25 * 6);
 
       return { ...post, calculatedScore: score };
     })
     .sort((a, b) => {
-      // الأولوية المطلقة للمنشورات المروجة (Promoted)
       if (a.promoted !== b.promoted) return a.promoted ? -1 : 1;
       return b.calculatedScore - a.calculatedScore;
     })
@@ -123,6 +114,17 @@ export default function Home() {
     });
   }, [rawFollowingPosts]);
 
+  const renderPostsWithAds = (posts: any[]) => {
+    const elements = [];
+    for (let i = 0; i < posts.length; i++) {
+      elements.push(<PostCard key={posts[i].id} post={posts[i]} currentUserProfile={profile} />);
+      if ((i + 1) % 5 === 0) {
+        elements.push(<AadsUnitInside key={`ad-${i}`} />);
+      }
+    }
+    return elements;
+  };
+
   if (isUserLoading || !user) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
@@ -147,7 +149,7 @@ export default function Home() {
                 {activeTab === 'for-you' ? (
                   <motion.div key="for-you" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     {isPoolLoading && recommendedPosts.length === 0 ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div> : (
-                      recommendedPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)
+                      renderPostsWithAds(recommendedPosts)
                     )}
                   </motion.div>
                 ) : (
@@ -158,7 +160,7 @@ export default function Home() {
                         <p className="text-primary font-bold text-xs">لم تتابع أحداً بعد!</p>
                       </div>
                     ) : (
-                      sortedFollowingPosts.map((post: any) => <PostCard key={post.id} post={post} currentUserProfile={profile} />)
+                      renderPostsWithAds(sortedFollowingPosts)
                     )}
                   </motion.div>
                 )}
