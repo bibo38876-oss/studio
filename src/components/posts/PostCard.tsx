@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Heart, MessageCircle, Bookmark, BarChart3, MoreHorizontal, Trash2, AlertTriangle, Rocket, Coffee } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,253 +15,110 @@ import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import CommentsDialog from "./CommentsDialog";
-import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
+import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
-interface PostData {
-  id: string;
-  authorId: string;
-  authorName?: string;
-  authorAvatar?: string;
-  content: string;
-  mediaUrls?: string[];
-  createdAt: any;
-  likesCount?: number;
-  commentsCount?: number;
-  repostsCount?: number;
-  bookmarksCount?: number;
-  viewsCount?: number;
-  reportsCount?: number;
-  promoted?: boolean;
-  authorVerificationType?: VerificationType;
-}
-
-export default function PostCard({ post, currentUserProfile }: { post: PostData, currentUserProfile?: any }) {
+export default function PostCard({ post, currentUserProfile }: any) {
   const { user, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const viewedRef = useRef(false);
+  const viewed = useRef(false);
   
-  const isAnonymous = !user || user.isAnonymous;
   const isOwner = user?.uid === post.authorId;
   const isAdmin = user?.email === 'adelbenmaza8@gmail.com';
 
-  const authorRef = useMemoFirebase(() => {
-    if (!firestore || !post.authorId) return null;
-    return doc(firestore, 'users', post.authorId);
-  }, [firestore, post.authorId]);
-  
-  const { data: authorProfile } = useDoc(authorRef);
-  
-  const currentVerificationType: VerificationType = authorProfile?.verificationType || post.authorVerificationType || 'none';
+  const authorRef = useMemoFirebase(() => (firestore && post.authorId) ? doc(firestore, 'users', post.authorId) : null, [firestore, post.authorId]);
+  const { data: author } = useDoc(authorRef);
 
-  const likeRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !post.id) return null;
-    return doc(firestore, 'posts', post.id, 'likes', user.uid);
-  }, [firestore, post.id, user?.uid]);
-  const { data: likeData } = useDoc(likeRef);
+  const likeRef = useMemoFirebase(() => (firestore && user?.uid) ? doc(firestore, 'posts', post.id, 'likes', user.uid) : null, [firestore, post.id, user?.uid]);
+  const { data: liked } = useDoc(likeRef);
 
-  const bookmarkRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !post.id) return null;
-    return doc(firestore, 'users', user.uid, 'bookmarks', post.id);
-  }, [firestore, post.id, user?.uid]);
-  const { data: bookmarkData } = useDoc(bookmarkRef);
+  const bookmarkRef = useMemoFirebase(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid, 'bookmarks', post.id) : null, [firestore, post.id, user?.uid]);
+  const { data: bookmarked } = useDoc(bookmarkRef);
 
   useEffect(() => {
-    if (!firestore || !post.id || !user?.uid || viewedRef.current) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !viewedRef.current) {
-        viewedRef.current = true;
+    if (!firestore || !post.id || viewed.current) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !viewed.current) {
+        viewed.current = true;
         updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { viewsCount: increment(1) });
       }
-    }, { 
-      threshold: 0.1, 
-      rootMargin: '0px'
-    });
+    }, { threshold: 0.1 });
+    if (cardRef.current) obs.observe(cardRef.current);
+    return () => obs.disconnect();
+  }, [firestore, post.id]);
 
-    const currentTarget = cardRef.current;
-    if (currentTarget) observer.observe(currentTarget);
-
-    return () => {
-      if (currentTarget) observer.unobserve(currentTarget);
-      observer.disconnect();
-    };
-  }, [firestore, post.id, user?.uid]);
-
-  const handleLike = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user || !post.id) return;
+  const handleSupport = (amt: number) => {
+    if (!user || user.isAnonymous) return router.push('/login');
+    if ((currentUserProfile?.coins || 0) < amt) return toast({ variant: "destructive", description: "رصيد غير كافٍ." });
     
-    if (likeData) {
-      deleteDocumentNonBlocking(likeRef!);
-      updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { likesCount: increment(-1) });
-    } else {
-      setDocumentNonBlocking(likeRef!, { createdAt: serverTimestamp() }, { merge: true });
-      updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { likesCount: increment(1) });
-      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { interactedAuthorIds: arrayUnion(post.authorId) });
-    }
-  };
-
-  const handleBookmark = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isAnonymous) { router.push('/login'); return; }
-    if (!firestore || !user || !post.id) return;
-    if (bookmarkData) {
-      if (bookmarkRef) deleteDocumentNonBlocking(bookmarkRef);
-      updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { bookmarksCount: increment(-1) });
-    } else {
-      if (bookmarkRef) setDocumentNonBlocking(bookmarkRef, { ...post, createdAt: serverTimestamp() }, { merge: true });
-      updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { bookmarksCount: increment(1) });
-    }
-  };
-
-  const handleReport = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isAnonymous) { router.push('/login'); return; }
-    updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { reportsCount: increment(1) });
-    toast({ title: "تم الإبلاغ", description: "سنراجع هذا المنشور فوراً." });
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isAdmin && !isOwner) return;
-    deleteDocumentNonBlocking(doc(firestore!, 'posts', post.id));
-    toast({ description: "تم حذف المنشور." });
-  };
-
-  const handleSupport = (amount: number) => {
-    if (isAnonymous) { router.push('/login'); return; }
-    if ((currentUserProfile?.coins || 0) < amount) {
-      toast({ variant: "destructive", description: "رصيدك غير كافٍ." });
-      return;
-    }
-    if (!firestore || !user) return;
-    const platformFee = amount * 0.1;
-    const netAmount = amount - platformFee;
-    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amount) });
-    updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(netAmount) });
-    addDocumentNonBlocking(collection(firestore, 'platform_revenue'), { type: 'support_fee', amount: platformFee, fromUserId: user.uid, toUserId: post.authorId, createdAt: serverTimestamp() });
-    setDocumentNonBlocking(doc(firestore, 'users', post.authorId, 'supporters', user.uid), { userId: user.uid, username: currentUserProfile?.username || 'مبادر من تيمقاد', avatar: currentUserProfile?.profilePictureUrl || '', verificationType: currentUserProfile?.verificationType || 'none', totalAmount: increment(amount), lastSupportedAt: serverTimestamp() }, { merge: true });
-    addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), { type: 'support', fromUserId: user.uid, fromUsername: currentUserProfile?.username || 'مبادر من تيمقاد', fromAvatar: currentUserProfile?.profilePictureUrl || '', amount: netAmount, postId: post.id, createdAt: serverTimestamp(), read: false });
-    toast({ title: "تم الدعم! ☕️", description: `أرسلت ${netAmount.toFixed(1)} عملة للمبدع بعد عمولة المنصة.` });
+    const fee = amt * 0.1, net = amt - fee;
+    updateDocumentNonBlocking(doc(firestore!, 'users', user.uid), { coins: increment(-amt) });
+    updateDocumentNonBlocking(doc(firestore!, 'users', post.authorId), { coins: increment(net) });
+    addDocumentNonBlocking(collection(firestore!, 'platform_revenue'), { type: 'support_fee', amount: fee, fromUserId: user.uid, toUserId: post.authorId, createdAt: serverTimestamp() });
+    setDocumentNonBlocking(doc(firestore!, 'users', post.authorId, 'supporters', user.uid), { userId: user.uid, username: currentUserProfile.username, avatar: currentUserProfile.profilePictureUrl, totalAmount: increment(amt), lastSupportedAt: serverTimestamp() }, { merge: true });
+    addDocumentNonBlocking(collection(firestore!, 'users', post.authorId, 'notifications'), { type: 'support', fromUserId: user.uid, fromUsername: currentUserProfile.username, amount: net, postId: post.id, createdAt: serverTimestamp(), read: false });
+    
+    toast({ title: "تم الدعم! ☕️", description: `أرسلت ${net.toFixed(1)} عملة.` });
     setIsSupportOpen(false);
   };
 
+  const content = useMemo(() => {
+    const text = expanded || post.content.length <= 180 ? post.content : post.content.slice(0, 180) + "...";
+    return text.split(/(#[^\s#]+)/g).map((p: string, i: number) => p.startsWith('#') ? <span key={i} className="text-accent font-bold">{p}</span> : p);
+  }, [post.content, expanded]);
+
   return (
     <>
-      <Card ref={cardRef} className={cn("border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-all min-h-[150px]", post.promoted && "bg-primary/5")} onClick={() => setIsCommentsOpen(true)}>
-        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+      <Card ref={cardRef} className={cn("border-none shadow-none rounded-none bg-card border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-all cursor-pointer", post.promoted && "bg-primary/5")} onClick={() => setIsCommentsOpen(true)}>
+        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
           <div className="flex items-center gap-1">
-            {post.promoted && <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1 ml-2"><Rocket size={10} /><span className="text-[8px] font-bold">مروج</span></div>}
+            {post.promoted && <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[8px] font-bold flex items-center gap-1 ml-2"><Rocket size={10} /> مروج</div>}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground"><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 rounded-none">
-                <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer" onClick={handleReport}><AlertTriangle size={14} /> إبلاغ</DropdownMenuItem>
-                {(isOwner || isAdmin) && <DropdownMenuItem className="text-[11px] gap-2 cursor-pointer text-destructive" onClick={handleDelete}><Trash2 size={14} /> حذف المنشور</DropdownMenuItem>}
-              </DropdownMenuContent>
+              <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end"><DropdownMenuItem className="text-xs" onClick={() => updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { reportsCount: increment(1) })}><AlertTriangle size={14} /> إبلاغ</DropdownMenuItem>{(isOwner || isAdmin) && <DropdownMenuItem className="text-xs text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'posts', post.id))}><Trash2 size={14} /> حذف</DropdownMenuItem>}</DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          <Link href={`/profile/${post.authorId}`} className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col text-right">
-              <div className="flex items-center gap-1.5 leading-tight justify-end">
-                <VerifiedBadge type={currentVerificationType} size={14} />
-                <span className="text-xs font-bold text-primary">{authorProfile?.username || post.authorName}</span>
-              </div>
-              <span className="text-[9px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
-            </div>
-            <Avatar className="h-10 w-10 border border-primary/10"><AvatarImage src={authorProfile?.profilePictureUrl || post.authorAvatar} /><AvatarFallback>{(authorProfile?.username || post.authorName)?.[0]}</AvatarFallback></Avatar>
+          <Link href={`/profile/${post.authorId}`} className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
+            <div className="text-right"><div className="flex items-center gap-1 justify-end"><VerifiedBadge type={author?.verificationType || 'none'} size={14} /><span className="text-xs font-bold text-primary">{author?.username || post.authorName}</span></div><span className="text-[9px] text-muted-foreground">{post.createdAt?.toDate ? formatDistanceToNow(post.createdAt.toDate(), { locale: ar }) : 'الآن'}</span></div>
+            <Avatar className="h-10 w-10 border border-primary/10"><AvatarImage src={author?.profilePictureUrl || post.authorAvatar} /><AvatarFallback>{(author?.username || post.authorName)?.[0]}</AvatarFallback></Avatar>
           </Link>
         </CardHeader>
-
         <CardContent className="px-4 py-1 text-right">
-          <div className="flex flex-col items-start w-full">
-            <div className="text-sm leading-relaxed whitespace-pre-wrap text-right font-medium w-full">
-              {(isExpanded || post.content.length <= 200 ? post.content : post.content.substring(0, 200) + "...").split(/(#[^\s#]+)/g).map((part, i) => (
-                part.startsWith('#') ? <span key={i} className="text-accent font-bold hover:underline">{part}</span> : part
-              ))}
-            </div>
-            {post.content.length > 200 && (
-              <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="text-accent text-[11px] font-bold mt-1 hover:underline">
-                {isExpanded ? "عرض أقل" : "إقرأ المزيد"}
-              </button>
-            )}
-          </div>
-          
-          {post.mediaUrls && post.mediaUrls.length > 0 && (
-            <div className="mt-3 relative" onClick={(e) => e.stopPropagation()}>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{content}</div>
+          {post.content.length > 180 && <button onClick={e => { e.stopPropagation(); setExpanded(!expanded); }} className="text-accent text-[10px] font-bold mt-1">{expanded ? "عرض أقل" : "إقرأ المزيد"}</button>}
+          {post.mediaUrls?.length > 0 && (
+            <div className="mt-3 relative" onClick={e => e.stopPropagation()}>
               <Carousel className="w-full" opts={{ direction: 'rtl' }}>
-                <CarouselContent>
-                  {post.mediaUrls.map((url, i) => (
-                    <CarouselItem key={i}>
-                      <div className="rounded-xl overflow-hidden border bg-muted/5 aspect-square relative w-full">
-                        <img src={url} alt="Post media" className="absolute inset-0 w-full h-full object-cover" />
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                {post.mediaUrls.length > 1 && (
-                  <>
-                    <CarouselPrevious className="right-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
-                    <CarouselNext className="left-2 bg-black/20 text-white border-none h-8 w-8 z-10" />
-                  </>
-                )}
+                <CarouselContent>{post.mediaUrls.map((u: string, i: number) => <CarouselItem key={i}><div className="rounded-xl overflow-hidden border aspect-square relative"><img src={u} className="absolute inset-0 w-full h-full object-cover" /></div></CarouselItem>)}</CarouselContent>
+                {post.mediaUrls.length > 1 && <><CarouselPrevious className="right-2 h-8 w-8" /><CarouselNext className="left-2 h-8 w-8" /></>}
               </Carousel>
             </div>
           )}
         </CardContent>
-
         <CardFooter className="p-4 py-3 border-t border-muted/5 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleLike(e); }} className={cn("flex items-center gap-1.5 transition-colors", likeData ? "text-red-500" : "text-muted-foreground hover:text-red-500")}>
-              <Heart size={18} className={likeData ? "fill-current" : ""} />
-              <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
-            </motion.button>
+            <button onClick={e => { e.stopPropagation(); if(liked) deleteDocumentNonBlocking(likeRef!); else setDocumentNonBlocking(likeRef!, {createdAt: serverTimestamp()}, {merge:true}); updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), {likesCount: increment(liked?-1:1)}); }} className={cn("flex items-center gap-1.5", liked ? "text-red-500" : "text-muted-foreground")}><Heart size={18} className={liked?"fill-current":""} /><span className="text-[11px] font-bold">{post.likesCount || 0}</span></button>
             <div className="flex items-center gap-1.5 text-muted-foreground"><MessageCircle size={18} /><span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); setIsSupportOpen(true); }} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors">
-              <Coffee size={18} />
-              <span className="text-[10px] font-bold">دعم</span>
-            </motion.button>
+            <button onClick={e => { e.stopPropagation(); setIsSupportOpen(true); }} className="flex items-center gap-1.5 text-amber-600 font-bold"><Coffee size={18} /><span className="text-[10px]">دعم</span></button>
             <div className="flex items-center gap-1.5 text-muted-foreground"><BarChart3 size={18} /><span className="text-[11px] font-bold">{post.viewsCount || 0}</span></div>
           </div>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleBookmark(e); }} className={cn("flex items-center gap-1.5 transition-colors", bookmarkData ? "text-blue-500" : "text-muted-foreground hover:text-blue-500")}>
-            <Bookmark size={18} className={bookmarkData ? "fill-current" : ""} />
-            <span className="text-[11px] font-bold">{post.bookmarksCount || 0}</span>
-          </motion.button>
+          <button onClick={e => { e.stopPropagation(); if(bookmarked) deleteDocumentNonBlocking(bookmarkRef!); else setDocumentNonBlocking(bookmarkRef!, {...post, createdAt: serverTimestamp()}, {merge:true}); updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), {bookmarksCount: increment(bookmarked?-1:1)}); }} className={cn(bookmarked?"text-blue-500":"text-muted-foreground")}><Bookmark size={18} className={bookmarked?"fill-current":""} /></button>
         </CardFooter>
       </Card>
 
       <Dialog open={isSupportOpen} onOpenChange={setIsSupportOpen}>
-        <DialogContent className="sm:max-w-[300px] text-center p-6 rounded-none">
-          <DialogTitle className="text-sm font-bold text-primary mb-4">دعم المبدع</DialogTitle>
-          <div className="grid grid-cols-2 gap-3">
-            {[3, 7, 10, 20].map((amt) => (
-              <Button key={amt} variant="outline" className="h-14 flex flex-col gap-1 rounded-none border-primary/20 hover:bg-primary/5" onClick={() => handleSupport(amt)}>
-                <span className="text-sm font-bold">{amt}</span>
-                <TimgadCoin size={14} />
-              </Button>
-            ))}
-          </div>
-          <p className="text-[9px] text-muted-foreground italic mt-4">سيتم خصم المبلغ وعمولة 10% من رصيدك.</p>
-        </DialogContent>
+        <DialogContent className="sm:max-w-[300px] text-center p-6"><DialogTitle className="text-sm font-bold text-primary mb-4">دعم المبدع</DialogTitle><div className="grid grid-cols-2 gap-3">{[3, 7, 10, 20].map(a => <Button key={a} variant="outline" className="h-14 flex flex-col gap-1" onClick={() => handleSupport(a)}><span className="text-sm font-bold">{a}</span><TimgadCoin size={14} /></Button>)}</div><p className="text-[9px] text-muted-foreground mt-4 italic">عمولة المنصة 10%.</p></DialogContent>
       </Dialog>
-
-      <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-        <DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[95vh] p-0 border-none bg-background gap-0 overflow-hidden flex flex-col [&>button]:hidden">
-          <DialogTitle className="sr-only">تفاصيل المنشور والتعليقات</DialogTitle>
-          <CommentsDialog postId={post.id} postAuthorId={post.authorId} post={post} onClose={() => setIsCommentsOpen(false)} currentUserProfile={currentUserProfile} />
-        </DialogContent>
-      </Dialog>
+      <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}><DialogContent className="sm:max-w-[600px] h-[100dvh] sm:h-[90vh] p-0 border-none flex flex-col [&>button]:hidden"><DialogTitle className="sr-only">تعليقات</DialogTitle><CommentsDialog post={post} postId={post.id} postAuthorId={post.authorId} currentUserProfile={currentUserProfile} onClose={() => setIsCommentsOpen(false)} /></DialogContent></Dialog>
     </>
   );
 }
