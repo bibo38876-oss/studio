@@ -8,8 +8,8 @@ import LeftSidebar from '@/components/layout/LeftSidebar';
 import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
-import { useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, where, limit } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, doc, where, limit, increment } from 'firebase/firestore';
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,7 +31,14 @@ function HomeContent() {
     }
   }, [user, isUserLoading, router]);
 
-  // إظهار تحذير الإعلانات عند الوصول من صفحة المتابعات
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: profile } = useDoc(userProfileRef);
+
+  // إظهار تحذير الإعلانات ونظام الدخل الساعي
   useEffect(() => {
     if (mounted && searchParams.get('show_ad_warning') === 'true') {
       toast({
@@ -43,14 +50,33 @@ function HomeContent() {
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
-  }, [mounted, searchParams, toast]);
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user?.uid]);
+    // حساب ومنح الدخل الساعي (0.02 عملة لكل ساعة)
+    if (mounted && user && profile) {
+      const now = Date.now();
+      const lastRewardTime = profile.lastPassiveRewardAt 
+        ? new Date(profile.lastPassiveRewardAt).getTime() 
+        : profile.createdAt 
+          ? new Date(profile.createdAt).getTime() 
+          : now;
+      
+      const elapsedMs = now - lastRewardTime;
+      const elapsedHours = Math.floor(elapsedMs / (1000 * 60 * 60));
 
-  const { data: profile } = useDoc(userProfileRef);
+      if (elapsedHours >= 1) {
+        const reward = elapsedHours * 0.02;
+        updateDocumentNonBlocking(doc(firestore!, 'users', user.uid), {
+          coins: increment(reward),
+          lastPassiveRewardAt: new Date(now).toISOString()
+        });
+        
+        toast({
+          title: "دخل إعلانات سلبي 💰",
+          description: `لقد حصلت على ${reward.toFixed(3)} عملة تيمقاد مقابل نشاطك الساعي.`,
+        });
+      }
+    }
+  }, [mounted, searchParams, toast, user, profile, firestore]);
 
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;

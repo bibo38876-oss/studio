@@ -40,13 +40,15 @@ export default function LoginPage() {
         
         await updateProfile(user, { displayName: username });
         
+        const now = new Date().toISOString();
         await setDoc(doc(firestore, 'users', user.uid), {
           id: user.uid,
           username: username,
           email: email,
           profilePictureUrl: "",
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
+          createdAt: now,
+          lastLoginAt: now,
+          lastPassiveRewardAt: now, // تهيئة تاريخ أول مكافأة سلبيّة
           bio: 'مرحباً، أنا مستخدم جديد في تيمقاد. فخور بانضمامي لهذه المنصة العريقة!',
           followingIds: [],
           followerIds: [],

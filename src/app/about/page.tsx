@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Coins, BadgeCheck, Scale, History, ShieldCheck, Info, Globe, Heart, Coffee, Star, Gavel, AlertCircle, Megaphone, Wallet, LayoutGrid, Sparkles } from 'lucide-react';
+import { ChevronRight, Coins, BadgeCheck, Scale, History, ShieldCheck, Info, Globe, Heart, Coffee, Star, Gavel, AlertCircle, Megaphone, Wallet, LayoutGrid, Sparkles, Clock } from 'lucide-react';
 import TimgadLogo from '@/components/ui/Logo';
 
 export default function AboutPage() {
@@ -40,6 +40,16 @@ export default function AboutPage() {
               <p className="text-[11px] leading-relaxed text-foreground/80">
                 يعتمد نظام تيمقاد على عملة ذهبية داخلية مرتبطة تقنياً بعملة <span className="font-bold">TRX (Tron)</span>. يتم الشحن والسحب يدوياً عبر مركز الدعم لضمان أمان خزانة المنصة.
               </p>
+              
+              {/* الميزة الجديدة: الدخل الساعي */}
+              <div className="bg-primary/5 p-4 border border-primary/10 flex items-center gap-3">
+                <Clock size={18} className="text-primary" />
+                <div className="flex-1">
+                  <h4 className="text-[10px] font-bold text-primary uppercase">الدخل السلبي المجاني</h4>
+                  <p className="text-[9px] text-muted-foreground">يحصل كل عضو تلقائياً على <span className="text-primary font-bold">0.02 عملة كل ساعة</span> كعائد مشاركة من إيرادات الإعلانات العامة.</p>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-card border text-center">
                   <p className="text-[9px] text-muted-foreground mb-1 uppercase font-bold">الحد الأدنى للسحب</p>
