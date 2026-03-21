@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useRef } from 'react';
-import { Image as ImageIcon, X, Hash, Loader2, Camera } from 'lucide-react';
+import { Image as ImageIcon, X, Hash, Loader2, Camera, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,6 +11,7 @@ import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase 
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { cn } from '@/lib/utils';
+import imageCompression from 'browser-image-compression';
 
 interface CreatePostProps {
   onSuccess?: () => void;
@@ -39,7 +40,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const isVerified = profile?.verificationType === 'blue' || profile?.verificationType === 'gold' || isAdmin;
   
   const charLimit = isVerified ? 1500 : 400;
-  const imageLimit = isVerified ? 3 : 1;
+  const imageLimit = 3; // متاح للجميع الآن رفع 3 صور
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -48,9 +49,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     if (mediaUrls.length + files.length > imageLimit) {
       toast({ 
         variant: "destructive", 
-        description: isVerified 
-          ? `يمكنك رفع 3 صور كحد أقصى.` 
-          : "يمكنك رفع صورة واحدة فقط. وثق حسابك لرفع المزيد!" 
+        description: `يمكنك رفع ${imageLimit} صور كحد أقصى.` 
       });
       return;
     }
@@ -58,13 +57,23 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     setIsUploading(true);
     try {
       const newUrls = [...mediaUrls];
+      const compressionOptions = {
+        maxSizeMB: 0.8,
+        maxWidthOrHeight: 1200,
+        useWebWorker: true
+      };
+
       for (let i = 0; i < files.length; i++) {
-        const url = await uploadImageToCloudinary(files[i]);
+        const file = files[i];
+        // ضغط الصورة قبل الرفع
+        const compressedFile = await imageCompression(file, compressionOptions);
+        const url = await uploadImageToCloudinary(compressedFile);
         newUrls.push(url);
       }
       setMediaUrls(newUrls);
+      toast({ description: "تم ضغط ورفع الصور بنجاح ✨" });
     } catch (error: any) {
-      toast({ variant: "destructive", title: "خطأ في الرفع", description: error.message });
+      toast({ variant: "destructive", title: "خطأ في المعالجة", description: error.message });
     } finally { 
       setIsUploading(false); 
     }
@@ -156,16 +165,22 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
       </div>
 
       <div className="border-t bg-background/95 p-2">
-        <div className="flex items-center gap-2 max-w-lg mx-auto">
-          <Button variant="secondary" className="flex-1 h-9 rounded-xl gap-2 font-bold text-[10px]" onClick={() => fileInputRef.current?.click()} disabled={isUploading || mediaUrls.length >= imageLimit}>
-            <ImageIcon size={16} className="text-primary" />
-            <span>{isVerified ? `صور (${mediaUrls.length}/3)` : "صورة واحدة"}</span>
-          </Button>
-          <Button variant="secondary" className="h-9 w-9 rounded-xl p-0 flex items-center justify-center" onClick={() => setContent(content + ' #')}>
-            <Hash size={18} />
-          </Button>
+        <div className="flex flex-col gap-2 max-w-lg mx-auto">
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" className="flex-1 h-9 rounded-xl gap-2 font-bold text-[10px]" onClick={() => fileInputRef.current?.click()} disabled={isUploading || mediaUrls.length >= imageLimit}>
+              <ImageIcon size={16} className="text-primary" />
+              <span>{`رفع صور (${mediaUrls.length}/${imageLimit})`}</span>
+            </Button>
+            <Button variant="secondary" className="h-9 w-9 rounded-xl p-0 flex items-center justify-center" onClick={() => setContent(content + ' #')}>
+              <Hash size={18} />
+            </Button>
+          </div>
+          <p className="text-[8px] text-muted-foreground text-center flex items-center justify-center gap-1">
+            <Sparkles size={10} className="text-accent" />
+            يتم ضغط الصور تلقائياً لسرعة النشر
+          </p>
         </div>
-        <input type="file" accept="image/*" multiple={isVerified} hidden ref={fileInputRef} onChange={handleFileChange} />
+        <input type="file" accept="image/*" multiple hidden ref={fileInputRef} onChange={handleFileChange} />
       </div>
     </div>
   );

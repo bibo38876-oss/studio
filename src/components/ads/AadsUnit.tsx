@@ -32,11 +32,11 @@ export function AadsUnitSmall() {
         href={adLink} 
         target="_blank" 
         rel="noopener noreferrer" 
-        className="block w-[120px] h-[60px] bg-primary/10 border border-primary/20 rounded-md overflow-hidden relative group"
+        className="block w-full max-w-[200px] h-[60px] bg-primary/10 border border-primary/20 rounded-md overflow-hidden relative group"
       >
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-1">
           <span className="text-[8px] font-bold text-primary uppercase tracking-tighter">Sponsored</span>
-          <span className="text-[10px] font-bold text-accent group-hover:underline">Visit Now</span>
+          <span className="text-[10px] font-bold text-accent group-hover:underline">Visit Now & Support Us</span>
         </div>
         <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
       </a>
