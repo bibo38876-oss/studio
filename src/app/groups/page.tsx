@@ -28,7 +28,6 @@ export default function GroupsPage() {
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
-  // جلب المجموعات - يتطلب تسجيل الدخول
   const myGroupsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'groups'), where('creatorId', '==', user.uid));
@@ -62,7 +61,6 @@ export default function GroupsPage() {
 
   const hasGroup = myGroups && myGroups.length > 0;
 
-  // خوارزمية الاقتراحات العادلة والذكية
   const suggestedUsers = useMemo(() => {
     if (!allUsers || !user) return [];
     
@@ -201,7 +199,6 @@ export default function GroupsPage() {
           </div>
         )}
 
-        {/* قسم الاقتراحات العادلة والذكية */}
         {!isUsersLoading && suggestedUsers.length > 0 && (
           <div className="bg-card border-b py-6 px-4 space-y-4">
             <div className="flex items-center justify-between">
@@ -252,8 +249,9 @@ export default function GroupsPage() {
           </div>
         )}
 
-        {/* وحدة الإعلانات الكبيرة في صفحة إنشاء المجموعات */}
-        <AadsUnitBanner />
+        <div className="my-4">
+          <AadsUnitBanner />
+        </div>
 
         {(isMyGroupsLoading || isJoinedLoading) ? (
           <div className="flex justify-center py-20">

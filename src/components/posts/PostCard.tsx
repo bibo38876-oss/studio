@@ -75,18 +75,16 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   }, [firestore, post.id, user?.uid]);
   const { data: bookmarkData } = useDoc(bookmarkRef);
 
-  // نظام احتساب المشاهدات المطور
   useEffect(() => {
     if (!firestore || !post.id || !user?.uid || viewedRef.current) return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && !viewedRef.current) {
         viewedRef.current = true;
-        // احتساب المشاهدة للجميع لضمان الدقة
         updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { viewsCount: increment(1) });
       }
     }, { 
-      threshold: 0.1, // حساسية عالية (10% من المنشور كافية لاحتساب مشاهدة)
+      threshold: 0.1, 
       rootMargin: '0px'
     });
 

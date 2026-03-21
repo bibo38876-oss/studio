@@ -98,7 +98,7 @@ export default function Home() {
     const elements = [];
     for (let i = 0; i < posts.length; i++) {
       elements.push(<PostCard key={posts[i].id} post={posts[i]} currentUserProfile={profile} />);
-      // الإعلانات تظهر كل 4 منشورات بناءً على الطلب (استخدام البانر العريض الجديد)
+      // الإعلانات تظهر كل 4 منشورات لتعظيم العوائد
       if ((i + 1) % 4 === 0) {
         elements.push(<AadsUnitBanner key={`ad-${i}`} />);
       }

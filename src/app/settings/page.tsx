@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { LogOut, Search, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Smartphone, Download, LayoutGrid } from 'lucide-react';
+import { LogOut, Search, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Smartphone, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -129,12 +129,10 @@ export default function SettingsPage() {
       </div>
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
-        {/* وحدة الإعلانات في صفحة الإعدادات */}
         <div className="mb-4">
           <AadsUnitBanner />
         </div>
 
-        {/* بطاقة تثبيت التطبيق */}
         <Card className="border-none shadow-sm rounded-none bg-accent/10 border-r-4 border-r-accent overflow-hidden mb-4">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -169,32 +167,6 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
-
-        <div className="space-y-2">
-          <h2 className="text-[10px] font-bold text-primary uppercase px-1 mb-1">فرص تيمقاد</h2>
-          <div 
-            onClick={() => toast({ title: "قريباً جداً! 🚀", description: "سوق الإعلانات في مراحل التجهيز النهائية." })}
-            className="opacity-70 grayscale-[50%]"
-          >
-            <Card className="border-none shadow-sm rounded-none bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group overflow-hidden border-r-4 border-r-primary">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                    <LayoutGrid size={18} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-primary">سوق القصص والأرباح</span>
-                    <span className="text-[9px] text-muted-foreground">شاهد الإعلانات وحقق أرباحاً حقيقية</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="default" className="bg-accent text-white text-[8px] h-4 font-bold uppercase">جديد قريباً</Badge>
-                  <ChevronLeft size={14} className="text-primary/30" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
 
         {isAdmin && (
           <div className="space-y-2 pt-2">
