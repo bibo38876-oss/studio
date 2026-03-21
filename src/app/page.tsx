@@ -118,7 +118,8 @@ export default function Home() {
     const elements = [];
     for (let i = 0; i < posts.length; i++) {
       elements.push(<PostCard key={posts[i].id} post={posts[i]} currentUserProfile={profile} />);
-      if ((i + 1) % 5 === 0) {
+      // تغيير التردد إلى كل 4 منشورات بناءً على طلب المستخدم
+      if ((i + 1) % 4 === 0) {
         elements.push(<AadsUnitInside key={`ad-${i}`} />);
       }
     }

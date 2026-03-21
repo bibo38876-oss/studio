@@ -79,16 +79,16 @@ export default function LeftSidebar() {
           </Link>
         ))}
 
-        {/* أيقونة سوق القصص المعطلة مؤقتاً */}
+        {/* أيقونة سوق القصص المعطلة مؤقتاً بملصق قريباً */}
         <div 
-          onClick={() => toast({ title: "قريباً جداً! 🏺", description: "سوق الإعلانات في مراحل التجهيز النهائية." })}
-          className="flex items-center justify-between p-3 text-muted-foreground/50 cursor-pointer hover:bg-secondary/50 transition-all rounded-lg"
+          onClick={() => toast({ title: "قريباً جداً! 🏺", description: "سوق الإعلانات والأرباح في مراحل التجهيز النهائية." })}
+          className="flex items-center justify-between p-3 text-muted-foreground/60 cursor-pointer hover:bg-secondary/50 transition-all rounded-lg"
         >
           <div className="flex items-center gap-3">
-            <LayoutGrid size={18} />
+            <LayoutGrid size={18} className="opacity-50" />
             <span className="text-sm font-medium">سوق القصص</span>
           </div>
-          <span className="text-[8px] font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded-sm">قريباً</span>
+          <span className="text-[7px] font-bold bg-accent text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">قريباً</span>
         </div>
 
         {isAdmin && (

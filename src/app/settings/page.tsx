@@ -147,7 +147,7 @@ export default function SettingsPage() {
 
         <div className="space-y-2">
           <h2 className="text-[10px] font-bold text-primary uppercase px-1 mb-1">فرص تيمقاد</h2>
-          {/* رابط معطل مؤقتاً بطلب المستخدم */}
+          {/* تعطيل سوق القصص مع ملصق قريباً بناءً على طلب المستخدم */}
           <div 
             onClick={() => toast({ title: "قريباً جداً! 🚀", description: "سوق الإعلانات في مراحل التجهيز النهائية." })}
             className="opacity-70 grayscale-[50%]"
@@ -164,7 +164,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-accent border-accent text-[8px] h-4 font-bold">قريباً</Badge>
+                  <Badge variant="default" className="bg-accent text-white text-[8px] h-4 font-bold uppercase">جديد قريباً</Badge>
                   <ChevronLeft size={14} className="text-primary/30" />
                 </div>
               </CardContent>
