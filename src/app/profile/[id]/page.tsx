@@ -24,6 +24,7 @@ import Link from 'next/link';
 import { ar } from 'date-fns/locale';
 import { formatDistanceToNow } from 'date-fns';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { AadsUnitBanner } from '@/components/ads/AadsUnit';
 
 export default function ProfilePage() {
   const params = useParams();
@@ -440,6 +441,11 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* وحدة الإعلانات في ملف المستخدم الشخصي */}
+        <div className="my-2">
+          <AadsUnitBanner />
         </div>
 
         {isPrivateAndNotFollowing ? (

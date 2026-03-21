@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { motion } from 'framer-motion';
+import { AadsUnitBanner } from '@/components/ads/AadsUnit';
 
 export default function GroupsPage() {
   const { firestore, user } = useFirebase();
@@ -250,6 +251,9 @@ export default function GroupsPage() {
             </div>
           </div>
         )}
+
+        {/* وحدة الإعلانات الكبيرة في صفحة إنشاء المجموعات */}
+        <AadsUnitBanner />
 
         {(isMyGroupsLoading || isJoinedLoading) ? (
           <div className="flex justify-center py-20">

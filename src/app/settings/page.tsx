@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import { AadsUnitBanner } from '@/components/ads/AadsUnit';
 
 export default function SettingsPage() {
   const { auth, user, firestore } = useFirebase();
@@ -128,6 +129,11 @@ export default function SettingsPage() {
       </div>
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
+        {/* وحدة الإعلانات في صفحة الإعدادات */}
+        <div className="mb-4">
+          <AadsUnitBanner />
+        </div>
+
         {/* بطاقة تثبيت التطبيق */}
         <Card className="border-none shadow-sm rounded-none bg-accent/10 border-r-4 border-r-accent overflow-hidden mb-4">
           <CardContent className="p-4 flex items-center justify-between">
