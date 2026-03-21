@@ -5,11 +5,11 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, useDoc } from '@/firebase';
-import { collection, query, doc, limit, where, serverTimestamp, orderBy, increment, getDoc } from 'firebase/firestore';
+import { collection, query, doc, limit, where, serverTimestamp, orderBy, increment, getDocs } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp, LayoutGrid, Plus, Calendar as CalendarIcon, ImageIcon, Megaphone, ArrowDownToLine, Wallet, Flag } from 'lucide-react';
+import { Loader2, Search, ShieldCheck, BarChart3, Users, MessageSquare, AlertTriangle, Trash2, CheckCircle2, Coins, History, ArrowUpRight, TrendingUp, LayoutGrid, Plus, Calendar as CalendarIcon, ImageIcon, Megaphone, ArrowDownToLine, Wallet, Flag, Gift, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -25,6 +25,7 @@ export default function AdminPage() {
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [coinAmount, setCoinAmount] = useState<Record<string, string>>({});
+  const [isDistributing, setIsDistributing] = useState(false);
 
   const [bannerTitle, setBannerTitle] = useState('');
   const [bannerLink, setBannerLink] = useState('');
@@ -97,6 +98,51 @@ export default function AdminPage() {
     u.email?.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
+  // نظام توزيع الـ 5 عملات اليومية
+  const handleDailyDistribution = async () => {
+    if (!firestore || !isAdminUser) return;
+    
+    setIsDistributing(true);
+    try {
+      const usersSnap = await getDocs(collection(firestore, 'users'));
+      const allUsers = usersSnap.docs;
+      const count = allUsers.length;
+
+      if (count === 0) {
+        toast({ variant: "destructive", description: "لا يوجد مستخدمون للتوزيع عليهم." });
+        return;
+      }
+
+      const totalBudget = 5;
+      const sharePerUser = totalBudget / count;
+
+      allUsers.forEach(userDoc => {
+        const userId = userDoc.id;
+        // تحديث الرصيد
+        updateDocumentNonBlocking(doc(firestore, 'users', userId), {
+          coins: increment(sharePerUser)
+        });
+
+        // إرسال تنبيه
+        addDocumentNonBlocking(collection(firestore, 'users', userId, 'notifications'), {
+          type: 'system',
+          message: `🎁 لقد حصلت على نصيبك من عوائد مشاهدة الإعلانات لليوم (${sharePerUser.toFixed(3)} عملة). شكراً لتفاعلك في تيمقاد!`,
+          createdAt: serverTimestamp(),
+          read: false
+        });
+      });
+
+      toast({ 
+        title: "تم التوزيع بنجاح! 🚀", 
+        description: `تم تقسيم 5 عملات على ${count} مستخدم بالتساوي.` 
+      });
+    } catch (e) {
+      toast({ variant: "destructive", description: "فشل توزيع العوائد." });
+    } finally {
+      setIsDistributing(false);
+    }
+  };
+
   const handleCreatePostAd = async () => {
     if (!postAdId || !postAdTitle || !postAdImage || !firestore) return;
     
@@ -113,7 +159,6 @@ export default function AdminPage() {
       const authorSnap = await getDoc(doc(firestore, 'users', authorId));
       const authorData = authorSnap.data();
       
-      // فحص الأهلية: 500 متابع + توثيق
       const isVerified = authorData?.verificationType === 'blue' || authorData?.verificationType === 'gold';
       const hasMinFollowers = (authorData?.followerIds?.length || 0) >= 500;
       const isEligible = isVerified && hasMinFollowers;
@@ -232,6 +277,16 @@ export default function AdminPage() {
               <p className="text-[10px] text-white/60">الإدارة والتحكم الاقتصادي</p>
             </div>
           </div>
+          
+          {/* زر التوزيع اليومي البارز */}
+          <Button 
+            className="relative z-10 bg-yellow-500 hover:bg-yellow-600 text-primary font-bold gap-2 rounded-full h-11 px-6 shadow-lg shadow-yellow-500/20 animate-pulse"
+            onClick={handleDailyDistribution}
+            disabled={isDistributing}
+          >
+            {isDistributing ? <Loader2 className="animate-spin" /> : <Gift size={18} />}
+            توزيع عوائد الإعلانات (5 عملات)
+          </Button>
         </header>
 
         <Tabs defaultValue="analytics" className="w-full">
@@ -249,7 +304,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="bg-primary/5 border-r-4 border-r-primary"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">إجمالي المستخدمين</CardTitle></CardHeader><CardContent className="p-4 pt-0 text-2xl font-bold text-primary">{stats.totalUsers}</CardContent></Card>
               <Card className="bg-accent/5 border-r-4 border-r-accent"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">أرباح المنصة (TRX)</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-accent">{(stats.totalRevenue / 100).toFixed(2)} TRX</CardContent></Card>
-              <Card className="bg-yellow-500/5 border-r-4 border-r-yellow-600"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">العملات المتداولة</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-yellow-600">{stats.totalCoins.toFixed(0)} <TimgadCoin size={20} /></CardContent></Card>
+              <Card className="bg-yellow-500/5 border-r-4 border-r-yellow-600"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">العملات المتداولة</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-yellow-600">{stats.totalCoins.toFixed(1)} <TimgadCoin size={20} /></CardContent></Card>
             </div>
           </TabsContent>
 
@@ -394,7 +449,7 @@ export default function AdminPage() {
                         <span className="text-[9px] text-muted-foreground">{user.followerIds?.length || 0} متابع</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-xs font-bold">{user.coins || 0} <TimgadCoin size={14} /></div>
+                    <div className="flex items-center gap-1 text-xs font-bold">{user.coins?.toFixed(2) || 0} <TimgadCoin size={14} /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <Select defaultValue={user.verificationType || 'none'} onValueChange={(v) => handleUpdateVerification(user.id, v)}>
@@ -438,7 +493,7 @@ export default function AdminPage() {
   }
 
   function handleAdjustCoins(userId: string) {
-    const amount = parseInt(coinAmount[userId] || '0');
+    const amount = parseFloat(coinAmount[userId] || '0');
     if (isNaN(amount) || amount === 0) return;
     if (!firestore || !isAdminUser) return;
     updateDocumentNonBlocking(doc(firestore, 'users', userId), { coins: increment(amount) });

@@ -61,7 +61,7 @@ export default function WalletPage() {
   const { data: profile } = useDoc(userRef);
 
   const calculatedTRX = useMemo(() => {
-    const amount = parseInt(withdrawAmount) || 0;
+    const amount = parseFloat(withdrawAmount) || 0;
     const trx = amount / CONVERSION_RATE;
     const fee = (trx * CONVERSION_FEE_PERCENT) / 100;
     return {
@@ -104,7 +104,7 @@ export default function WalletPage() {
   };
 
   const handleWithdrawRequest = async () => {
-    const amount = parseInt(withdrawAmount);
+    const amount = parseFloat(withdrawAmount);
     const minCoins = MIN_WITHDRAW_TRX * CONVERSION_RATE;
     if (!amount || amount < minCoins) {
       toast({ variant: "destructive", description: `الحد الأدنى هو ${minCoins} عملة.` });
@@ -189,7 +189,7 @@ export default function WalletPage() {
                     <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">عنوان محفظة TRX</label>
                     <Input placeholder="عنوان المحفظة..." className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right" value={fastPayAddress} onChange={(e) => setFastPayAddress(e.target.value)} />
                   </div>
-                  {parseInt(withdrawAmount) >= 2000 && (
+                  {parseFloat(withdrawAmount) >= 2000 && (
                     <div className="bg-primary/10 p-3 border border-primary/20 space-y-2">
                       <div className="flex justify-between text-[10px] font-bold"><span>{calculatedTRX.raw.toFixed(2)} TRX</span><span className="text-[#F3E5AB]/60">القيمة:</span></div>
                       <div className="border-t border-white/10 pt-2 flex justify-between text-xs font-bold"><span className="text-green-400">{calculatedTRX.final.toFixed(2)} TRX</span><span className="text-[#FBBF24]">الصافي المستلم:</span></div>
@@ -216,7 +216,7 @@ export default function WalletPage() {
                 <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-[#FBBF24]">الرصيد الحالي</CardTitle>
                 <Coins size={14} className="text-[#FBBF24]" />
               </CardHeader>
-              <CardContent className="p-4 pt-0 text-right"><p className="text-3xl font-bold text-[#FBBF24]">{isInfiniteAdmin ? '∞' : (profile?.coins || 0).toFixed(1)}</p></CardContent>
+              <CardContent className="p-4 pt-0 text-right"><p className="text-3xl font-bold text-[#FBBF24]">{isInfiniteAdmin ? '∞' : (profile?.coins || 0).toFixed(2)}</p></CardContent>
             </Card>
             <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-blue-500">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
