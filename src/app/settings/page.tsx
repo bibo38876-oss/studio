@@ -210,39 +210,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
-            <DialogTrigger asChild>
-              <Card className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group overflow-hidden">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                      <Lock size={16} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-primary">أمان الحساب</span>
-                      <span className="text-[9px] text-muted-foreground">تغيير كلمة المرور</span>
-                    </div>
-                  </div>
-                  <ChevronLeft size={14} className="text-muted-foreground/30" />
-                </CardContent>
-              </Card>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="text-sm font-bold">تغيير كلمة المرور</DialogTitle>
-                <DialogDescription className="text-[10px]">أدخل كلمة المرور الجديدة.</DialogDescription>
-              </DialogHeader>
-              <div className="py-4">
-                <Input type="password" placeholder="كلمة المرور الجديدة..." className="h-9 rounded-none bg-secondary/30 border-none text-xs" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-              </div>
-              <DialogFooter>
-                <Button className="w-full rounded-full text-xs h-9 font-bold" onClick={handleChangePassword} disabled={isUpdatingPassword}>
-                  {isUpdatingPassword ? <Loader2 className="animate-spin h-4 w-4" /> : "تحديث كلمة المرور"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
           <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mt-4 mb-1">معلومات المنصة</h2>
           
           <div className="space-y-2">

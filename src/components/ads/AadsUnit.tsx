@@ -20,16 +20,26 @@ export default function AadsUnit() {
   );
 }
 
+/**
+ * رابط الإعلانات الثاني المحدث لشبكة CPM المربحة
+ */
 export function AadsUnitSmall() {
+  const adLink = "https://www.profitablecpmratenetwork.com/mq7q42ghq?key=359975fc44f3fd6f131913aca68bef30";
+  
   return (
     <div className="flex justify-center my-2 overflow-hidden w-full">
-      <div id="frame" style={{ width: '120px', margin: 'auto', zIndex: 99998, height: 'auto' }}>
-        <iframe 
-          data-aa='2431181' 
-          src='https://ad.a-ads.com/2431181/?size=120x60'
-          style={{ border: 0, padding: 0, width: '120px', height: '60px', overflow: 'hidden', display: 'block', margin: 'auto' }}
-        ></iframe>
-      </div>
+      <a 
+        href={adLink} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        className="block w-[120px] h-[60px] bg-primary/10 border border-primary/20 rounded-md overflow-hidden relative group"
+      >
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-1">
+          <span className="text-[8px] font-bold text-primary uppercase tracking-tighter">Sponsored</span>
+          <span className="text-[10px] font-bold text-accent group-hover:underline">Visit Now</span>
+        </div>
+        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      </a>
     </div>
   );
 }
