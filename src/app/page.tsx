@@ -18,9 +18,11 @@ import { AadsUnitInside } from '@/components/ads/AadsUnit';
 export default function Home() {
   const { firestore, user, isUserLoading } = useFirebase();
   const [activeTab, setActiveTab] = useState('for-you');
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     if (!isUserLoading && !user) {
       router.push('/login');
     }
@@ -32,8 +34,6 @@ export default function Home() {
   }, [firestore, user?.uid]);
 
   const { data: profile } = useDoc(userProfileRef);
-
-  // تم إزالة مكافأة الدخول اليومي بناءً على طلب المستخدم لضبط الاقتصاد
 
   const feedPoolQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -106,19 +106,19 @@ export default function Home() {
     return elements;
   };
 
-  if (isUserLoading || !user) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (!mounted || isUserLoading || !user) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <main className="container mx-auto px-0 md:px-4 pt-8 flex flex-col md:flex-row gap-6">
-        <div className="hidden md:block w-64 pt-4 h-fit sticky top-8"><LeftSidebar /></div>
+      <main className="container mx-auto px-0 md:px-4 pt-12 flex flex-col md:flex-row gap-6">
+        <div className="hidden md:block w-64 pt-4 h-fit sticky top-12"><LeftSidebar /></div>
         <div className="flex-1 w-full max-w-full md:max-w-xl mx-auto min-h-screen">
           
           <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="w-full bg-background/80 backdrop-blur-md border-b-[0.5px] border-muted/20 rounded-none h-10 p-0 sticky top-10 z-40">
               <TabsTrigger value="for-you" className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary font-bold text-xs gap-2">
-                <Sparkles size={14} /> لك (توصيات ذكية)
+                <Sparkles size={14} /> لك
               </TabsTrigger>
               <TabsTrigger value="following" className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary font-bold text-xs gap-2">
                 <Users size={14} /> أتابعهم
@@ -149,7 +149,7 @@ export default function Home() {
             </div>
           </Tabs>
         </div>
-        <div className="hidden lg:block w-80 pt-4 h-fit sticky top-8"><RightSidebar /></div>
+        <div className="hidden lg:block w-80 pt-4 h-fit sticky top-12"><RightSidebar /></div>
       </main>
       <Toaster />
     </div>

@@ -4,6 +4,7 @@ import './globals.css';
 import BottomNav from '@/components/layout/BottomNav';
 import { FirebaseClientProvider } from '@/firebase';
 import PWARegistration from '@/components/PWARegistration';
+import InstallPwaOverlay from '@/components/InstallPwaOverlay';
 
 export const viewport: Viewport = {
   themeColor: '#1e3a8a',
@@ -67,6 +68,7 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground pb-12 md:pb-0">
         <FirebaseClientProvider>
           <PWARegistration />
+          <InstallPwaOverlay />
           {children}
           <BottomNav />
         </FirebaseClientProvider>
