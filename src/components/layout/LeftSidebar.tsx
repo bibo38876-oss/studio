@@ -2,15 +2,17 @@
 "use client"
 
 import Link from 'next/link';
-import { Compass, Settings, MessageSquare, Loader2, ShieldCheck } from 'lucide-react';
+import { Compass, Settings, MessageSquare, Loader2, ShieldCheck, LayoutGrid } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import TimgadLogo from '@/components/ui/Logo';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LeftSidebar() {
   const { user, firestore } = useFirebase();
+  const { toast } = useToast();
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
   const userRef = useMemoFirebase(() => {
@@ -76,6 +78,19 @@ export default function LeftSidebar() {
             <span className="text-sm font-medium">{item.label}</span>
           </Link>
         ))}
+
+        {/* أيقونة سوق القصص المعطلة مؤقتاً */}
+        <div 
+          onClick={() => toast({ title: "قريباً جداً! 🏺", description: "سوق الإعلانات في مراحل التجهيز النهائية." })}
+          className="flex items-center justify-between p-3 text-muted-foreground/50 cursor-pointer hover:bg-secondary/50 transition-all rounded-lg"
+        >
+          <div className="flex items-center gap-3">
+            <LayoutGrid size={18} />
+            <span className="text-sm font-medium">سوق القصص</span>
+          </div>
+          <span className="text-[8px] font-bold bg-accent/10 text-accent px-1.5 py-0.5 rounded-sm">قريباً</span>
+        </div>
+
         {isAdmin && (
           <Link 
             href="/admin" 

@@ -147,7 +147,11 @@ export default function SettingsPage() {
 
         <div className="space-y-2">
           <h2 className="text-[10px] font-bold text-primary uppercase px-1 mb-1">فرص تيمقاد</h2>
-          <Link href="/ads">
+          {/* رابط معطل مؤقتاً بطلب المستخدم */}
+          <div 
+            onClick={() => toast({ title: "قريباً جداً! 🚀", description: "سوق الإعلانات في مراحل التجهيز النهائية." })}
+            className="opacity-70 grayscale-[50%]"
+          >
             <Card className="border-none shadow-sm rounded-none bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group overflow-hidden border-r-4 border-r-primary">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -160,12 +164,12 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-green-500 text-[8px] h-4">جديد</Badge>
+                  <Badge variant="outline" className="text-accent border-accent text-[8px] h-4 font-bold">قريباً</Badge>
                   <ChevronLeft size={14} className="text-primary/30" />
                 </div>
               </CardContent>
             </Card>
-          </Link>
+          </div>
         </div>
 
         {isAdmin && (
