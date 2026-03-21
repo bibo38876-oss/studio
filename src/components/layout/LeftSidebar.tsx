@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import TimgadLogo from '@/components/ui/Logo';
+import { cn } from '@/lib/utils';
 
 export default function LeftSidebar() {
   const { user, firestore } = useFirebase();

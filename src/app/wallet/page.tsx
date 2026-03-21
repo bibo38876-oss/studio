@@ -23,6 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import { cn } from '@/lib/utils';
 
 const PACKAGES = [
   { id: "pkg_1", amount: 100, price: "1 TRX", label: "حقيبة البداية" },
