@@ -218,7 +218,6 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
               <span className="text-[11px] font-bold">{post.likesCount || 0}</span>
             </motion.button>
             <div className="flex items-center gap-1.5 text-muted-foreground"><MessageCircle size={18} /><span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
-            {/* الدعم متاح للجميع الآن بناءً على طلب المستخدم */}
             <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); setIsSupportOpen(true); }} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors">
               <Coffee size={18} />
               <span className="text-[10px] font-bold">دعم</span>

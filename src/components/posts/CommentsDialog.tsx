@@ -183,7 +183,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-1.5 text-muted-foreground"><Heart size={18} /> <span className="text-[11px] font-bold">{post.likesCount || 0}</span></div>
               <div className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareText size={18} /> <span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
-              {/* الدعم متاح للجميع الآن */}
               <motion.button whileTap={{ scale: 0.9 }} onClick={() => setIsSupportOpen(true)} className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700">
                 <Coffee size={18} />
                 <span className="text-[10px] font-bold">دعم</span>

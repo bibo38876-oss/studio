@@ -98,7 +98,7 @@ export default function Home() {
     const elements = [];
     for (let i = 0; i < posts.length; i++) {
       elements.push(<PostCard key={posts[i].id} post={posts[i]} currentUserProfile={profile} />);
-      // الإعلانات تظهر كل 4 منشورات
+      // الإعلانات تظهر كل 4 منشورات بناءً على الطلب
       if ((i + 1) % 4 === 0) {
         elements.push(<AadsUnitInside key={`ad-${i}`} />);
       }
