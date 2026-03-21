@@ -75,17 +75,29 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
   }, [firestore, post.id, user?.uid]);
   const { data: bookmarkData } = useDoc(bookmarkRef);
 
+  // نظام احتساب المشاهدات المطور
   useEffect(() => {
-    if (!firestore || !post.id || !user?.uid || isOwner) return;
+    if (!firestore || !post.id || !user?.uid || viewedRef.current) return;
+
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && !viewedRef.current) {
         viewedRef.current = true;
+        // احتساب المشاهدة للجميع لضمان الدقة
         updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { viewsCount: increment(1) });
       }
-    }, { threshold: 0.5 });
-    if (cardRef.current) observer.observe(cardRef.current);
-    return () => observer.disconnect();
-  }, [firestore, post.id, user?.uid, isOwner]);
+    }, { 
+      threshold: 0.1, // حساسية عالية (10% من المنشور كافية لاحتساب مشاهدة)
+      rootMargin: '0px'
+    });
+
+    const currentTarget = cardRef.current;
+    if (currentTarget) observer.observe(currentTarget);
+
+    return () => {
+      if (currentTarget) observer.unobserve(currentTarget);
+      observer.disconnect();
+    };
+  }, [firestore, post.id, user?.uid]);
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -107,10 +119,10 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
     if (isAnonymous) { router.push('/login'); return; }
     if (!firestore || !user || !post.id) return;
     if (bookmarkData) {
-      deleteDocumentNonBlocking(bookmarkRef!);
+      if (bookmarkRef) deleteDocumentNonBlocking(bookmarkRef);
       updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { bookmarksCount: increment(-1) });
     } else {
-      setDocumentNonBlocking(bookmarkRef!, { ...post, createdAt: serverTimestamp() }, { merge: true });
+      if (bookmarkRef) setDocumentNonBlocking(bookmarkRef, { ...post, createdAt: serverTimestamp() }, { merge: true });
       updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { bookmarksCount: increment(1) });
     }
   };
@@ -149,7 +161,7 @@ export default function PostCard({ post, currentUserProfile }: { post: PostData,
 
   return (
     <>
-      <Card ref={cardRef} className={cn("border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-all", post.promoted && "bg-primary/5")} onClick={() => setIsCommentsOpen(true)}>
+      <Card ref={cardRef} className={cn("border-none shadow-none rounded-none w-full bg-card mb-0 cursor-pointer border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-all min-h-[150px]", post.promoted && "bg-primary/5")} onClick={() => setIsCommentsOpen(true)}>
         <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-1">
             {post.promoted && <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1 ml-2"><Rocket size={10} /><span className="text-[8px] font-bold">مروج</span></div>}

@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, useDoc, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, increment, where } from 'firebase/firestore';
@@ -28,6 +28,13 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const router = useRouter();
 
   const isAnonymous = !user || user.isAnonymous;
+
+  // احتساب مشاهدة عند فتح التفاصيل لضمان الدقة
+  useEffect(() => {
+    if (firestore && postId) {
+      updateDocumentNonBlocking(doc(firestore, 'posts', postId), { viewsCount: increment(1) });
+    }
+  }, [firestore, postId]);
 
   const postAuthorProfileRef = useMemoFirebase(() => {
     if (!firestore || !postAuthorId) return null;
