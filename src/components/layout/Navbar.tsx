@@ -39,6 +39,13 @@ export default function Navbar() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // تفعيل إعلان البحث الجديد عند التنفيذ
+    const script = document.createElement('script');
+    script.src = 'https://pl28954367.profitablecpmratenetwork.com/6d/ad/6f/6dad6f94ed63930519f283f5feb4c15d.js';
+    script.async = true;
+    document.body.appendChild(script);
+
     if (searchValue.trim()) {
       router.push(`/explore?q=${encodeURIComponent(searchValue.trim())}`);
       setSearchValue('');
@@ -46,7 +53,7 @@ export default function Navbar() {
   };
 
   const handleJarClick = () => {
-    // تحميل إعلان CPM المربحة الخاص بالجرة
+    // تحميل إعلان الجرة الملكية
     const script = document.createElement('script');
     script.src = 'https://pl28954370.profitablecpmratenetwork.com/07/71/59/0771598f8f7ac7b55732a0256a9d6147.js';
     script.async = true;
@@ -76,7 +83,12 @@ export default function Navbar() {
         </form>
 
         <div className="flex items-center gap-2">
-          <Link href="/explore" className="md:hidden">
+          <Link href="/explore" className="md:hidden" onClick={() => {
+            const script = document.createElement('script');
+            script.src = 'https://pl28954367.profitablecpmratenetwork.com/6d/ad/6f/6dad6f94ed63930519f283f5feb4c15d.js';
+            script.async = true;
+            document.body.appendChild(script);
+          }}>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
               <Search size={18} />
             </Button>
