@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { LogOut, Search, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Smartphone, Download, Trophy } from 'lucide-react';
+import { LogOut, Search, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Smartphone, Download, TrendingUp, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -33,9 +33,6 @@ export default function SettingsPage() {
   const { toast } = useToast();
   
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
@@ -64,19 +61,6 @@ export default function SettingsPage() {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
-    toast({
-      description: checked ? "تم تفعيل الوضع الليلي 🌙" : "تم تفعيل الوضع النهاري ☀️",
-    });
-  };
-
-  const togglePrivateAccount = (checked: boolean) => {
-    if (!firestore || !user) return;
-    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
-      isPrivate: checked
-    });
-    toast({
-      description: checked ? "حسابك الآن خاص 🔒" : "حسابك الآن عام 🌍",
-    });
   };
 
   const handleLogout = () => {
@@ -85,37 +69,12 @@ export default function SettingsPage() {
     router.push('/login');
   };
 
-  const handleChangePassword = async () => {
-    if (!auth.currentUser || newPassword.length < 6) {
-      toast({ variant: "destructive", description: "يجب أن تكون كلمة المرور 6 أحرف على الأقل." });
-      return;
-    }
-    setIsUpdatingPassword(true);
-    try {
-      await updatePassword(auth.currentUser, newPassword);
-      toast({ title: "تم التحديث", description: "تم تغيير كلمة المرور بنجاح." });
-      setIsPasswordDialogOpen(false);
-      setNewPassword('');
-    } catch (error: any) {
-      toast({ 
-        variant: "destructive", 
-        title: "خطأ", 
-        description: error.code === 'auth/requires-recent-login' 
-          ? "يجب إعادة تسجيل الدخول لتغيير كلمة المرور." 
-          : "فشل تحديث كلمة المرور." 
-      });
-    } finally {
-      setIsUpdatingPassword(false);
-    }
-  };
-
   if (!user || user.isAnonymous) return null;
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="bg-primary pt-12 pb-10 px-6 relative overflow-hidden">
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl" />
         <div className="relative z-10 container max-w-xl mx-auto flex flex-col items-center gap-4">
           <button onClick={() => router.back()} className="absolute right-0 top-0 text-white/80 hover:text-white transition-colors"><ArrowRight size={20} /></button>
           <div className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center mb-2">
@@ -129,45 +88,24 @@ export default function SettingsPage() {
       </div>
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
-        <div className="mb-4">
-          <AadsUnitBanner />
-        </div>
-
-        {/* كنز تيمقاد - الجرة */}
-        <Link href="/vault">
-          <Card className="border-none shadow-lg rounded-none bg-[#B45309]/10 border-r-4 border-r-[#FBBF24] overflow-hidden mb-4 hover:bg-[#B45309]/20 transition-all cursor-pointer group">
-            <CardContent className="p-4 flex items-center justify-between">
+        
+        {/* مركز الأرباح الجديد - الرابط الأساسي */}
+        <Link href="/earn">
+          <Card className="border-none shadow-xl rounded-2xl bg-gradient-to-r from-primary to-accent overflow-hidden mb-4 hover:scale-[1.02] transition-transform cursor-pointer group">
+            <CardContent className="p-5 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-[#B45309]/20 rounded-full flex items-center justify-center text-[#FBBF24] group-hover:scale-110 transition-transform">
-                  <Trophy size={20} />
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md">
+                  <TrendingUp size={24} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-[#FBBF24]">جرة تيمقاد الملكية</span>
-                  <span className="text-[9px] text-muted-foreground uppercase tracking-tighter">شارك واربح الكنز اليومي</span>
+                  <span className="text-sm font-bold text-white">مركز أرباح تيمقاد</span>
+                  <span className="text-[9px] text-white/70 uppercase tracking-tighter">تفاعل مع الإعلانات واربح عملات ذهبية</span>
                 </div>
               </div>
-              <ChevronLeft size={14} className="text-[#FBBF24]/40" />
+              <Sparkles size={20} className="text-white animate-pulse" />
             </CardContent>
           </Card>
         </Link>
-
-        <Card className="border-none shadow-sm rounded-none bg-accent/10 border-r-4 border-r-accent overflow-hidden mb-4">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center text-accent">
-                <Smartphone size={18} />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-primary">تثبيت التطبيق على هاتفك</span>
-                <span className="text-[9px] text-muted-foreground">أضف تيمقاد للشاشة الرئيسية</span>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="h-7 text-[9px] font-bold border-accent/30 text-accent rounded-full gap-1.5">
-              <Download size={12} />
-              تثبيت
-            </Button>
-          </CardContent>
-        </Card>
 
         <Card className="border-none shadow-sm rounded-none bg-card mb-4 overflow-hidden">
           <CardContent className="p-0">
@@ -176,7 +114,7 @@ export default function SettingsPage() {
                 <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary shrink-0">
                   {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col text-right">
                   <span className="text-xs font-bold text-primary">المظهر</span>
                   <span className="text-[9px] text-muted-foreground">{isDarkMode ? 'الوضع الليلي نشط' : 'الوضع النهاري نشط'}</span>
                 </div>
@@ -187,84 +125,38 @@ export default function SettingsPage() {
         </Card>
 
         {isAdmin && (
-          <div className="space-y-2 pt-2">
-            <h2 className="text-[10px] font-bold text-accent uppercase px-1 mb-1">لوحة التحكم</h2>
-            <Link href="/admin">
-              <Card className="border-none shadow-sm rounded-none bg-accent/5 hover:bg-accent/10 transition-colors cursor-pointer group overflow-hidden border-r-4 border-r-accent">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center text-accent">
-                      <ShieldCheck size={18} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-accent">الإدارة</span>
-                      <span className="text-[9px] text-muted-foreground">التحكم في المنصة والمستخدمين</span>
-                    </div>
+          <Link href="/admin">
+            <Card className="border-none shadow-sm rounded-none bg-accent/5 hover:bg-accent/10 transition-colors cursor-pointer border-r-4 border-r-accent overflow-hidden">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center text-accent"><ShieldCheck size={18} /></div>
+                  <div className="flex flex-col text-right">
+                    <span className="text-xs font-bold text-accent">الإدارة</span>
+                    <span className="text-[9px] text-muted-foreground">التحكم في المنصة وتوزيع العوائد</span>
                   </div>
-                  <ChevronLeft size={14} className="text-accent/30" />
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
+                </div>
+                <ChevronLeft size={14} className="text-accent/30" />
+              </CardContent>
+            </Card>
+          </Link>
         )}
 
         <div className="space-y-2 pt-2">
-          <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mb-1">الخصوصية والأمان</h2>
-          
-          <Card className="border-none shadow-sm rounded-none bg-card overflow-hidden">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">
-                <Label htmlFor="private-account" className="flex items-center gap-4 flex-1 cursor-pointer">
-                  <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary shrink-0">
-                    <Shield size={16} />
+          <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mb-1">معلومات المنصة</h2>
+          <Link href="/about">
+            <Card className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer overflow-hidden">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary"><Info size={16} /></div>
+                  <div className="flex flex-col text-right">
+                    <span className="text-xs font-bold text-primary">حول تيمقاد</span>
+                    <span className="text-[9px] text-muted-foreground">الميثاق والدليل الاقتصادي</span>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-primary">حساب خاص</span>
-                    <span className="text-[9px] text-muted-foreground">فقط المتابعون يمكنهم رؤية منشوراتك</span>
-                  </div>
-                </Label>
-                <Switch id="private-account" checked={profile?.isPrivate || false} onCheckedChange={togglePrivateAccount} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <h2 className="text-[10px] font-bold text-muted-foreground uppercase px-1 mt-4 mb-1">معلومات المنصة</h2>
-          
-          <div className="space-y-2">
-            <Link href="/about">
-              <Card className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group overflow-hidden">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                      <Info size={16} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-primary">حول تيمقاد</span>
-                      <span className="text-[9px] text-muted-foreground">رؤيتنا، رسالتنا، وقيمنا</span>
-                    </div>
-                  </div>
-                  <ChevronLeft size={14} className="text-muted-foreground/30" />
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/privacy">
-              <Card className="border-none shadow-sm rounded-none bg-card hover:bg-secondary/20 transition-colors cursor-pointer group overflow-hidden">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                      <FileText size={16} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-primary">سياسة الخصوصية</span>
-                      <span className="text-[9px] text-muted-foreground">كيفية حماية بياناتك في تيمقاد</span>
-                    </div>
-                  </div>
-                  <ChevronLeft size={14} className="text-muted-foreground/30" />
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
+                </div>
+                <ChevronLeft size={14} className="text-muted-foreground/30" />
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         <Card className="border-none shadow-sm rounded-none bg-card mt-8 hover:bg-red-50 transition-colors cursor-pointer border-r-4 border-r-destructive overflow-hidden">
@@ -280,11 +172,6 @@ export default function SettingsPage() {
             </button>
           </CardContent>
         </Card>
-
-        <div className="pt-10 text-center space-y-1">
-          <p className="text-[10px] font-bold text-primary/40 tracking-tighter uppercase">Timgad Platform</p>
-          <p className="text-[8px] text-muted-foreground/50">إصدار 1.0.0 • صُنع بكل فخر للمجتمع العربي</p>
-        </div>
       </main>
     </div>
   );

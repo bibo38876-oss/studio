@@ -24,28 +24,11 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  const POPUNDER_LINK = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
-
   useEffect(() => {
     setMounted(true);
     if (!isUserLoading && !user) {
       router.push('/login');
     }
-
-    // تفعيل Popunder عند أول نقرة في الجلسة
-    const handleFirstClick = () => {
-      if (!sessionStorage.getItem('popunder_triggered')) {
-        window.open(POPUNDER_LINK, '_blank');
-        sessionStorage.setItem('popunder_triggered', 'true');
-      }
-      document.removeEventListener('click', handleFirstClick);
-    };
-
-    if (mounted) {
-      document.addEventListener('click', handleFirstClick);
-    }
-
-    return () => document.removeEventListener('click', handleFirstClick);
   }, [user, isUserLoading, router, mounted]);
 
   const userProfileRef = useMemoFirebase(() => {
@@ -66,6 +49,7 @@ function HomeContent() {
       window.history.replaceState({}, '', newUrl);
     }
 
+    // نظام الدخل الساعي المجاني (0.02 كل ساعة)
     if (mounted && user && profile) {
       const now = Date.now();
       const lastRewardTime = profile.lastPassiveRewardAt 
@@ -119,9 +103,6 @@ function HomeContent() {
       else if (diffHours < 24) recencyBase = 15;
       score += (recencyBase * 2);
 
-      const hasInteractedBefore = profile?.interactedAuthorIds?.includes(post.authorId);
-      if (hasInteractedBefore) score += (25 * 6);
-
       return { ...post, calculatedScore: score };
     })
     .sort((a, b) => {
@@ -131,31 +112,17 @@ function HomeContent() {
     .slice(0, 50);
   }, [postsPool, profile]);
 
-  const followingPostsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !profile?.followingIds || profile.followingIds.length === 0) return null;
-    return query(
-      collection(firestore, 'posts'), 
-      where('authorId', 'in', profile.followingIds.slice(0, 30)),
-      limit(50)
-    );
-  }, [firestore, user?.uid, profile?.followingIds]);
-
-  const { data: rawFollowingPosts, isLoading: isFollowingLoading } = useCollection(followingPostsQuery);
-
   const sortedFollowingPosts = useMemo(() => {
-    if (!rawFollowingPosts) return [];
-    return [...rawFollowingPosts].sort((a, b) => {
-      const dateA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-      const dateB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-      return dateB - dateA;
-    });
-  }, [rawFollowingPosts]);
+    if (!postsPool || !profile?.followingIds) return [];
+    return postsPool.filter(p => profile.followingIds.includes(p.authorId));
+  }, [postsPool, profile]);
 
   const renderPostsWithAds = (posts: any[]) => {
     const elements = [];
     for (let i = 0; i < posts.length; i++) {
       elements.push(<PostCard key={posts[i].id} post={posts[i]} currentUserProfile={profile} />);
-      if ((i + 1) % 4 === 0) {
+      // إعلان بانر نظيف كل 5 منشورات
+      if ((i + 1) % 5 === 0) {
         elements.push(<AadsUnitBanner key={`ad-${i}`} />);
       }
     }
@@ -191,7 +158,7 @@ function HomeContent() {
                   </motion.div>
                 ) : (
                   <motion.div key="following" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    {isFollowingLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div> : (!profile?.followingIds || profile.followingIds.length === 0) ? (
+                    {(!profile?.followingIds || profile.followingIds.length === 0) ? (
                       <div className="text-center py-24 px-8">
                         <Users size={40} className="mx-auto text-muted-foreground/30 mb-4" />
                         <p className="text-primary font-bold text-xs">لم تتابع أحداً بعد!</p>
