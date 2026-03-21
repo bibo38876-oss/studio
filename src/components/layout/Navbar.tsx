@@ -45,6 +45,19 @@ export default function Navbar() {
     }
   };
 
+  const handleJarClick = () => {
+    // تحميل إعلان CPM المربحة الخاص بالجرة
+    const script = document.createElement('script');
+    script.src = 'https://pl28954370.profitablecpmratenetwork.com/07/71/59/0771598f8f7ac7b55732a0256a9d6147.js';
+    script.async = true;
+    document.body.appendChild(script);
+    
+    toast({ 
+      title: "قريباً جرة الأرباح 🏺", 
+      description: "ميزة الجرة الملكية قيد التفعيل النهائي، انتظرونا!" 
+    });
+  };
+
   return (
     <nav className="fixed top-0 z-50 w-full h-10 border-b bg-background/80 backdrop-blur-md">
       <div className="container mx-auto h-full flex items-center justify-between px-4 max-w-5xl">
@@ -52,7 +65,6 @@ export default function Navbar() {
           <TimgadLogo size={18} /> تيمقاد <span className="text-accent text-[10px] hidden sm:inline">Timgad</span>
         </Link>
 
-        {/* حقل البحث السريع في الـ Navbar لشاشات الحاسوب */}
         <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-xs mx-6 relative">
           <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input 
@@ -64,7 +76,6 @@ export default function Navbar() {
         </form>
 
         <div className="flex items-center gap-2">
-          {/* أيقونة البحث للموبايل */}
           <Link href="/explore" className="md:hidden">
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
               <Search size={18} />
@@ -73,7 +84,7 @@ export default function Navbar() {
 
           <motion.div 
             whileTap={{ scale: 0.9 }} 
-            onClick={() => toast({ title: "قريباً جداً! 🏺", description: "ميزة جرة تيمقاد الملكية في مراحل التطوير الأخيرة." })} 
+            onClick={handleJarClick} 
             className="h-8 w-8 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full relative"
           >
             <WoodenChestIcon size={18} />

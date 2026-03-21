@@ -40,7 +40,7 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
   const isVerified = profile?.verificationType === 'blue' || profile?.verificationType === 'gold' || isAdmin;
   
   const charLimit = isVerified ? 1500 : 400;
-  const imageLimit = 3; // متاح للجميع الآن رفع 3 صور
+  const imageLimit = 3; 
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -65,7 +65,6 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        // ضغط الصورة قبل الرفع
         const compressedFile = await imageCompression(file, compressionOptions);
         const url = await uploadImageToCloudinary(compressedFile);
         newUrls.push(url);
@@ -84,7 +83,6 @@ export default function CreatePost({ onSuccess }: CreatePostProps) {
     if (!content.trim() && mediaUrls.length === 0) return;
     if (content.length > charLimit) return toast({ variant: "destructive", description: `تجاوزت الحد (${charLimit} حرف).` });
     
-    // منع الروابط الخارجية
     const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+/gi;
     if (urlRegex.test(content)) {
       return toast({ 

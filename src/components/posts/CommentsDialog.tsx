@@ -29,7 +29,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
   const isAnonymous = !user || user.isAnonymous;
 
-  // احتساب مشاهدة مؤكدة عند فتح التفاصيل لضمان الدقة المطلقة
   useEffect(() => {
     if (firestore && postId) {
       updateDocumentNonBlocking(doc(firestore, 'posts', postId), { viewsCount: increment(1) });
@@ -221,7 +220,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </div>
         </div>
 
-        {/* وحدة الإعلانات الرئيسية فوق التعليقات */}
         <AadsUnitBanner />
 
         {activeAd && (
