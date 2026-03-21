@@ -24,12 +24,29 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
+  const POPUNDER_LINK = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
+
   useEffect(() => {
     setMounted(true);
     if (!isUserLoading && !user) {
       router.push('/login');
     }
-  }, [user, isUserLoading, router]);
+
+    // تفعيل Popunder عند أول نقرة في الجلسة
+    const handleFirstClick = () => {
+      if (!sessionStorage.getItem('popunder_triggered')) {
+        window.open(POPUNDER_LINK, '_blank');
+        sessionStorage.setItem('popunder_triggered', 'true');
+      }
+      document.removeEventListener('click', handleFirstClick);
+    };
+
+    if (mounted) {
+      document.addEventListener('click', handleFirstClick);
+    }
+
+    return () => document.removeEventListener('click', handleFirstClick);
+  }, [user, isUserLoading, router, mounted]);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -38,7 +55,6 @@ function HomeContent() {
 
   const { data: profile } = useDoc(userProfileRef);
 
-  // إظهار تحذير الإعلانات ونظام الدخل الساعي
   useEffect(() => {
     if (mounted && searchParams.get('show_ad_warning') === 'true') {
       toast({
@@ -46,12 +62,10 @@ function HomeContent() {
         description: "بعض الإعلانات في المنصة قد تظهر بشكل غير لائق تأتي من المصدر و نعمل على فرزها قدر المستطاع لحماية مجتمع تيمقاد.",
         duration: 8000,
       });
-      // إزالة المعلمة من الرابط لتجنب التكرار
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
 
-    // حساب ومنح الدخل الساعي (0.02 عملة لكل ساعة)
     if (mounted && user && profile) {
       const now = Date.now();
       const lastRewardTime = profile.lastPassiveRewardAt 
@@ -141,7 +155,6 @@ function HomeContent() {
     const elements = [];
     for (let i = 0; i < posts.length; i++) {
       elements.push(<PostCard key={posts[i].id} post={posts[i]} currentUserProfile={profile} />);
-      // الإعلانات تظهر كل 4 منشورات لتعظيم العوائد
       if ((i + 1) % 4 === 0) {
         elements.push(<AadsUnitBanner key={`ad-${i}`} />);
       }

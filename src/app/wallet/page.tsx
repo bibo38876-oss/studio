@@ -1,13 +1,13 @@
 
 "use client"
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, BadgeCheck, Coins, Trophy, Wallet, ShieldCheck, ArrowDownToLine, Loader2, CheckCircle2, AlertCircle, Sparkles, ExternalLink } from 'lucide-react';
+import { ChevronRight, BadgeCheck, Coins, Trophy, Wallet, ShieldCheck, ArrowDownToLine, Loader2, CheckCircle2, AlertCircle, Sparkles, ExternalLink, Gift, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, serverTimestamp, increment } from 'firebase/firestore';
 import TimgadCoin from '@/components/ui/TimgadCoin';
@@ -37,6 +37,7 @@ const MIN_WITHDRAW_TRX = 20;
 const CONVERSION_FEE_PERCENT = 3;
 const WALLET_ADDRESS = "TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2";
 const WITHDRAW_AD_LINK = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
+const SMARTLINK_REWARD = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
 
 export default function WalletPage() {
   const router = useRouter();
@@ -49,6 +50,10 @@ export default function WalletPage() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [adVisited, setAdVisited] = useState(false);
   const [isPurchasingVerification, setIsPurchasingVerification] = useState(false);
+
+  // حالة مكافأة الـ Smartlink
+  const [isRewardLoading, setIsRewardLoading] = useState(false);
+  const [rewardTimer, setRewardRewardTimer] = useState(0);
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
   const isInfiniteAdmin = user?.email === ADMIN_EMAIL;
@@ -84,6 +89,41 @@ export default function WalletPage() {
     window.open(WITHDRAW_AD_LINK, '_blank');
     setAdVisited(true);
     toast({ description: "تم التحقق من دعمك! يمكنك الآن إكمال عملية السحب." });
+  };
+
+  const handleGetReward = () => {
+    if (isRewardLoading) return;
+    
+    // فتح الـ Smartlink
+    window.open(SMARTLINK_REWARD, '_blank');
+    
+    setIsRewardLoading(true);
+    setRewardRewardTimer(10); // عد تنازلي 10 ثوانٍ
+
+    const timer = setInterval(() => {
+      setRewardRewardTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          completeReward();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const completeReward = async () => {
+    if (!user || !firestore) return;
+    
+    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+      coins: increment(0.5)
+    });
+
+    toast({
+      title: "تم استلام المكافأة! 🎁",
+      description: "لقد حصلت على 0.5 عملة تيمقاد لدعمك للمنصة.",
+    });
+    setIsRewardLoading(false);
   };
 
   const handlePurchaseVerification = async () => {
@@ -135,7 +175,7 @@ export default function WalletPage() {
       <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0 relative z-10">
         <div className="bg-[#451A03]/80 backdrop-blur-md sticky top-8 z-30 py-4 border-b border-[#B45309]/30 flex items-center justify-between mb-10 shadow-2xl px-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full text-[#FBBF24] hover:bg-[#78350F]"><ChevronRight size={20} /></Button>
+            <button onClick={() => router.back()} className="h-8 w-8 rounded-full text-[#FBBF24] hover:bg-[#78350F] flex items-center justify-center"><ChevronRight size={20} /></button>
             <div className="flex flex-col text-right">
               <h1 className="text-sm font-bold text-[#FBBF24] uppercase tracking-tighter">خزانة تيمقاد الملكية</h1>
               <span className="text-[8px] text-[#FBBF24]/60 uppercase tracking-[0.2em]">إدارة الأصول الرقمية</span>
@@ -218,12 +258,33 @@ export default function WalletPage() {
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right"><p className="text-3xl font-bold text-[#FBBF24]">{isInfiniteAdmin ? '∞' : (profile?.coins || 0).toFixed(2)}</p></CardContent>
             </Card>
-            <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-blue-500">
+            
+            {/* نظام المكافآت الجديد (Smartlink) */}
+            <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-green-500 relative overflow-hidden group">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-400">مرتبة الحساب</CardTitle>
-                <Trophy size={14} className="text-blue-400" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-400">مكافأة الإعلانات</CardTitle>
+                <Gift size={14} className="text-green-400" />
               </CardHeader>
-              <CardContent className="p-4 pt-0 text-right"><div className="flex items-center justify-end gap-2"><VerifiedBadge type={profile?.verificationType || 'none'} size={20} /><p className="text-xl font-bold text-[#F3E5AB]">{profile?.verificationType === 'gold' ? 'نخبة تيمقاد' : profile?.verificationType === 'blue' ? 'عضو موثق' : 'مستكشف'}</p></div></CardContent>
+              <CardContent className="p-4 pt-0 text-right space-y-2">
+                <p className="text-[10px] text-white/60">احصل على 0.5 عملة فوراً</p>
+                <Button 
+                  className={cn(
+                    "w-full h-8 rounded-full text-[10px] font-bold transition-all",
+                    isRewardLoading ? "bg-secondary text-primary" : "bg-green-600 hover:bg-green-700 text-white"
+                  )}
+                  onClick={handleGetReward}
+                  disabled={isRewardLoading}
+                >
+                  {isRewardLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Clock size={12} className="animate-spin" />
+                      انتظر {rewardTimer} ثانية
+                    </span>
+                  ) : (
+                    "احصل على المكافأة الآن"
+                  )}
+                </Button>
+              </CardContent>
             </Card>
           </div>
 

@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,22 @@ export default function LoginPage() {
   const { auth, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
+
+  const POPUNDER_LINK = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
+
+  useEffect(() => {
+    // تفعيل Popunder عند أول نقرة في صفحة الدخول
+    const handleFirstClick = () => {
+      if (!sessionStorage.getItem('popunder_triggered')) {
+        window.open(POPUNDER_LINK, '_blank');
+        sessionStorage.setItem('popunder_triggered', 'true');
+      }
+      document.removeEventListener('click', handleFirstClick);
+    };
+
+    document.addEventListener('click', handleFirstClick);
+    return () => document.removeEventListener('click', handleFirstClick);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +64,7 @@ export default function LoginPage() {
           profilePictureUrl: "",
           createdAt: now,
           lastLoginAt: now,
-          lastPassiveRewardAt: now, // تهيئة تاريخ أول مكافأة سلبيّة
+          lastPassiveRewardAt: now,
           bio: 'مرحباً، أنا مستخدم جديد في تيمقاد. فخور بانضمامي لهذه المنصة العريقة!',
           followingIds: [],
           followerIds: [],
@@ -74,7 +90,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* عناصر جمالية في الخلفية */}
       <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-accent/10 rounded-full blur-3xl animate-pulse" />
 
@@ -95,7 +110,6 @@ export default function LoginPage() {
               تيمقاد <span className="text-accent text-sm">Timgad</span>
             </h1>
             
-            {/* التعريف الأكاديمي الملكي */}
             <div className="px-2">
               <p className="text-[11px] leading-relaxed text-accent font-bold text-center bg-accent/5 p-4 border-y border-accent/20 rounded-sm">
                 "منصة تيمقاد الرقمية تمثل الجيل الجديد من الشبكات الاجتماعية السيادية؛ حيث تعد المنصة الأولى التي تدمج بروتوكولات العملات الرقمية (TRX) ضمن نسيجها الاجتماعي، متبنيةً نموذجاً اقتصادياً مبتكراً يتيح للمستخدمين والمعلنين تبادل القيمة الحقيقية من خلال المحتوى والإعلانات التفاعلية في بيئة تقنية آمنة ومتطورة."

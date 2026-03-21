@@ -5,6 +5,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import { FirebaseClientProvider } from '@/firebase';
 import PWARegistration from '@/components/PWARegistration';
 import InstallPwaOverlay from '@/components/InstallPwaOverlay';
+import Script from 'next/script';
 
 export const viewport: Viewport = {
   themeColor: '#1e3a8a',
@@ -64,6 +65,20 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="https://picsum.photos/seed/timgad-pwa-192/192/192" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        
+        {/* Social Bar & Popunder Global Loader */}
+        <Script id="ad-scripts" strategy="afterInteractive">
+          {`
+            // منع تكرار الإعلانات المزعجة
+            if (!window.adsLoaded) {
+              const socialBar = document.createElement('script');
+              socialBar.src = 'https://pl28954367.profitablecpmratenetwork.com/6d/ad/6f/6dad6f94ed63930519f283f5feb4c15d.js';
+              socialBar.async = true;
+              document.body.appendChild(socialBar);
+              window.adsLoaded = true;
+            }
+          `}
+        </Script>
       </head>
       <body className="font-body antialiased bg-background text-foreground pb-12 md:pb-0">
         <FirebaseClientProvider>
