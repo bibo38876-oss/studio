@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import LeftSidebar from '@/components/layout/LeftSidebar';
 import RightSidebar from '@/components/layout/RightSidebar';
@@ -14,12 +14,15 @@ import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AadsUnitBanner } from '@/components/ads/AadsUnit';
+import { useToast } from '@/hooks/use-toast';
 
-export default function Home() {
+function HomeContent() {
   const { firestore, user, isUserLoading } = useFirebase();
   const [activeTab, setActiveTab] = useState('for-you');
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
@@ -27,6 +30,20 @@ export default function Home() {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
+
+  // إظهار تحذير الإعلانات عند الوصول من صفحة المتابعات
+  useEffect(() => {
+    if (mounted && searchParams.get('show_ad_warning') === 'true') {
+      toast({
+        title: "تنبيه بخصوص الإعلانات",
+        description: "بعض الإعلانات في المنصة قد تظهر بشكل غير لائق تأتي من المصدر و نعمل على فرزها قدر المستطاع لحماية مجتمع تيمقاد.",
+        duration: 8000,
+      });
+      // إزالة المعلمة من الرابط لتجنب التكرار
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [mounted, searchParams, toast]);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -153,5 +170,13 @@ export default function Home() {
       </main>
       <Toaster />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

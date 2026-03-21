@@ -167,7 +167,7 @@ export default function OnboardingPage() {
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t z-50 flex justify-center animate-in slide-in-from-bottom duration-500">
           <Button 
             className="w-full max-w-sm rounded-full font-bold text-sm h-11 gap-2 shadow-lg shadow-primary/20"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/?show_ad_warning=true')}
           >
             استمر إلى تيمقاد
             <ArrowLeft size={18} />
