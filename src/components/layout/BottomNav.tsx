@@ -2,7 +2,7 @@
 "use client"
 
 import Link from 'next/link';
-import { Home, Compass, MessageSquare, User, Plus } from 'lucide-react';
+import { Home, Search, MessageSquare, User, Plus } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import CreatePost from '@/components/posts/CreatePost';
@@ -18,7 +18,11 @@ export default function BottomNav() {
 
   const isAnonymous = !user || user.isAnonymous;
 
-  if (pathname !== '/') {
+  // يظهر الشريط السفلي فقط في الصفحات الرئيسية
+  const allowedPaths = ['/', '/explore', '/groups', '/messages', '/notifications'];
+  const isAllowed = allowedPaths.includes(pathname) || pathname.startsWith('/profile');
+
+  if (!isAllowed) {
     return null;
   }
 
@@ -31,7 +35,7 @@ export default function BottomNav() {
 
   const navItems = [
     { icon: <Home size={18} />, label: 'الرئيسية', path: '/' },
-    { icon: <Compass size={18} />, label: 'استكشف', path: '/explore' },
+    { icon: <Search size={18} />, label: 'بحث', path: '/explore' },
     { icon: null, label: 'نشر', path: 'post' },
     { icon: <MessageSquare size={18} />, label: 'المجموعات', path: '/groups' },
     { 

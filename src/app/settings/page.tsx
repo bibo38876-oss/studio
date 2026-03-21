@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { LogOut, User, Bell, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Sparkles, LayoutGrid } from 'lucide-react';
+import { LogOut, Search, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Smartphone, Download, LayoutGrid } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -128,6 +128,25 @@ export default function SettingsPage() {
       </div>
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
+        {/* بطاقة تثبيت التطبيق */}
+        <Card className="border-none shadow-sm rounded-none bg-accent/10 border-r-4 border-r-accent overflow-hidden mb-4">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center text-accent">
+                <Smartphone size={18} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-primary">تثبيت التطبيق على هاتفك</span>
+                <span className="text-[9px] text-muted-foreground">أضف تيمقاد للشاشة الرئيسية</span>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="h-7 text-[9px] font-bold border-accent/30 text-accent rounded-full gap-1.5">
+              <Download size={12} />
+              تثبيت
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card className="border-none shadow-sm rounded-none bg-card mb-4 overflow-hidden">
           <CardContent className="p-0">
             <div className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">
@@ -147,7 +166,6 @@ export default function SettingsPage() {
 
         <div className="space-y-2">
           <h2 className="text-[10px] font-bold text-primary uppercase px-1 mb-1">فرص تيمقاد</h2>
-          {/* تعطيل سوق القصص مع ملصق قريباً بناءً على طلب المستخدم */}
           <div 
             onClick={() => toast({ title: "قريباً جداً! 🚀", description: "سوق الإعلانات في مراحل التجهيز النهائية." })}
             className="opacity-70 grayscale-[50%]"

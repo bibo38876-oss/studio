@@ -4,9 +4,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useFirebase, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, addDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, limit, doc, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Loader2, BadgeCheck, UserRoundPlus } from 'lucide-react';
+import { Loader2, UserRoundPlus, Smartphone, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -63,6 +63,28 @@ export default function RightSidebar() {
 
   return (
     <aside className="hidden lg:block w-80 space-y-6 text-right">
+      {/* بطاقة تثبيت التطبيق */}
+      <Card className="border-none shadow-none rounded-none bg-primary/5 border-r-4 border-r-accent overflow-hidden">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-accent/10 rounded-full flex items-center justify-center text-accent">
+              <Smartphone size={20} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-primary">ثبّت تطبيق تيمقاد</span>
+              <span className="text-[9px] text-muted-foreground uppercase tracking-tighter">تجربة أسرع وأسهل</span>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            للحصول على أفضل تجربة، أضف تيمقاد لشاشتك الرئيسية من خلال خيارات المتصفح (Add to Home Screen).
+          </p>
+          <Button variant="outline" className="w-full h-8 rounded-full text-[9px] font-bold border-accent/20 text-accent hover:bg-accent hover:text-white transition-all gap-2">
+            <Download size={12} />
+            شاهد طريقة التثبيت
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card className="border-none shadow-none rounded-none bg-card">
         <CardHeader className="pb-3 px-4 pt-4 text-right">
           <CardTitle className="text-sm font-bold text-primary">اقتراحات المتابعة</CardTitle>
