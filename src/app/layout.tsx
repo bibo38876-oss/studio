@@ -40,19 +40,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-        
-        {/* Social Bar Global Loader - Non Intrusive */}
-        <Script id="ad-scripts" strategy="afterInteractive">
-          {`
-            if (!window.adsLoaded) {
-              const socialBar = document.createElement('script');
-              socialBar.src = 'https://pl28954367.profitablecpmratenetwork.com/6d/ad/6f/6dad6f94ed63930519f283f5feb4c15d.js';
-              socialBar.async = true;
-              document.body.appendChild(socialBar);
-              window.adsLoaded = true;
-            }
-          `}
-        </Script>
       </head>
       <body className="font-body antialiased bg-background text-foreground pb-12 md:pb-0">
         <FirebaseClientProvider>

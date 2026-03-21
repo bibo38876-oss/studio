@@ -10,12 +10,13 @@ import { Input } from '@/components/ui/input';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Gift, PlayCircle, Clock, Sparkles, ShieldCheck, TrendingUp, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Loader2, Gift, PlayCircle, Clock, Sparkles, ShieldCheck, TrendingUp, ChevronRight, CheckCircle2, MessageSquare } from 'lucide-react';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SMARTLINK_URL = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
+const SOCIAL_BAR_SCRIPT = "https://pl28954367.profitablecpmratenetwork.com/6d/ad/6f/6dad6f94ed63930519f283f5feb4c15d.js";
 const DAILY_LIMIT = 25;
 
 export default function EarnPage() {
@@ -41,6 +42,29 @@ export default function EarnPage() {
   }, [firestore, user?.uid]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(userRef);
+
+  // نظام إعلانات Social Bar المتجدد كل دقيقة
+  useEffect(() => {
+    const loadSocialBar = () => {
+      const existingScript = document.getElementById('social-bar-dynamic');
+      if (existingScript) existingScript.remove();
+
+      const script = document.createElement('script');
+      script.id = 'social-bar-dynamic';
+      script.src = SOCIAL_BAR_SCRIPT;
+      script.async = true;
+      document.body.appendChild(script);
+    };
+
+    loadSocialBar();
+    const adInterval = setInterval(loadSocialBar, 60000); // تجديد كل دقيقة
+
+    return () => {
+      clearInterval(adInterval);
+      const script = document.getElementById('social-bar-dynamic');
+      if (script) script.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -79,7 +103,7 @@ export default function EarnPage() {
 
     window.open(SMARTLINK_URL, '_blank');
     setIsRewardLoading(true);
-    setRewardTimer(7); // عداد 7 ثوانٍ كما طلب المستخدم
+    setRewardTimer(7); 
 
     const timer = setInterval(() => {
       setRewardTimer((prev) => {
@@ -218,6 +242,12 @@ export default function EarnPage() {
         </AnimatePresence>
 
         <div className="space-y-4">
+          {/* تنبيه خاص بإعلانات الرسائل المتجددة */}
+          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center gap-3 animate-pulse">
+            <MessageSquare size={18} className="text-blue-400 shrink-0" />
+            <p className="text-[10px] text-blue-300 font-medium">تظهر إعلانات الرسائل الربحية هنا كل دقيقة لدعم المنصة.</p>
+          </div>
+
           <Card className="bg-slate-900/50 border-white/5 overflow-hidden group">
             <CardContent className="p-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -226,7 +256,7 @@ export default function EarnPage() {
                 </div>
                 <div className="text-right">
                   <h3 className="text-sm font-bold">المكافأة الذكية</h3>
-                  <p className="text-[10px] text-muted-foreground">افتح الرابط (7 ثوانٍ) واحصل على 0.50 عملة</p>
+                  <p className="text-[10px] text-muted-foreground">افتح الرابط (7 ثوانٍ) وحل الكابتشا لربح 0.50 عملة</p>
                 </div>
               </div>
               <Button 
@@ -301,7 +331,7 @@ export default function EarnPage() {
           <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl flex items-start gap-3">
             <ShieldCheck size={18} className="text-primary mt-0.5" />
             <p className="text-[10px] leading-relaxed text-muted-foreground">
-              نظام الأرباح في تيمقاد يعتمد على التفاعل الحقيقي. تأكد من البقاء في الصفحة وحل الكابتشا بشكل صحيح لضمان استلام مكافأتك فوراً.
+              نظام الأرباح في تيمقاد يعتمد على التفاعل الحقيقي. تأكد من البقاء في الصفحة وحل الكابتشا بشكل صحيح لضمان استلام مكافأتك فوراً. إعلانات الرسائل تتجدد كل دقيقة لزيادة فرص دعمك للمنصة.
             </p>
           </div>
         </div>
