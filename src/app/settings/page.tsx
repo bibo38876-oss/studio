@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { updatePassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { LogOut, Search, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Smartphone, Download } from 'lucide-react';
+import { LogOut, Search, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Smartphone, Download, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -132,6 +132,24 @@ export default function SettingsPage() {
         <div className="mb-4">
           <AadsUnitBanner />
         </div>
+
+        {/* كنز تيمقاد - الجرة */}
+        <Link href="/vault">
+          <Card className="border-none shadow-lg rounded-none bg-[#B45309]/10 border-r-4 border-r-[#FBBF24] overflow-hidden mb-4 hover:bg-[#B45309]/20 transition-all cursor-pointer group">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-[#B45309]/20 rounded-full flex items-center justify-center text-[#FBBF24] group-hover:scale-110 transition-transform">
+                  <Trophy size={20} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-[#FBBF24]">جرة تيمقاد الملكية</span>
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-tighter">شارك واربح الكنز اليومي</span>
+                </div>
+              </div>
+              <ChevronLeft size={14} className="text-[#FBBF24]/40" />
+            </CardContent>
+          </Card>
+        </Link>
 
         <Card className="border-none shadow-sm rounded-none bg-accent/10 border-r-4 border-r-accent overflow-hidden mb-4">
           <CardContent className="p-4 flex items-center justify-between">

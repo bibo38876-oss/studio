@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { Loader2, Clock, Shield, Trophy } from 'lucide-react';
+import { Loader2, Clock, Shield, Trophy, ExternalLink, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { doc, increment, serverTimestamp } from 'firebase/firestore';
@@ -17,6 +17,9 @@ export default function VaultPage() {
   const [timeLeft, setTimeLeft] = useState<string>('جاري الحساب...');
   const [isJoining, setIsJoining] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [adVisited, setAdVisited] = useState(false);
+
+  const VERIFICATION_LINK = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
 
   const jarRef = useMemoFirebase(() => firestore ? doc(firestore, 'vault', 'current_jar') : null, [firestore]);
   const { data: jarData, isLoading: isJarLoading } = useDoc(jarRef);
@@ -54,6 +57,12 @@ export default function VaultPage() {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleVisitAd = () => {
+    window.open(VERIFICATION_LINK, '_blank');
+    setAdVisited(true);
+    toast({ description: "تم التحقق من دعمك! يمكنك الآن المشاركة في الجرة." });
+  };
 
   const handleJoinJar = async () => {
     if (!user || user.isAnonymous) {
@@ -123,25 +132,43 @@ export default function VaultPage() {
         </div>
 
         <div className="w-full max-w-sm space-y-4 pt-6">
-          <Button 
-            className={cn(
-              "w-full rounded-full h-16 text-white font-bold text-md shadow-xl active:scale-95 transition-all gap-2",
-              participation ? "bg-green-700 cursor-default" : "bg-[#B45309] hover:bg-[#D97706]"
-            )}
-            onClick={handleJoinJar}
-            disabled={isJoining || !!participation}
-          >
-            {isJoining ? (
-              <Loader2 className="animate-spin" />
-            ) : participation ? (
-              <>
-                <Trophy size={20} />
-                أنت داخل السحب
-              </>
-            ) : (
-              "المشاركة بـ 3 عملات تيمقاد"
-            )}
-          </Button>
+          {!adVisited && !participation ? (
+            <div className="bg-black/40 p-6 rounded-2xl border border-[#B45309]/30 backdrop-blur-md space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-[#FBBF24]">خطوة دعم تيمقاد</h3>
+                <p className="text-[10px] text-[#F3E5AB]/70 leading-relaxed">
+                  للمشاركة في سحب الجرة الملكية، يرجى زيارة الرابط التالي أولاً لدعم استمرارية الجوائز.
+                </p>
+              </div>
+              <Button 
+                className="w-full bg-[#B45309] hover:bg-[#D97706] text-white font-bold h-12 rounded-full text-xs gap-2 shadow-xl"
+                onClick={handleVisitAd}
+              >
+                <Sparkles size={16} />
+                تفعيل المشاركة عبر الإعلان
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              className={cn(
+                "w-full rounded-full h-16 text-white font-bold text-md shadow-xl active:scale-95 transition-all gap-2 animate-in fade-in zoom-in duration-500",
+                participation ? "bg-green-700 cursor-default" : "bg-[#B45309] hover:bg-[#D97706]"
+              )}
+              onClick={handleJoinJar}
+              disabled={isJoining || !!participation}
+            >
+              {isJoining ? (
+                <Loader2 className="animate-spin" />
+              ) : participation ? (
+                <>
+                  <Trophy size={20} />
+                  أنت داخل السحب
+                </>
+              ) : (
+                "المشاركة بـ 3 عملات تيمقاد"
+              )}
+            </Button>
+          )}
           
           <div className="flex items-center justify-center gap-2 opacity-30">
             <Shield size={12} />

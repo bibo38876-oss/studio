@@ -13,16 +13,6 @@ import TimgadLogo from '@/components/ui/Logo';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 
-function WoodenChestIcon({ size = 16, className }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <rect x="3" y="10" width="18" height="10" rx="1" fill="#78350F" stroke="#451A03" strokeWidth="1.2" />
-      <path d="M3 10V7C3 5.34315 4.34315 4 6 4H18C19.6569 4 21 5.34315 21 7V10H3Z" fill="#92400E" stroke="#451A03" strokeWidth="1.2" />
-      <rect x="9" y="9" width="6" height="4" rx="1" fill="#FBBF24" stroke="#B45309" strokeWidth="0.8" />
-    </svg>
-  );
-}
-
 export default function Navbar() {
   const router = useRouter();
   const { firestore, user } = useFirebase();
@@ -50,19 +40,6 @@ export default function Navbar() {
       router.push(`/explore?q=${encodeURIComponent(searchValue.trim())}`);
       setSearchValue('');
     }
-  };
-
-  const handleJarClick = () => {
-    // تحميل إعلان الجرة الملكية
-    const script = document.createElement('script');
-    script.src = 'https://pl28954370.profitablecpmratenetwork.com/07/71/59/0771598f8f7ac7b55732a0256a9d6147.js';
-    script.async = true;
-    document.body.appendChild(script);
-    
-    toast({ 
-      title: "قريباً جرة الأرباح 🏺", 
-      description: "ميزة الجرة الملكية قيد التفعيل النهائي، انتظرونا!" 
-    });
   };
 
   return (
@@ -93,14 +70,6 @@ export default function Navbar() {
               <Search size={18} />
             </Button>
           </Link>
-
-          <motion.div 
-            whileTap={{ scale: 0.9 }} 
-            onClick={handleJarClick} 
-            className="h-8 w-8 flex items-center justify-center cursor-pointer hover:bg-secondary rounded-full relative"
-          >
-            <WoodenChestIcon size={18} />
-          </motion.div>
           
           <Link href="/notifications">
             <Button variant="ghost" size="icon" className="h-8 w-8 relative">
