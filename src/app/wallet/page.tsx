@@ -34,7 +34,7 @@ const PACKAGES = [
 
 const VERIFICATION_COST = 500;
 const CONVERSION_RATE = 100; 
-const MIN_WITHDRAW_TRX = 20; 
+const MIN_WITHDRAW_TRX = 5; 
 const CONVERSION_FEE_PERCENT = 3;
 const WALLET_ADDRESS = "TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2";
 const WITHDRAW_AD_LINK = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
@@ -52,7 +52,6 @@ export default function WalletPage() {
   const [adVisited, setAdVisited] = useState(false);
   const [isPurchasingVerification, setIsPurchasingVerification] = useState(false);
 
-  // حالة مكافأة الـ Smartlink
   const [isRewardLoading, setIsRewardLoading] = useState(false);
   const [rewardTimer, setRewardRewardTimer] = useState(0);
 
@@ -94,13 +93,9 @@ export default function WalletPage() {
 
   const handleGetReward = () => {
     if (isRewardLoading) return;
-    
-    // فتح الـ Smartlink
     window.open(SMARTLINK_REWARD, '_blank');
-    
     setIsRewardLoading(true);
-    setRewardRewardTimer(10); // عد تنازلي 10 ثوانٍ
-
+    setRewardRewardTimer(10);
     const timer = setInterval(() => {
       setRewardRewardTimer((prev) => {
         if (prev <= 1) {
@@ -115,11 +110,9 @@ export default function WalletPage() {
 
   const completeReward = async () => {
     if (!user || !firestore) return;
-    
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
       coins: increment(0.5)
     });
-
     toast({
       title: "تم استلام المكافأة! 🎁",
       description: "لقد حصلت على 0.5 عملة تيمقاد لدعمك للمنصة.",
@@ -156,7 +149,7 @@ export default function WalletPage() {
       return;
     }
     if (!fastPayAddress.trim()) {
-      toast({ variant: "destructive", description: "يرجى إدخال عنوان محفظة TRX." });
+      toast({ variant: "destructive", description: "يرجى إدخل عنوان محفظة TRX." });
       return;
     }
     setIsWithdrawing(true);
@@ -187,7 +180,7 @@ export default function WalletPage() {
             <DialogTrigger asChild>
               <Button variant="outline" className="h-8 rounded-full border-[#FBBF24]/30 text-[#FBBF24] hover:bg-[#B45309] text-[10px] font-bold gap-2">
                 <ArrowDownToLine size={14} />
-                سحب (Min: 20 TRX)
+                سحب (Min: 5 TRX)
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#2D1606] text-[#F3E5AB] border-[#B45309] rounded-none">
@@ -223,14 +216,14 @@ export default function WalletPage() {
                     </p>
                   </div>
                   <div className="space-y-1 text-right">
-                    <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">كمية العملات (Min: 2000)</label>
-                    <Input type="number" placeholder="2000" className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} />
+                    <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">كمية العملات (Min: 500)</label>
+                    <Input type="number" placeholder="500" className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} />
                   </div>
                   <div className="space-y-1 text-right">
                     <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">عنوان محفظة TRX</label>
                     <Input placeholder="عنوان المحفظة..." className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right" value={fastPayAddress} onChange={(e) => setFastPayAddress(e.target.value)} />
                   </div>
-                  {parseFloat(withdrawAmount) >= 2000 && (
+                  {parseFloat(withdrawAmount) >= 500 && (
                     <div className="bg-primary/10 p-3 border border-primary/20 space-y-2">
                       <div className="flex justify-between text-[10px] font-bold"><span>{calculatedTRX.raw.toFixed(2)} TRX</span><span className="text-[#F3E5AB]/60">القيمة:</span></div>
                       <div className="border-t border-white/10 pt-2 flex justify-between text-xs font-bold"><span className="text-green-400">{calculatedTRX.final.toFixed(2)} TRX</span><span className="text-[#FBBF24]">الصافي المستلم:</span></div>
@@ -260,7 +253,6 @@ export default function WalletPage() {
               <CardContent className="p-4 pt-0 text-right"><p className="text-3xl font-bold text-[#FBBF24]">{isInfiniteAdmin ? '∞' : (profile?.coins || 0).toFixed(2)}</p></CardContent>
             </Card>
             
-            {/* نظام المكافآت الجديد (Smartlink) */}
             <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-green-500 relative overflow-hidden group">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
                 <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-green-400">مكافأة الإعلانات</CardTitle>

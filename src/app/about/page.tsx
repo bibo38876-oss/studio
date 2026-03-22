@@ -41,7 +41,6 @@ export default function AboutPage() {
                 يعتمد نظام تيمقاد على عملة ذهبية داخلية مرتبطة تقنياً بعملة <span className="font-bold">TRX (Tron)</span>. يتم الشحن والسحب يدوياً عبر مركز الدعم لضمان أمان خزانة المنصة.
               </p>
               
-              {/* الميزة الجديدة: الدخل الساعي */}
               <div className="bg-primary/5 p-4 border border-primary/10 flex items-center gap-3">
                 <Clock size={18} className="text-primary" />
                 <div className="flex-1">
@@ -53,7 +52,7 @@ export default function AboutPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-card border text-center">
                   <p className="text-[9px] text-muted-foreground mb-1 uppercase font-bold">الحد الأدنى للسحب</p>
-                  <p className="text-xs font-bold text-primary">20 TRX (2000 عملة)</p>
+                  <p className="text-xs font-bold text-primary">5 TRX (500 عملة)</p>
                 </div>
                 <div className="p-3 bg-card border text-center">
                   <p className="text-[9px] text-muted-foreground mb-1 uppercase font-bold">رسوم التحويل</p>
@@ -93,24 +92,24 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* 3. سوق القصص والأرباح */}
+          {/* 3. سوق الأرباح للمستخدمين */}
           <section className="space-y-6">
             <div className="flex items-center gap-3 text-primary border-r-4 border-green-600 pr-3">
               <LayoutGrid size={20} className="text-green-600" />
-              <h2 className="text-xl font-bold font-headline tracking-tighter">سوق القصص والأرباح للمستخدمين</h2>
+              <h2 className="text-xl font-bold font-headline tracking-tighter">مركز الأرباح للمستخدمين</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-secondary/20 border-r-2 border-green-600 space-y-2">
-                <h4 className="text-[10px] font-bold text-green-700 uppercase">اربح من المشاهدة</h4>
+                <h4 className="text-[10px] font-bold text-green-700 uppercase">اربح من التفاعل</h4>
                 <p className="text-[9px] text-muted-foreground leading-relaxed">
-                  إذا كنت مستوفياً لشروط الأهلية (500+ متابع وتوثيق)، تحصل فوراً على <span className="text-green-600 font-bold">0.6 عملة</span> عن كل نقرة حقيقية على القصص الإعلانية.
+                  يمكنك زيارة مركز الأرباح للقيام بمهام بسيطة (مشاهدة، روابط ذكية) وجمع عملات تيمقاد بحد يومي يصل لـ 25 عملة.
                 </p>
               </div>
               <div className="p-4 bg-secondary/20 border-r-2 border-primary space-y-2">
-                <h4 className="text-[10px] font-bold text-primary uppercase">أعلن عن مشروعك</h4>
+                <h4 className="text-[10px] font-bold text-primary uppercase">ادعم مجتمعك</h4>
                 <p className="text-[9px] text-muted-foreground leading-relaxed">
-                  مقابل <span className="text-primary font-bold">100 عملة</span>، يمكنك نشر قصة إعلانية تحصل من خلالها على 100 نقرة حقيقية لموقعك أو حسابك من مجتمع تيمقاد.
+                  استخدم أرباحك لدعم المبدعين المفضلين لديك أو توثيق حسابك للحصول على ميزات حصرية وزيادة حد المنشورات.
                 </p>
               </div>
             </div>
@@ -134,7 +133,7 @@ export default function AboutPage() {
                 </thead>
                 <tbody className="divide-y">
                   <tr>
-                    <td className="p-4 border-l font-medium">مستطيل السوق (بين الستوريات)</td>
+                    <td className="p-4 border-l font-medium">مستطيل السوق (بين المنشورات)</td>
                     <td className="p-4 border-l">5 أيام</td>
                     <td className="p-4 font-bold">5 TRX</td>
                   </tr>
