@@ -3,12 +3,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Coffee } from 'lucide-react';
+import { Loader2, Send, ChevronRight, MessageSquareText, Heart, Coffee, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -42,6 +42,13 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
       createdAt: serverTimestamp()
     });
     updateDocumentNonBlocking(doc(firestore, 'posts', postId), { commentsCount: increment(1) });
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    if (!firestore || !postId) return;
+    deleteDocumentNonBlocking(doc(firestore, 'posts', postId, 'comments', commentId));
+    updateDocumentNonBlocking(doc(firestore, 'posts', postId), { commentsCount: increment(-1) });
+    toast({ description: "تم حذف التعليق بنجاح." });
   };
 
   const handleSupport = (amt: number) => {
@@ -92,7 +99,15 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
               <div key={c.id}>
                 <div className="flex gap-3 justify-end group">
                   <div className="flex-1 flex flex-col items-end">
-                    <div className="bg-secondary/30 p-3 rounded-2xl rounded-tr-none text-right w-fit max-w-[90%] shadow-sm">
+                    <div className="bg-secondary/30 p-3 rounded-2xl rounded-tr-none text-right w-fit max-w-[90%] shadow-sm relative">
+                      {(c.authorId === user?.uid || user?.email === 'adelbenmaza8@gmail.com') && (
+                        <button 
+                          onClick={() => handleDeleteComment(c.id)} 
+                          className="absolute -left-2 -top-2 h-6 w-6 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 shadow-sm"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
                       <div className="flex justify-end gap-1.5 mb-1">
                         <VerifiedBadge type={c.authorVerificationType || 'none'} size={10} />
                         <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
@@ -133,7 +148,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </DialogContent>
       </Dialog>
 
-      {/* شريط الإدخال الثابت المصلح */}
       <div className="absolute bottom-0 left-0 right-0 p-3 border-t bg-background/95 backdrop-blur-md z-[60] pb-[env(safe-area-inset-bottom)]">
         <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 focus-within:border-primary/20 transition-all">
           <Input 

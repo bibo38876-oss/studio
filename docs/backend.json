@@ -12,6 +12,7 @@
         "role": { "type": "string", "enum": ["user", "admin"] },
         "verificationType": { "type": "string", "enum": ["none", "blue", "gold"] },
         "coins": { "type": "number", "default": 0 },
+        "adEarnings": { "type": "number", "default": 0 },
         "isPrivate": { "type": "boolean", "default": false },
         "followingIds": { "type": "array", "items": { "type": "string" } },
         "followerIds": { "type": "array", "items": { "type": "string" } },

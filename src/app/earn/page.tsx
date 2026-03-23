@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Gift, PlayCircle, Clock, ShieldCheck, TrendingUp, ChevronRight, MessageSquare, Sparkles } from 'lucide-react';
+import { Loader2, Gift, PlayCircle, Clock, ShieldCheck, TrendingUp, ChevronRight, MessageSquare, Sparkles, ArrowDownToLine, Wallet } from 'lucide-react';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +28,7 @@ export default function EarnPage() {
   const [rewardTimer, setRewardTimer] = useState(0);
   const [faucetTimer, setFaucetTimer] = useState('00:00');
   const [canClaim, setCanClaim] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
   
   // نظام الكابتشا
   const [showCaptcha, setShowCaptcha] = useState(false);
@@ -38,7 +39,7 @@ export default function EarnPage() {
   const userRef = useMemoFirebase(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile, isLoading } = useDoc(userRef);
 
-  // تحميل وتجديد إعلانات الرسائل كل 1 دقيقة
+  // تحميل وتجديد إعلانات الرسائل كل 1 دقيقة بشكل حصري هنا
   useEffect(() => {
     const loadSocialBar = () => {
       const existing = document.getElementById('social-bar-script');
@@ -52,7 +53,7 @@ export default function EarnPage() {
     };
 
     loadSocialBar();
-    const interval = setInterval(loadSocialBar, 60000); // تجديد كل دقيقة
+    const interval = setInterval(loadSocialBar, 60000);
 
     return () => {
       clearInterval(interval);
@@ -100,7 +101,7 @@ export default function EarnPage() {
     }
 
     setIsRewardLoading(true);
-    setRewardTimer(7); // عداد الـ 7 ثوانٍ الإجباري
+    setRewardTimer(7);
 
     const timerInterval = setInterval(() => {
       setRewardTimer((prev) => {
@@ -119,7 +120,7 @@ export default function EarnPage() {
     if (parseInt(answer) === captcha.a) {
       if (firestore && user) {
         const updateData: any = {
-          coins: increment(pendingReward.amt),
+          adEarnings: increment(pendingReward.amt), // جمع الأرباح في الحصالة أولاً
           dailyEarned: increment(pendingReward.amt)
         };
         if (pendingReward.type === 'الصنبور الساعي') {
@@ -127,12 +128,32 @@ export default function EarnPage() {
         }
         
         updateDocumentNonBlocking(doc(firestore, 'users', user.uid), updateData);
-        toast({ title: "تمت إضافة الأرباح! ✨", description: `لقد حصلت على ${pendingReward.amt} عملة تيمقاد.` });
+        toast({ title: "تمت إضافة الأرباح للحصالة! ✨", description: `لقد حصلت على ${pendingReward.amt} عملة. حولها لمحفظتك الآن.` });
       }
       setShowCaptcha(false);
       setIsRewardLoading(false);
     } else {
       toast({ variant: "destructive", description: "إجابة خاطئة، حاول مرة أخرى." });
+    }
+  };
+
+  const handleTransferEarnings = async () => {
+    const amount = profile?.adEarnings || 0;
+    if (amount <= 0) return toast({ variant: "destructive", description: "لا يوجد أرباح لتحويلها حالياً." });
+    
+    setIsTransferring(true);
+    try {
+      if (firestore && user) {
+        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), {
+          coins: increment(amount),
+          adEarnings: 0
+        });
+        toast({ title: "تم التحويل بنجاح! 💰", description: `تم نقل ${amount.toFixed(2)} عملة لمحفظتك الرئيسية.` });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", description: "فشل التحويل." });
+    } finally {
+      setIsTransferring(false);
     }
   };
 
@@ -149,17 +170,38 @@ export default function EarnPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold uppercase tracking-tight">مركز أرباح تيمقاد</h1>
-              <p className="text-[10px] opacity-60 font-medium">تفاعل مع المحتوى واربح عملات TRX</p>
+              <p className="text-[10px] opacity-60 font-medium">تفاعل مع المحتوى واربح عملات ذهبية</p>
             </div>
           </div>
           <div className="text-right">
-            <span className="text-[8px] text-muted-foreground uppercase font-bold">رصيدك الحالي</span>
+            <span className="text-[8px] text-muted-foreground uppercase font-bold">حصالة الأرباح</span>
             <div className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded-full border border-white/5">
-              <span className="text-sm font-bold text-accent">{(profile?.coins || 0).toFixed(2)}</span>
+              <span className="text-sm font-bold text-accent">{(profile?.adEarnings || 0).toFixed(2)}</span>
               <TimgadCoin size={16} />
             </div>
           </div>
         </header>
+
+        {/* بطاقة التحويل للمحفظة الرئيسية */}
+        <Card className="mb-8 border-none bg-gradient-to-r from-accent/20 to-primary/20 overflow-hidden shadow-2xl">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-xs font-bold text-accent uppercase">المحفظة الرئيسية</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">{(profile?.coins || 0).toFixed(2)}</span>
+                <TimgadCoin size={18} />
+              </div>
+            </div>
+            <Button 
+              onClick={handleTransferEarnings} 
+              disabled={isTransferring || (profile?.adEarnings || 0) <= 0}
+              className="bg-accent hover:bg-accent/90 text-white font-bold rounded-full h-10 px-6 gap-2 shadow-lg shadow-accent/20 transition-all active:scale-95"
+            >
+              {isTransferring ? <Loader2 className="animate-spin h-4 w-4" /> : <ArrowDownToLine size={16} />}
+              تحويل للمحفظة
+            </Button>
+          </CardContent>
+        </Card>
 
         <AnimatePresence>
           {showCaptcha && (
