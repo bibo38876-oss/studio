@@ -12,6 +12,7 @@ export function HighPerformanceAd() {
 
   useEffect(() => {
     if (adRef.current && adRef.current.childNodes.length === 0) {
+      // حقن السكريبت البرمجي الجديد
       const script1 = document.createElement('script');
       script1.innerHTML = `
         atOptions = {

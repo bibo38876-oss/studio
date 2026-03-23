@@ -74,7 +74,7 @@ export default function SettingsPage() {
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
         
-        {/* رابط صفحة الدخل - تم التأكيد على وجوده هنا */}
+        {/* رابط مركز الأرباح الرئيسي */}
         <Link href="/earn">
           <Card className="border-none shadow-xl rounded-2xl bg-gradient-to-r from-primary to-accent overflow-hidden mb-4 hover:scale-[1.02] transition-transform cursor-pointer group">
             <CardContent className="p-5 flex items-center justify-between">

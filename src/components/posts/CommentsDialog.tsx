@@ -31,7 +31,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   const handleAdd = () => {
     if (!user || user.isAnonymous) return router.push('/login');
     if (!text.trim() || !firestore) return;
-    const c = text.trim(); setText('');
+    const c = text.trim(); 
+    setText('');
     addDocumentNonBlocking(collection(firestore, 'posts', postId, 'comments'), {
       authorId: user.uid, 
       authorName: currentUserProfile?.username || 'مستخدم', 
@@ -49,7 +50,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
     updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-amt) });
     updateDocumentNonBlocking(doc(firestore!, 'users', postAuthorId), { coins: increment(net) });
     addDocumentNonBlocking(collection(firestore!, 'platform_revenue'), { type: 'support_fee', amount: fee, fromUserId: user!.uid, toUserId: postAuthorId, createdAt: serverTimestamp() });
-    toast({ title: "شكراً! ☕️", description: `تم إرسال ${net.toFixed(1)} عملة.` });
+    toast({ title: "شكراً! ☕️", description: `تم إرسال ${net.toFixed(1)} عملة للمبدع.` });
     setIsSupport(false);
   };
 
@@ -79,7 +80,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           <div className="flex items-center gap-6 border-t border-muted/10 pt-3">
             <div className="flex items-center gap-1.5 text-muted-foreground"><Heart size={18} /> <span className="text-[11px] font-bold">{post.likesCount || 0}</span></div>
             <div className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareText size={18} /> <span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
-            <button onClick={() => setIsSupport(true)} className="flex items-center gap-1.5 text-amber-600 font-bold hover:scale-105 transition-transform"><Coffee size={18} /><span className="text-[10px]">دعم</span></button>
+            <button onClick={() => setIsSupport(true)} className="flex items-center gap-1.5 text-amber-600 font-bold hover:scale-105 transition-transform"><Coffee size={18} /><span className="text-[10px]">دعم المبدع</span></button>
           </div>
         </div>
 
@@ -109,7 +110,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           ) : (
             <div className="text-center py-20 opacity-30 flex flex-col items-center gap-2">
               <MessageSquareText size={32} />
-              <p className="text-[10px] font-bold">كن أول من يشارك في هذا النقاش!</p>
+              <p className="text-[10px] font-bold">كن أول من يشارك في هذا النقاش الراقي!</p>
             </div>
           )}
         </div>
@@ -132,7 +133,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </DialogContent>
       </Dialog>
 
-      {/* مربع كتابة التعليقات المصلح */}
+      {/* شريط الإدخال الثابت المصلح */}
       <div className="absolute bottom-0 left-0 right-0 p-3 border-t bg-background/95 backdrop-blur-md z-[60] pb-[env(safe-area-inset-bottom)]">
         <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 focus-within:border-primary/20 transition-all">
           <Input 
