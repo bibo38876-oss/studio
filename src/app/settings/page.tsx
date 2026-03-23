@@ -4,34 +4,19 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useFirebase, initiateSignOut, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
-import { updatePassword } from 'firebase/auth';
+import { useFirebase, initiateSignOut, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { LogOut, Search, Shield, HelpCircle, ChevronLeft, ArrowRight, Moon, Sun, Lock, Loader2, ShieldCheck, FileText, Info, Smartphone, Download, TrendingUp, Sparkles } from 'lucide-react';
+import { LogOut, ChevronLeft, ArrowRight, Moon, Sun, ShieldCheck, Info, TrendingUp, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import TimgadLogo from '@/components/ui/Logo';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { AadsUnitBanner } from '@/components/ads/AadsUnit';
+import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 
 export default function SettingsPage() {
   const { auth, user, firestore } = useFirebase();
   const router = useRouter();
-  const { toast } = useToast();
-  
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
@@ -89,7 +74,7 @@ export default function SettingsPage() {
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
         
-        {/* مركز الأرباح الجديد - الرابط الأساسي */}
+        {/* رابط صفحة الدخل - تم التأكيد على وجوده هنا */}
         <Link href="/earn">
           <Card className="border-none shadow-xl rounded-2xl bg-gradient-to-r from-primary to-accent overflow-hidden mb-4 hover:scale-[1.02] transition-transform cursor-pointer group">
             <CardContent className="p-5 flex items-center justify-between">
@@ -158,6 +143,8 @@ export default function SettingsPage() {
             </Card>
           </Link>
         </div>
+
+        <HighPerformanceAd />
 
         <Card className="border-none shadow-sm rounded-none bg-card mt-8 hover:bg-red-50 transition-colors cursor-pointer border-r-4 border-r-destructive overflow-hidden">
           <CardContent className="p-0">

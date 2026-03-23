@@ -13,7 +13,7 @@ import { collection, query, orderBy, doc, increment, limit } from 'firebase/fire
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AadsUnitBanner } from '@/components/ads/AadsUnit';
+import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 import { useToast } from '@/hooks/use-toast';
 
 function HomeContent() {
@@ -90,7 +90,8 @@ function HomeContent() {
       {posts.map((post, idx) => (
         <div key={post.id}>
           <PostCard post={post} currentUserProfile={profile} />
-          {(idx + 1) % 5 === 0 && <AadsUnitBanner />}
+          {/* إعلان الأداء العالي كل 5 منشورات */}
+          {(idx + 1) % 5 === 0 && <HighPerformanceAd />}
         </div>
       ))}
     </div>

@@ -11,7 +11,6 @@ export function HighPerformanceAd() {
   const adRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // التأكد من عدم تكرار حقن السكريبت في نفس المكان
     if (adRef.current && adRef.current.childNodes.length === 0) {
       const script1 = document.createElement('script');
       script1.innerHTML = `
@@ -40,7 +39,6 @@ export function HighPerformanceAd() {
   );
 }
 
-// تصدير كاسم بديل للتوافق مع الملفات القديمة التي تستخدم AadsUnitBanner
 export const AadsUnitBanner = HighPerformanceAd;
 export const AadsUnit = HighPerformanceAd;
 export const AadsUnitSmall = HighPerformanceAd;
