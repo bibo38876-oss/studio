@@ -1,7 +1,6 @@
-
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, increment } from 'firebase/firestore';
@@ -19,6 +18,10 @@ import TimgadCoin from '@/components/ui/TimgadCoin';
 import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
+/**
+ * CommentsDialog - نافذة التعليقات المطورة حصرياً للهواتف.
+ * تم حل مشكلة اختفاء المربع خلف لوحة المفاتيح عبر استخدام تخطيط Flex ثابت.
+ */
 export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: any) {
   const [text, setText] = useState('');
   const [isSupport, setIsSupport] = useState(false);
@@ -63,18 +66,18 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   };
 
   return (
-    <div className="flex flex-col h-full bg-background text-right relative">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-2 border-b h-12 bg-background/95 sticky top-0 z-50">
+    <div className="flex flex-col h-[100dvh] bg-background text-right overflow-hidden">
+      {/* رأس النافذة الثابت */}
+      <header className="flex items-center gap-3 p-2 border-b h-12 bg-background/95 shrink-0 z-50">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 rounded-full"><ChevronRight size={24} /></Button>
         <div className="flex flex-col">
           <span className="text-xs font-bold text-primary">النقاش التفاعلي</span>
-          <span className="text-[8px] text-muted-foreground uppercase tracking-widest">Timgad Debate</span>
+          <span className="text-[8px] text-muted-foreground uppercase tracking-widest">Timgad Global Chat</span>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto no-scrollbar">
+      {/* منطقة المحتوى القابلة للتمرير */}
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-2">
         <div className="p-4 border-b bg-primary/[0.02]">
           <div className="flex gap-3 mb-4 justify-end">
             <div className="flex flex-col text-right">
@@ -101,12 +104,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                {post.mediaUrls.length > 1 && (
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-2">
-                    <CarouselPrevious className="pointer-events-auto h-8 w-8 rounded-full bg-black/20 text-white border-none backdrop-blur-md static translate-y-0" />
-                    <CarouselNext className="pointer-events-auto h-8 w-8 rounded-full bg-black/20 text-white border-none backdrop-blur-md static translate-y-0" />
-                  </div>
-                )}
               </Carousel>
             </div>
           )}
@@ -114,7 +111,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           <div className="flex items-center gap-6 border-t border-muted/10 pt-3">
             <div className="flex items-center gap-1.5 text-muted-foreground"><Heart size={18} /> <span className="text-[11px] font-bold">{post.likesCount || 0}</span></div>
             <div className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareText size={18} /> <span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
-            <button onClick={() => setIsSupport(true)} className="flex items-center gap-1.5 text-amber-600 font-bold hover:scale-105 transition-transform"><Coffee size={18} /><span className="text-[10px]">دعم المبدع</span></button>
+            <button onClick={() => setIsSupport(true)} className="flex items-center gap-1.5 text-amber-600 font-bold"><Coffee size={18} /><span className="text-[10px]">دعم</span></button>
           </div>
         </div>
 
@@ -126,8 +123,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
               <div key={c.id}>
                 <div className="flex gap-3 justify-end group">
                   <div className="flex-1 flex flex-col items-end">
-                    <div className="bg-secondary/30 p-3 rounded-2xl rounded-tr-none text-right w-fit max-w-[90%] shadow-sm relative">
-                      {(c.authorId === user?.uid || user?.email === 'adelbenmaza8@gmail.com') && (
+                    <div className="bg-secondary/40 p-3 rounded-2xl rounded-tr-none text-right w-fit max-w-[90%] shadow-sm relative border border-primary/5">
+                      {(c.authorId === user?.uid || isAdmin) && (
                         <button onClick={() => handleDeleteComment(c.id)} className="absolute -left-2 -top-2 h-6 w-6 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 shadow-sm"><Trash2 size={12} /></button>
                       )}
                       <div className="flex justify-end gap-1.5 mb-1">
@@ -140,24 +137,25 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                   </div>
                   <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
                 </div>
+                {/* إعلان كل 5 تعليقات */}
                 {(i + 1) % 5 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}`} />}
               </div>
             ))
           ) : (
             <div className="text-center py-20 opacity-30 flex flex-col items-center gap-2">
               <MessageSquareText size={32} />
-              <p className="text-[10px] font-bold">كن أول من يشارك في هذا النقاش الراقي!</p>
+              <p className="text-[10px] font-bold">كن أول من يشارك في هذا النقاش!</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Input Section - Improved for Mobile Stability */}
-      <div className="p-3 border-t bg-background/95 backdrop-blur-md z-[60]">
-        <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 focus-within:border-primary/20 transition-all">
+      {/* حقل الإدخال الثابت والذكي للموبايل */}
+      <div className="p-3 border-t bg-background shrink-0 pb-safe">
+        <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 focus-within:border-primary/20 transition-all shadow-inner">
           <Input 
-            placeholder="اكتب تعليقك الراقي..." 
-            className="flex-1 border-none bg-transparent text-xs text-right p-0 focus-visible:ring-0 placeholder:text-muted-foreground/50" 
+            placeholder="اكتب تعليقك..." 
+            className="flex-1 border-none bg-transparent text-xs text-right p-0 h-full focus-visible:ring-0 placeholder:text-muted-foreground/50" 
             value={text} 
             onChange={e => setText(e.target.value)} 
             onKeyDown={e => e.key === 'Enter' && handleAdd()} 
@@ -174,9 +172,9 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      {/* Support Dialog */}
+      {/* نافذة الدعم */}
       <Dialog open={isSupport} onOpenChange={setIsSupport}>
-        <DialogContent className="sm:max-w-[300px] text-center p-6 border-amber-200">
+        <DialogContent className="sm:max-w-[300px] text-center p-6 border-amber-200 bg-background rounded-2xl">
           <DialogTitle className="text-sm font-bold text-amber-700 mb-4 flex items-center justify-center gap-2">
             <Coffee size={18} /> دعم المبدع تيمقاد
           </DialogTitle>
@@ -188,7 +186,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
               </Button>
             ))}
           </div>
-          <p className="text-[8px] text-muted-foreground mt-4 italic">تقتطع المنصة 10% كرسوم صيانة تقنية.</p>
+          <p className="text-[8px] text-muted-foreground mt-4 italic">رسوم صيانة المنصة 10%.</p>
         </DialogContent>
       </Dialog>
     </div>

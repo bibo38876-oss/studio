@@ -1,11 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
-import LeftSidebar from '@/components/layout/LeftSidebar';
-import RightSidebar from '@/components/layout/RightSidebar';
 import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirebase, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
@@ -75,13 +72,10 @@ function HomeContent() {
     return [...postsPool].map(post => {
       let score = (post.likesCount || 0) * 3 + (post.commentsCount || 0) * 5;
       if (profile?.followingIds?.includes(post.authorId)) score += 80;
-      
       const hours = (Date.now() - (post.createdAt?.toMillis?.() || Date.now())) / 3600000;
       score += hours < 1 ? 60 : hours < 24 ? 30 : 10;
-      
       const boost = post.boostFactor || 1.0;
       score *= boost;
-
       return { ...post, calculatedScore: score };
     }).sort((a, b) => {
       if (a.isAdPost !== b.isAdPost) return a.isAdPost ? -1 : 1;
@@ -94,10 +88,11 @@ function HomeContent() {
   [postsPool, profile]);
 
   const renderList = (posts: any[]) => (
-    <div className="space-y-[1px]">
+    <div className="space-y-[1px] pb-24">
       {posts.map((post, idx) => (
         <div key={post.id}>
           <PostCard post={post} currentUserProfile={profile} />
+          {/* إظهار الإعلان المربع كل 5 منشورات - حصرياً للموبايل */}
           {(idx + 1) % 5 === 0 && <HighPerformanceAd key={`ad-feed-${post.id}`} />}
         </div>
       ))}
@@ -107,11 +102,10 @@ function HomeContent() {
   if (!mounted || isUserLoading || !user) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <Navbar />
-      <main className="container mx-auto px-0 md:px-4 pt-12 flex flex-col md:flex-row gap-6">
-        <div className="hidden md:block w-64 pt-4 h-fit sticky top-12"><LeftSidebar /></div>
-        <div className="flex-1 w-full max-w-xl mx-auto min-h-screen">
+      <main className="container mx-auto px-0 pt-10 flex flex-col max-w-xl">
+        <div className="w-full min-h-screen">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full bg-background/80 backdrop-blur-md border-b sticky top-10 z-40 rounded-none h-10 p-0">
               <TabsTrigger value="for-you" className="flex-1 h-full font-bold text-xs gap-2"><Sparkles size={14} /> لك</TabsTrigger>
@@ -123,13 +117,12 @@ function HomeContent() {
                   <TabsContent value="for-you" className="m-0">{renderList(recommendedPosts)}</TabsContent>
                 )}
                 <TabsContent value="following" className="m-0">
-                  {followingPosts.length > 0 ? renderList(followingPosts) : <div className="py-24 text-center text-xs font-bold text-muted-foreground">لم تتابع أحداً بعد!</div>}
+                  {followingPosts.length > 0 ? renderList(followingPosts) : <div className="py-24 text-center text-xs font-bold text-muted-foreground px-10">لم تتابع أحداً بعد! ابدأ باستكشاف المبدعين من صفحة البحث.</div>}
                 </TabsContent>
               </motion.div>
             </AnimatePresence>
           </Tabs>
         </div>
-        <div className="hidden lg:block w-80 pt-4 h-fit sticky top-12"><RightSidebar /></div>
       </main>
       <Toaster />
     </div>
