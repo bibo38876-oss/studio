@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection, increment, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { doc, collection, increment, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
@@ -68,22 +68,26 @@ export default function PostCard({ post, currentUserProfile }: any) {
 
   const handleSupport = (amt: number) => {
     if (!user || user.isAnonymous) return router.push('/login');
+    if (!firestore || !currentUserProfile) return;
     if ((currentUserProfile?.coins || 0) < amt) return toast({ variant: "destructive", description: "رصيد غير كافٍ." });
+    
     const fee = amt * 0.1, net = amt - fee;
-    updateDocumentNonBlocking(doc(firestore!, 'users', user.uid), { coins: increment(-amt) });
-    updateDocumentNonBlocking(doc(firestore!, 'users', post.authorId), { coins: increment(net) });
-    addDocumentNonBlocking(collection(firestore!, 'platform_revenue'), { type: 'support_fee', amount: fee, fromUserId: user.uid, toUserId: post.authorId, createdAt: serverTimestamp() });
-    setDocumentNonBlocking(doc(firestore!, 'users', post.authorId, 'supporters', user.uid), { userId: user.uid, username: currentUserProfile.username, avatar: currentUserProfile.profilePictureUrl, totalAmount: increment(amt), lastSupportedAt: serverTimestamp() }, { merge: true });
-    addDocumentNonBlocking(collection(firestore!, 'users', post.authorId, 'notifications'), { type: 'support', fromUserId: user.uid, fromUsername: currentUserProfile.username, amount: net, postId: post.id, createdAt: serverTimestamp(), read: false });
+    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amt) });
+    updateDocumentNonBlocking(doc(firestore, 'users', post.authorId), { coins: increment(net) });
+    addDocumentNonBlocking(collection(firestore, 'platform_revenue'), { type: 'support_fee', amount: fee, fromUserId: user.uid, toUserId: post.authorId, createdAt: serverTimestamp() });
+    setDocumentNonBlocking(doc(firestore, 'users', post.authorId, 'supporters', user.uid), { userId: user.uid, username: currentUserProfile.username, avatar: currentUserProfile.profilePictureUrl || '', totalAmount: increment(amt), lastSupportedAt: serverTimestamp() }, { merge: true });
+    addDocumentNonBlocking(collection(firestore, 'users', post.authorId, 'notifications'), { type: 'support', fromUserId: user.uid, fromUsername: currentUserProfile.username, amount: net, postId: post.id, createdAt: serverTimestamp(), read: false });
     toast({ title: "تم الدعم! ☕️", description: `أرسلت ${net.toFixed(1)} عملة.` });
     setIsSupportOpen(false);
   };
 
   const handleBoost = (amt: number, factor: number) => {
+    if (!firestore || !user) return;
     if ((currentUserProfile?.coins || 0) < amt) return toast({ variant: "destructive", description: "رصيدك غير كافٍ للترويج." });
-    updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(-amt) });
-    updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { promoted: true, boostFactor: factor });
-    addDocumentNonBlocking(collection(firestore!, 'platform_revenue'), { type: 'post_promotion', amount: amt, fromUserId: user!.uid, createdAt: serverTimestamp() });
+    
+    updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amt) });
+    updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { promoted: true, boostFactor: factor });
+    addDocumentNonBlocking(collection(firestore, 'platform_revenue'), { type: 'post_promotion', amount: amt, fromUserId: user.uid, createdAt: serverTimestamp() });
     toast({ title: "تم تعزيز المنشور! 🚀", description: `الآن سيظهر منشورك لشريحة أكبر من المستخدمين.` });
     setIsBoostOpen(false);
   };
@@ -108,10 +112,11 @@ export default function PostCard({ post, currentUserProfile }: any) {
   };
 
   const verifyAdCaptcha = () => {
+    if (!firestore || !user || !adRewardRef) return;
     if (parseInt(answer) === captcha.a) {
-      updateDocumentNonBlocking(doc(firestore!, 'users', user!.uid), { coins: increment(0.7) });
-      updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { remainingAdBudget: increment(-0.7) });
-      setDocumentNonBlocking(adRewardRef!, { clickedAt: serverTimestamp() }, { merge: true });
+      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(0.7) });
+      updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { remainingAdBudget: increment(-0.7) });
+      setDocumentNonBlocking(adRewardRef, { clickedAt: serverTimestamp() }, { merge: true });
       toast({ title: "تمت إضافة المكافأة! 💰", description: "حصلت على 0.7 عملة لزيارة الموقع الممول." });
       setIsAdRewardOpen(false);
       setShowCaptcha(false);
@@ -136,13 +141,19 @@ export default function PostCard({ post, currentUserProfile }: any) {
               <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {isOwner && (
-                  <DropdownMenuItem className="text-xs gap-2 font-bold text-accent" onClick={() => setIsBoostOpen(true)}>
+                  <DropdownMenuItem className="text-xs gap-2 font-bold text-accent" onClick={(e) => { e.stopPropagation(); setIsBoostOpen(true); }}>
                     <TrendingUp size={14} /> ترويج المنشور
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem className="text-xs" onClick={() => updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), { reportsCount: increment(1) })}><AlertTriangle size={14} /> إبلاغ</DropdownMenuItem>
+                <DropdownMenuItem className="text-xs" onClick={(e) => { e.stopPropagation(); if(firestore) updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { reportsCount: increment(1) }); }}>
+                  <AlertTriangle size={14} /> إبلاغ
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {(isOwner || isAdmin) && <DropdownMenuItem className="text-xs text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'posts', post.id))}><Trash2 size={14} /> حذف</DropdownMenuItem>}
+                {(isOwner || isAdmin) && (
+                  <DropdownMenuItem className="text-xs text-destructive" onClick={(e) => { e.stopPropagation(); if(firestore) deleteDocumentNonBlocking(doc(firestore, 'posts', post.id)); }}>
+                    <Trash2 size={14} /> حذف
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -194,12 +205,12 @@ export default function PostCard({ post, currentUserProfile }: any) {
         </CardContent>
         <CardFooter className="p-4 py-3 border-t border-muted/5 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <button onClick={e => { e.stopPropagation(); if(liked) deleteDocumentNonBlocking(likeRef!); else setDocumentNonBlocking(likeRef!, {createdAt: serverTimestamp()}, {merge:true}); updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), {likesCount: increment(liked?-1:1)}); }} className={cn("flex items-center gap-1.5", liked ? "text-red-500" : "text-muted-foreground")}><Heart size={18} className={liked?"fill-current":""} /><span className="text-[11px] font-bold">{post.likesCount || 0}</span></button>
+            <button onClick={e => { e.stopPropagation(); if(!firestore || !user) return; if(liked) deleteDocumentNonBlocking(likeRef!); else setDocumentNonBlocking(likeRef!, {createdAt: serverTimestamp()}, {merge:true}); updateDocumentNonBlocking(doc(firestore, 'posts', post.id), {likesCount: increment(liked?-1:1)}); }} className={cn("flex items-center gap-1.5", liked ? "text-red-500" : "text-muted-foreground")}><Heart size={18} className={liked?"fill-current":""} /><span className="text-[11px] font-bold">{post.likesCount || 0}</span></button>
             <div className="flex items-center gap-1.5 text-muted-foreground"><MessageCircle size={18} /><span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
             <button onClick={e => { e.stopPropagation(); setIsSupportOpen(true); }} className="flex items-center gap-1.5 text-amber-600 font-bold"><Coffee size={18} /><span className="text-[10px]">دعم</span></button>
             <div className="flex items-center gap-1.5 text-muted-foreground"><BarChart3 size={18} /><span className="text-[11px] font-bold">{post.viewsCount || 0}</span></div>
           </div>
-          <button onClick={e => { e.stopPropagation(); if(bookmarked) deleteDocumentNonBlocking(bookmarkRef!); else setDocumentNonBlocking(bookmarkRef!, {...post, createdAt: serverTimestamp()}, {merge:true}); updateDocumentNonBlocking(doc(firestore!, 'posts', post.id), {bookmarksCount: increment(bookmarked?-1:1)}); }} className={cn(bookmarked?"text-blue-500":"text-muted-foreground")}><Bookmark size={18} className={bookmarked?"fill-current":""} /></button>
+          <button onClick={e => { e.stopPropagation(); if(!firestore || !user) return; if(bookmarked) deleteDocumentNonBlocking(bookmarkRef!); else setDocumentNonBlocking(bookmarkRef!, {...post, createdAt: serverTimestamp()}, {merge:true}); updateDocumentNonBlocking(doc(firestore, 'posts', post.id), {bookmarksCount: increment(bookmarked?-1:1)}); }} className={cn(bookmarked?"text-blue-500":"text-muted-foreground")}><Bookmark size={18} className={bookmarked?"fill-current":""} /></button>
         </CardFooter>
       </Card>
 

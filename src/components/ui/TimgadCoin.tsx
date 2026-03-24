@@ -1,6 +1,8 @@
+
 "use client"
 
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 interface CoinProps {
   size?: number;
@@ -9,10 +11,18 @@ interface CoinProps {
 
 /**
  * TimgadCoin - A reusable component representing the official Timgad Coin.
- * Designed with gold gradients and professional numismatic details.
+ * Fixed hydration error by generating a stable ID on mount.
  */
 export default function TimgadCoin({ size = 24, className }: CoinProps) {
-  const uniqueId = Math.random().toString(36).substring(7);
+  const [mounted, setMounted] = useState(false);
+  const [uniqueId, setUniqueId] = useState("");
+
+  useEffect(() => {
+    setUniqueId(Math.random().toString(36).substring(7));
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return <div style={{ width: size, height: size }} className={className} />;
   
   return (
     <svg 
@@ -39,7 +49,7 @@ export default function TimgadCoin({ size = 24, className }: CoinProps) {
       </defs>
       
       {/* Outer Rim */}
-      <circle cx="100" cy="100" r="95" fill="url(#rim-coin-uniqueId)" />
+      <circle cx="100" cy="100" r="95" fill={`url(#rim-coin-${uniqueId})`} />
       <circle cx="100" cy="100" r="90" fill="none" stroke="#8a6500" strokeWidth="4" strokeDasharray="2 4"/>
       
       {/* Main Gold Body */}

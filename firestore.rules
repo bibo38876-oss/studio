@@ -50,7 +50,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         isOwner(resource.data.authorId) || 
         isAdmin() || 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount', 'likesCount', 'repostsCount', 'commentsCount', 'bookmarksCount', 'poll', 'reportsCount', 'impressions_left', 'promoted'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount', 'likesCount', 'repostsCount', 'commentsCount', 'bookmarksCount', 'poll', 'reportsCount', 'impressions_left', 'promoted', 'boostFactor', 'remainingAdBudget'])
       );
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isAdmin());
 
@@ -64,6 +64,11 @@ service cloud.firestore {
         allow create: if isSignedIn();
         allow update: if isSignedIn();
         allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isAdmin());
+      }
+      
+      match /adClicks/{userId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId);
       }
     }
 
