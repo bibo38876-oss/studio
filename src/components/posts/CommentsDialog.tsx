@@ -64,6 +64,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
   return (
     <div className="flex flex-col h-full bg-background text-right relative overflow-hidden">
+      {/* Header */}
       <div className="flex items-center gap-3 p-2 border-b h-12 bg-background/95 sticky top-0 z-50">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 rounded-full"><ChevronRight size={24} /></Button>
         <div className="flex flex-col">
@@ -72,7 +73,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-24 no-scrollbar">
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto no-scrollbar">
         <div className="p-4 border-b bg-primary/[0.02]">
           <div className="flex gap-3 mb-4 justify-end">
             <div className="flex flex-col text-right">
@@ -143,7 +145,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                   </div>
                   <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
                 </div>
-                {(i + 1) % 5 === 0 && <HighPerformanceAd />}
+                {(i + 1) % 5 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}`} />}
               </div>
             ))
           ) : (
@@ -155,7 +157,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-3 border-t bg-background/95 backdrop-blur-md z-[60] pb-[env(safe-area-inset-bottom)]">
+      {/* Input Section - Refined for mobile keyboard stability */}
+      <div className="mt-auto p-3 border-t bg-background/95 backdrop-blur-md z-[60] pb-[env(safe-area-inset-bottom)]">
         <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 focus-within:border-primary/20 transition-all">
           <Input 
             placeholder="اكتب تعليقك الراقي..." 
@@ -176,6 +179,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
+      {/* Support Dialog */}
       <Dialog open={isSupport} onOpenChange={setIsSupport}>
         <DialogContent className="sm:max-w-[300px] text-center p-6 border-amber-200">
           <DialogTitle className="text-sm font-bold text-amber-700 mb-4 flex items-center justify-center gap-2">

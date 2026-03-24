@@ -10,7 +10,7 @@ import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirebase, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, increment, limit } from 'firebase/firestore';
-import { Loader2, Sparkles, Users, TrendingUp } from 'lucide-react';
+import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HighPerformanceAd } from '@/components/ads/AadsUnit';
@@ -79,13 +79,11 @@ function HomeContent() {
       const hours = (Date.now() - (post.createdAt?.toMillis?.() || Date.now())) / 3600000;
       score += hours < 1 ? 60 : hours < 24 ? 30 : 10;
       
-      // تطبيق عامل التعزيز (Boost Factor)
       const boost = post.boostFactor || 1.0;
       score *= boost;
 
       return { ...post, calculatedScore: score };
     }).sort((a, b) => {
-      // المنشورات الممولة (Ads) تأتي أولاً إذا كانت نشطة، ثم الترتيب حسب النقاط
       if (a.isAdPost !== b.isAdPost) return a.isAdPost ? -1 : 1;
       return b.calculatedScore - a.calculatedScore;
     }).slice(0, 50);
@@ -100,7 +98,7 @@ function HomeContent() {
       {posts.map((post, idx) => (
         <div key={post.id}>
           <PostCard post={post} currentUserProfile={profile} />
-          {(idx + 1) % 5 === 0 && <HighPerformanceAd />}
+          {(idx + 1) % 5 === 0 && <HighPerformanceAd key={`ad-feed-${post.id}`} />}
         </div>
       ))}
     </div>
@@ -120,7 +118,7 @@ function HomeContent() {
               <TabsTrigger value="following" className="flex-1 h-full font-bold text-xs gap-2"><Users size={14} /> أتابعهم</TabsTrigger>
             </TabsList>
             <AnimatePresence mode="wait">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
                 {isPoolLoading ? <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div> : (
                   <TabsContent value="for-you" className="m-0">{renderList(recommendedPosts)}</TabsContent>
                 )}

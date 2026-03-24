@@ -5,16 +5,20 @@ import React, { useEffect, useRef } from 'react';
 
 /**
  * مكون إعلانات الأداء العالي الجديد (300x250)
- * يستبدل نظام AADS القديم في كافة أنحاء المنصة
+ * يتم حقن السكريبت برمجياً لضمان الظهور المستمر
  */
 export function HighPerformanceAd() {
   const adRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // التحقق من عدم وجود محتوى مسبق لتجنب التكرار
     if (adRef.current && adRef.current.childNodes.length === 0) {
-      // حقن السكريبت البرمجي الجديد
-      const script1 = document.createElement('script');
-      script1.innerHTML = `
+      const container = adRef.current;
+      
+      // السكريبت الأول: الإعدادات
+      const confScript = document.createElement('script');
+      confScript.type = 'text/javascript';
+      confScript.innerHTML = `
         atOptions = {
           'key' : 'e94da501ef4b01acec6f8588b1253c96',
           'format' : 'iframe',
@@ -24,18 +28,20 @@ export function HighPerformanceAd() {
         };
       `;
       
-      const script2 = document.createElement('script');
-      script2.src = 'https://www.highperformanceformat.com/e94da501ef4b01acec6f8588b1253c96/invoke.js';
-      script2.async = true;
+      // السكريبت الثاني: جلب الإعلان
+      const invokeScript = document.createElement('script');
+      invokeScript.type = 'text/javascript';
+      invokeScript.src = 'https://www.highperformanceformat.com/e94da501ef4b01acec6f8588b1253c96/invoke.js';
+      invokeScript.async = true;
 
-      adRef.current.appendChild(script1);
-      adRef.current.appendChild(script2);
+      container.appendChild(confScript);
+      container.appendChild(invokeScript);
     }
   }, []);
 
   return (
     <div className="flex justify-center my-6 overflow-hidden w-full min-h-[250px] bg-primary/[0.02] border-y border-primary/5 py-4">
-      <div id="ad-container" className="shadow-sm" ref={adRef}></div>
+      <div ref={adRef} className="shadow-sm"></div>
     </div>
   );
 }
