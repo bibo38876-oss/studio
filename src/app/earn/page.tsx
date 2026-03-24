@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,6 @@ export default function EarnPage() {
   const [canClaim, setCanClaim] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
   
-  // نظام مستعرض المهام الجديد
   const [activeTask, setActiveTask] = useState<{url: string, amt: number, type: string} | null>(null);
   const [taskTimer, setTaskTimer] = useState(0);
   const [showTaskCaptcha, setShowTaskCaptcha] = useState(false);
@@ -40,7 +39,7 @@ export default function EarnPage() {
 
   const adPostsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'posts'), where('isAdPost', '==', true), where('remainingAdBudget', '>', 0), orderBy('createdAt', 'desc'), limit(10));
+    return query(collection(firestore, 'posts'), where('isAdPost', '==', true), limit(10));
   }, [firestore]);
   const { data: adPosts } = useCollection(adPostsQuery);
 
@@ -55,7 +54,7 @@ export default function EarnPage() {
       document.body.appendChild(script);
     };
     loadSocialBar();
-    const interval = setInterval(loadSocialBar, 60000);
+    const interval = setInterval(loadSocialBar, 60000); // تجديد كل دقيقة
     return () => {
       clearInterval(interval);
       document.getElementById('social-bar-script')?.remove();
@@ -76,7 +75,6 @@ export default function EarnPage() {
     return () => clearInterval(interval);
   }, [profile]);
 
-  // منطق العداد داخل المستعرض
   useEffect(() => {
     let interval: any;
     if (activeTask && taskTimer > 0) {
@@ -97,7 +95,6 @@ export default function EarnPage() {
 
   const startTask = (amt: number, type: string, url: string) => {
     if ((profile?.dailyEarned || 0) >= DAILY_LIMIT) return toast({ variant: "destructive", description: "وصلت للحد اليومي (25 عملة)." });
-    
     setTaskAnswer('');
     setShowTaskCaptcha(false);
     setTaskTimer(7);
@@ -121,10 +118,12 @@ export default function EarnPage() {
   const handleTransferEarnings = async () => {
     const amount = profile?.adEarnings || 0;
     if (amount <= 0) return;
+    setIsTransferring(true);
     if (firestore && user) {
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(amount), adEarnings: 0 });
       toast({ title: "تم التحويل بنجاح! 💰" });
     }
+    setIsTransferring(false);
   };
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
@@ -152,7 +151,7 @@ export default function EarnPage() {
               <h3 className="text-xs font-bold text-accent uppercase">المحفظة الرئيسية</h3>
               <div className="flex items-center gap-2"><span className="text-lg font-bold">{(profile?.coins || 0).toFixed(2)}</span><TimgadCoin size={18} /></div>
             </div>
-            <Button onClick={handleTransferEarnings} disabled={isTransferring || (profile?.adEarnings || 0) <= 0} className="bg-accent hover:bg-accent/90 text-white font-bold rounded-full h-10 px-6 gap-2 shadow-lg shadow-accent/20 transition-all active:scale-95">
+            <Button onClick={handleTransferEarnings} disabled={isTransferring || (profile?.adEarnings || 0) <= 0} className="bg-accent hover:bg-accent/90 text-white font-bold rounded-full h-10 px-6 gap-2 shadow-lg shadow-accent/20">
               {isTransferring ? <Loader2 className="animate-spin h-4 w-4" /> : <ArrowDownToLine size={16} />} تحويل للمحفظة
             </Button>
           </CardContent>
@@ -169,10 +168,7 @@ export default function EarnPage() {
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 bg-accent/10 rounded-full flex items-center justify-center text-accent"><ExternalLink size={18} /></div>
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-white line-clamp-1">{ad.content}</p>
-                        <p className="text-[8px] text-muted-foreground">بواسطة: {ad.authorName}</p>
-                      </div>
+                      <div className="text-right"><p className="text-xs font-bold text-white line-clamp-1">{ad.content}</p><p className="text-[8px] text-muted-foreground">بواسطة: {ad.authorName}</p></div>
                     </div>
                     <div className="flex items-center gap-1.5 bg-accent/10 px-3 py-1.5 rounded-full border border-accent/20">
                       <span className="text-[10px] font-bold text-accent">+0.7</span><TimgadCoin size={12} />
@@ -199,75 +195,32 @@ export default function EarnPage() {
         <div className="mt-12 space-y-4 bg-white/5 p-6 rounded-2xl border border-white/5 text-center">
           <div className="flex justify-between items-center px-1"><span className="text-[10px] font-bold text-muted-foreground uppercase">تقدمك اليومي</span><span className="text-[10px] font-bold text-primary">{(profile?.dailyEarned || 0).toFixed(2)} / {DAILY_LIMIT} عملة</span></div>
           <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-1000" style={{ width: `${Math.min(((profile?.dailyEarned || 0) / DAILY_LIMIT) * 100, 100)}%` }} /></div>
-          <p className="text-[8px] text-muted-foreground italic">يتم إعادة ضبط الحد اليومي عند منتصف الليل بتوقيت الجزائر.</p>
         </div>
       </main>
 
-      {/* مستعرض المهام المدمج (Iframe Modal) */}
       <AnimatePresence>
         {activeTask && (
-          <motion.div 
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 100 }}
-            className="fixed inset-0 z-[100] bg-black flex flex-col"
-          >
-            {/* الشريط العلوي للتحقق */}
+          <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }} className="fixed inset-0 z-[100] bg-black flex flex-col">
             <div className="bg-[#1E293B] border-b border-white/10 p-3 h-16 flex items-center justify-between shadow-2xl">
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="text-white/60 hover:text-white" onClick={() => setActiveTask(null)}>
-                  <X size={20} />
-                </Button>
-                <div className="flex flex-col text-right">
-                  <span className="text-[10px] font-bold text-accent uppercase tracking-widest">{activeTask.type}</span>
-                  <span className="text-[8px] text-white/40">يرجى البقاء في الصفحة للحصول على المكافأة</span>
-                </div>
-              </div>
-
+              <Button variant="ghost" size="icon" className="text-white/60 hover:text-white" onClick={() => setActiveTask(null)}><X size={20} /></Button>
               <div className="flex-1 flex justify-center px-4">
                 {!showTaskCaptcha ? (
                   <div className="flex items-center gap-3 bg-black/40 px-6 py-2 rounded-full border border-accent/20">
-                    <Loader2 className="animate-spin text-accent" size={16} />
-                    <span className="text-xs font-mono font-bold text-white">انتظر {taskTimer} ثوانٍ...</span>
+                    <Loader2 className="animate-spin text-accent" size={16} /><span className="text-xs font-mono font-bold text-white">انتظر {taskTimer} ثوانٍ...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 bg-accent/10 px-4 py-1.5 rounded-xl border border-accent/30 animate-pulse">
-                    <span className="text-xs font-bold text-white whitespace-nowrap">{taskCaptcha.q} = </span>
-                    <Input 
-                      type="number" 
-                      className="w-16 h-8 bg-black/40 border-none text-center font-bold text-xs p-0 focus-visible:ring-1 focus-visible:ring-accent" 
-                      value={taskAnswer}
-                      onChange={e => setTaskAnswer(e.target.value)}
-                      placeholder="؟"
-                      autoFocus
-                    />
-                    <Button size="sm" className="h-8 bg-accent hover:bg-accent/90 text-white font-bold text-[10px]" onClick={handleVerifyTask}>تحقق</Button>
+                  <div className="flex items-center gap-2 bg-accent/10 px-4 py-1.5 rounded-xl border border-accent/30">
+                    <span className="text-xs font-bold text-white">{taskCaptcha.q} = </span>
+                    <Input type="number" className="w-16 h-8 bg-black/40 border-none text-center font-bold text-xs p-0" value={taskAnswer} onChange={e => setTaskAnswer(e.target.value)} autoFocus />
+                    <Button size="sm" className="h-8 bg-accent text-white font-bold text-[10px]" onClick={handleVerifyTask}>تحقق</Button>
                   </div>
                 )}
               </div>
-
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-8 text-[9px] border-white/10 text-white/60 hidden sm:flex" onClick={() => window.open(activeTask.url, '_blank')}>
-                  <OpenIcon size={12} className="ml-1" /> الموقع لا يعمل؟
-                </Button>
-              </div>
             </div>
-
-            {/* الإطار المدمج للموقع */}
-            <div className="flex-1 w-full bg-white overflow-hidden relative">
-              {activeTask.url !== "about:blank" ? (
-                <iframe 
-                  src={activeTask.url} 
-                  className="w-full h-full border-none"
-                  title="Task Viewer"
-                />
-              ) : (
+            <div className="flex-1 w-full bg-white overflow-hidden">
+              {activeTask.url !== "about:blank" ? <iframe src={activeTask.url} className="w-full h-full border-none" /> : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-[#0F172A] text-center p-8 space-y-4">
-                  <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center text-accent">
-                    <Clock size={40} />
-                  </div>
-                  <h3 className="text-xl font-bold">انتظر انتهاء وقت الصنبور</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs">هذه المهمة تتطلب فقط البقاء في هذه الواجهة حتى ينتهي العداد ويظهر حقل التحقق.</p>
+                  <Clock size={40} className="text-accent" /><h3 className="text-xl font-bold">انتظر انتهاء وقت الصنبور</h3>
                 </div>
               )}
             </div>
@@ -283,12 +236,10 @@ function RewardCard({ title, desc, icon, onClick, disabled, text, color = "bg-gr
     <Card className="bg-slate-900/50 border-white/5 overflow-hidden group hover:border-primary/30 transition-all">
       <CardContent className="p-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">{icon}</div>
+          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-primary">{icon}</div>
           <div className="text-right"><h3 className="text-sm font-bold text-white">{title}</h3><p className="text-[10px] text-muted-foreground font-medium">{desc}</p></div>
         </div>
-        <Button onClick={onClick} disabled={disabled} className={cn("h-11 px-6 font-bold text-xs rounded-xl shadow-lg transition-all", color, disabled && "opacity-50 grayscale")}>
-          {text || "احصل الآن"}
-        </Button>
+        <Button onClick={onClick} disabled={disabled} className={cn("h-11 px-6 font-bold text-xs rounded-xl", color, disabled && "opacity-50")}>{text || "احصل الآن"}</Button>
       </CardContent>
     </Card>
   );

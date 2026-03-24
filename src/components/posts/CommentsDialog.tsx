@@ -63,7 +63,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   };
 
   return (
-    <div className="flex flex-col h-full bg-background text-right relative overflow-hidden">
+    <div className="flex flex-col h-full bg-background text-right relative">
       {/* Header */}
       <div className="flex items-center gap-3 p-2 border-b h-12 bg-background/95 sticky top-0 z-50">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 rounded-full"><ChevronRight size={24} /></Button>
@@ -73,7 +73,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto no-scrollbar">
         <div className="p-4 border-b bg-primary/[0.02]">
           <div className="flex gap-3 mb-4 justify-end">
@@ -128,12 +128,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                   <div className="flex-1 flex flex-col items-end">
                     <div className="bg-secondary/30 p-3 rounded-2xl rounded-tr-none text-right w-fit max-w-[90%] shadow-sm relative">
                       {(c.authorId === user?.uid || user?.email === 'adelbenmaza8@gmail.com') && (
-                        <button 
-                          onClick={() => handleDeleteComment(c.id)} 
-                          className="absolute -left-2 -top-2 h-6 w-6 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 shadow-sm"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        <button onClick={() => handleDeleteComment(c.id)} className="absolute -left-2 -top-2 h-6 w-6 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 shadow-sm"><Trash2 size={12} /></button>
                       )}
                       <div className="flex justify-end gap-1.5 mb-1">
                         <VerifiedBadge type={c.authorVerificationType || 'none'} size={10} />
@@ -157,8 +152,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      {/* Input Section - Refined for mobile keyboard stability */}
-      <div className="mt-auto p-3 border-t bg-background/95 backdrop-blur-md z-[60] pb-[env(safe-area-inset-bottom)]">
+      {/* Input Section - Improved for Mobile Stability */}
+      <div className="p-3 border-t bg-background/95 backdrop-blur-md z-[60]">
         <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 focus-within:border-primary/20 transition-all">
           <Input 
             placeholder="اكتب تعليقك الراقي..." 

@@ -4,18 +4,18 @@
 import React, { useEffect, useRef } from 'react';
 
 /**
- * مكون إعلانات الأداء العالي الجديد (300x250)
- * يتم حقن السكريبت برمجياً لضمان الظهور المستمر
+ * مكون إعلانات الأداء العالي (300x250)
+ * يتم استخدامه في الفيد، التعليقات، والمجموعات.
  */
 export function HighPerformanceAd() {
   const adRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // التحقق من عدم وجود محتوى مسبق لتجنب التكرار
+    // التحقق من وجود الحاوية وعدم تكرار المحتوى
     if (adRef.current && adRef.current.childNodes.length === 0) {
       const container = adRef.current;
+      const scriptId = `ad-script-${Math.random().toString(36).substr(2, 9)}`;
       
-      // السكريبت الأول: الإعدادات
       const confScript = document.createElement('script');
       confScript.type = 'text/javascript';
       confScript.innerHTML = `
@@ -28,8 +28,8 @@ export function HighPerformanceAd() {
         };
       `;
       
-      // السكريبت الثاني: جلب الإعلان
       const invokeScript = document.createElement('script');
+      invokeScript.id = scriptId;
       invokeScript.type = 'text/javascript';
       invokeScript.src = 'https://www.highperformanceformat.com/e94da501ef4b01acec6f8588b1253c96/invoke.js';
       invokeScript.async = true;
