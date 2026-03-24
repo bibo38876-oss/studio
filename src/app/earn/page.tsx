@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, useCollection } from '@/firebase';
 import { doc, increment, collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Gift, PlayCircle, Clock, ShieldCheck, TrendingUp, ChevronRight, MessageSquare, Sparkles, ArrowDownToLine, Wallet, ExternalLink, Globe } from 'lucide-react';
+import { Loader2, Gift, PlayCircle, Clock, ShieldCheck, TrendingUp, ChevronRight, MessageSquare, Sparkles, ArrowDownToLine, Wallet, ExternalLink, Globe, X, ExternalLink as OpenIcon } from 'lucide-react';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,16 +24,16 @@ export default function EarnPage() {
   const { toast } = useToast();
   const router = useRouter();
   
-  const [isRewardLoading, setIsRewardLoading] = useState(false);
-  const [rewardTimer, setRewardTimer] = useState(0);
   const [faucetTimer, setFaucetTimer] = useState('00:00');
   const [canClaim, setCanClaim] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
   
-  const [showCaptcha, setShowCaptcha] = useState(false);
-  const [captcha, setCaptcha] = useState({ q: '', a: 0 });
-  const [answer, setAnswer] = useState('');
-  const [pendingReward, setPendingReward] = useState({ amt: 0, type: '', link: '' });
+  // نظام مستعرض المهام الجديد
+  const [activeTask, setActiveTask] = useState<{url: string, amt: number, type: string} | null>(null);
+  const [taskTimer, setTaskTimer] = useState(0);
+  const [showTaskCaptcha, setShowTaskCaptcha] = useState(false);
+  const [taskCaptcha, setTaskCaptcha] = useState({ q: '', a: 0 });
+  const [taskAnswer, setTaskAnswer] = useState('');
 
   const userRef = useMemoFirebase(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile, isLoading } = useDoc(userRef);
@@ -76,43 +76,45 @@ export default function EarnPage() {
     return () => clearInterval(interval);
   }, [profile]);
 
-  const generateCaptcha = () => {
-    const n1 = Math.floor(Math.random() * 9) + 1, n2 = Math.floor(Math.random() * 9) + 1;
-    setCaptcha({ q: `${n1} + ${n2}`, a: n1 + n2 });
-    setAnswer('');
-    setShowCaptcha(true);
-  };
+  // منطق العداد داخل المستعرض
+  useEffect(() => {
+    let interval: any;
+    if (activeTask && taskTimer > 0) {
+      interval = setInterval(() => {
+        setTaskTimer(prev => {
+          if (prev <= 1) {
+            const n1 = Math.floor(Math.random() * 9) + 1, n2 = Math.floor(Math.random() * 9) + 1;
+            setTaskCaptcha({ q: `${n1} + ${n2}`, a: n1 + n2 });
+            setShowTaskCaptcha(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [activeTask, taskTimer]);
 
-  const startTask = (amt: number, type: string, link: string) => {
+  const startTask = (amt: number, type: string, url: string) => {
     if ((profile?.dailyEarned || 0) >= DAILY_LIMIT) return toast({ variant: "destructive", description: "وصلت للحد اليومي (25 عملة)." });
-    window.open(link, '_blank');
-    setIsRewardLoading(true);
-    setRewardTimer(7);
-    const timerInterval = setInterval(() => {
-      setRewardTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerInterval);
-          setPendingReward({ amt, type, link });
-          generateCaptcha();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    
+    setTaskAnswer('');
+    setShowTaskCaptcha(false);
+    setTaskTimer(7);
+    setActiveTask({ url, amt, type });
   };
 
-  const handleVerifyCaptcha = () => {
-    if (parseInt(answer) === captcha.a) {
-      if (firestore && user) {
-        const updateData: any = { adEarnings: increment(pendingReward.amt), dailyEarned: increment(pendingReward.amt) };
-        if (pendingReward.type === 'الصنبور الساعي') updateData.lastFaucetAt = new Date().toISOString();
+  const handleVerifyTask = () => {
+    if (parseInt(taskAnswer) === taskCaptcha.a) {
+      if (firestore && user && activeTask) {
+        const updateData: any = { adEarnings: increment(activeTask.amt), dailyEarned: increment(activeTask.amt) };
+        if (activeTask.type === 'الصنبور الساعي') updateData.lastFaucetAt = new Date().toISOString();
         updateDocumentNonBlocking(doc(firestore, 'users', user.uid), updateData);
-        toast({ title: "تمت إضافة الأرباح! ✨", description: `لقد حصلت على ${pendingReward.amt} عملة.` });
+        toast({ title: "تمت إضافة الأرباح! ✨", description: `لقد حصلت على ${activeTask.amt} عملة.` });
       }
-      setShowCaptcha(false);
-      setIsRewardLoading(false);
+      setActiveTask(null);
     } else {
-      toast({ variant: "destructive", description: "إجابة خاطئة." });
+      toast({ variant: "destructive", description: "إجابة خاطئة، حاول مجدداً." });
     }
   };
 
@@ -156,19 +158,6 @@ export default function EarnPage() {
           </CardContent>
         </Card>
 
-        <AnimatePresence>
-          {showCaptcha && (
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="mb-6 p-6 bg-accent/10 border-2 border-accent/30 rounded-2xl text-center space-y-4 shadow-2xl backdrop-blur-sm">
-              <div className="flex items-center justify-center gap-2 text-accent"><ShieldCheck size={20} /><h3 className="text-sm font-bold">أثبت أنك إنسان</h3></div>
-              <p className="text-3xl font-mono font-bold text-white tracking-widest">{captcha.q} = ؟</p>
-              <div className="flex gap-2 max-w-[220px] mx-auto">
-                <Input type="number" className="bg-black/40 border-accent/20 text-center font-bold text-lg h-11" value={answer} onChange={e => setAnswer(e.target.value)} placeholder="الحل..." />
-                <Button onClick={handleVerifyCaptcha} className="bg-accent hover:bg-accent/90 text-white font-bold h-11 px-6">تحقق</Button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <div className="space-y-6">
           <section className="space-y-4">
             <div className="flex items-center justify-end gap-2 text-accent border-r-4 border-accent pr-3">
@@ -201,8 +190,8 @@ export default function EarnPage() {
               <Sparkles size={18} /><h2 className="text-sm font-bold uppercase tracking-tighter">المهام السريعة</h2>
             </div>
             <div className="space-y-3">
-              <RewardCard title="المكافأة الذكية" desc="افتح الرابط وانتظر 7 ثوانٍ" amt={0.5} icon={<Sparkles size={24} />} loading={isRewardLoading} timer={rewardTimer} onClick={() => startTask(0.5, "المكافأة الذكية", SMARTLINK)} />
-              <RewardCard title="الصنبور الساعي" desc="مكافأة مجانية كل ساعة" amt={0.2} icon={<Clock size={24} />} loading={isRewardLoading} disabled={!canClaim} text={faucetTimer} color="bg-amber-600" onClick={() => { setPendingReward({ amt: 0.2, type: "الصنبور الساعي", link: '#' }); generateCaptcha(); }} />
+              <RewardCard title="المكافأة الذكية" desc="افتح الرابط وانتظر 7 ثوانٍ" amt={0.5} icon={<Sparkles size={24} />} onClick={() => startTask(0.5, "المكافأة الذكية", SMARTLINK)} />
+              <RewardCard title="الصنبور الساعي" desc="مكافأة مجانية كل ساعة" amt={0.2} icon={<Clock size={24} />} disabled={!canClaim} text={faucetTimer} color="bg-amber-600" onClick={() => { startTask(0.2, "الصنبور الساعي", "about:blank"); }} />
             </div>
           </section>
         </div>
@@ -213,11 +202,83 @@ export default function EarnPage() {
           <p className="text-[8px] text-muted-foreground italic">يتم إعادة ضبط الحد اليومي عند منتصف الليل بتوقيت الجزائر.</p>
         </div>
       </main>
+
+      {/* مستعرض المهام المدمج (Iframe Modal) */}
+      <AnimatePresence>
+        {activeTask && (
+          <motion.div 
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 100 }}
+            className="fixed inset-0 z-[100] bg-black flex flex-col"
+          >
+            {/* الشريط العلوي للتحقق */}
+            <div className="bg-[#1E293B] border-b border-white/10 p-3 h-16 flex items-center justify-between shadow-2xl">
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" className="text-white/60 hover:text-white" onClick={() => setActiveTask(null)}>
+                  <X size={20} />
+                </Button>
+                <div className="flex flex-col text-right">
+                  <span className="text-[10px] font-bold text-accent uppercase tracking-widest">{activeTask.type}</span>
+                  <span className="text-[8px] text-white/40">يرجى البقاء في الصفحة للحصول على المكافأة</span>
+                </div>
+              </div>
+
+              <div className="flex-1 flex justify-center px-4">
+                {!showTaskCaptcha ? (
+                  <div className="flex items-center gap-3 bg-black/40 px-6 py-2 rounded-full border border-accent/20">
+                    <Loader2 className="animate-spin text-accent" size={16} />
+                    <span className="text-xs font-mono font-bold text-white">انتظر {taskTimer} ثوانٍ...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 bg-accent/10 px-4 py-1.5 rounded-xl border border-accent/30 animate-pulse">
+                    <span className="text-xs font-bold text-white whitespace-nowrap">{taskCaptcha.q} = </span>
+                    <Input 
+                      type="number" 
+                      className="w-16 h-8 bg-black/40 border-none text-center font-bold text-xs p-0 focus-visible:ring-1 focus-visible:ring-accent" 
+                      value={taskAnswer}
+                      onChange={e => setTaskAnswer(e.target.value)}
+                      placeholder="؟"
+                      autoFocus
+                    />
+                    <Button size="sm" className="h-8 bg-accent hover:bg-accent/90 text-white font-bold text-[10px]" onClick={handleVerifyTask}>تحقق</Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-8 text-[9px] border-white/10 text-white/60 hidden sm:flex" onClick={() => window.open(activeTask.url, '_blank')}>
+                  <OpenIcon size={12} className="ml-1" /> الموقع لا يعمل؟
+                </Button>
+              </div>
+            </div>
+
+            {/* الإطار المدمج للموقع */}
+            <div className="flex-1 w-full bg-white overflow-hidden relative">
+              {activeTask.url !== "about:blank" ? (
+                <iframe 
+                  src={activeTask.url} 
+                  className="w-full h-full border-none"
+                  title="Task Viewer"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-[#0F172A] text-center p-8 space-y-4">
+                  <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center text-accent">
+                    <Clock size={40} />
+                  </div>
+                  <h3 className="text-xl font-bold">انتظر انتهاء وقت الصنبور</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">هذه المهمة تتطلب فقط البقاء في هذه الواجهة حتى ينتهي العداد ويظهر حقل التحقق.</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function RewardCard({ title, desc, icon, onClick, loading, timer, disabled, text, color = "bg-green-600" }: any) {
+function RewardCard({ title, desc, icon, onClick, disabled, text, color = "bg-green-600" }: any) {
   return (
     <Card className="bg-slate-900/50 border-white/5 overflow-hidden group hover:border-primary/30 transition-all">
       <CardContent className="p-6 flex items-center justify-between">
@@ -225,8 +286,8 @@ function RewardCard({ title, desc, icon, onClick, loading, timer, disabled, text
           <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">{icon}</div>
           <div className="text-right"><h3 className="text-sm font-bold text-white">{title}</h3><p className="text-[10px] text-muted-foreground font-medium">{desc}</p></div>
         </div>
-        <Button onClick={onClick} disabled={loading || disabled} className={cn("h-11 px-6 font-bold text-xs rounded-xl shadow-lg transition-all", color, (loading || disabled) && "opacity-50 grayscale")}>
-          {loading && timer > 0 ? <span className="flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" />{timer} ث</span> : text || "احصل الآن"}
+        <Button onClick={onClick} disabled={disabled} className={cn("h-11 px-6 font-bold text-xs rounded-xl shadow-lg transition-all", color, disabled && "opacity-50 grayscale")}>
+          {text || "احصل الآن"}
         </Button>
       </CardContent>
     </Card>
