@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { HighPerformanceAd } from '@/components/ads/AadsUnit';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: any) {
   const [text, setText] = useState('');
@@ -83,7 +84,32 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
             </div>
             <Avatar className="h-10 w-10 border border-primary/10"><AvatarImage src={post.authorAvatar} /><AvatarFallback>{post.authorName?.[0]}</AvatarFallback></Avatar>
           </div>
+          
           <p className="text-sm leading-relaxed mb-4 whitespace-pre-wrap font-medium">{post.content}</p>
+
+          {/* إضافة عرض الصور هنا لمنع اختفائها عند الدخول للمنشور */}
+          {post.mediaUrls?.length > 0 && (
+            <div className="mb-4 relative">
+              <Carousel className="w-full" opts={{ direction: 'rtl', align: 'start' }}>
+                <CarouselContent className="-ml-1">
+                  {post.mediaUrls.map((u: string, i: number) => (
+                    <CarouselItem key={i} className="pl-1">
+                      <div className="rounded-xl overflow-hidden border aspect-square relative shadow-sm bg-muted/20">
+                        <img src={u} className="absolute inset-0 w-full h-full object-cover" alt={`Post image ${i + 1}`} />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {post.mediaUrls.length > 1 && (
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-2">
+                    <CarouselPrevious className="pointer-events-auto h-8 w-8 rounded-full bg-black/20 text-white border-none backdrop-blur-md static translate-y-0" />
+                    <CarouselNext className="pointer-events-auto h-8 w-8 rounded-full bg-black/20 text-white border-none backdrop-blur-md static translate-y-0" />
+                  </div>
+                )}
+              </Carousel>
+            </div>
+          )}
+
           <div className="flex items-center gap-6 border-t border-muted/10 pt-3">
             <div className="flex items-center gap-1.5 text-muted-foreground"><Heart size={18} /> <span className="text-[11px] font-bold">{post.likesCount || 0}</span></div>
             <div className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareText size={18} /> <span className="text-[11px] font-bold">{post.commentsCount || 0}</span></div>
@@ -118,7 +144,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                   </div>
                   <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
                 </div>
-                {/* إعلان الأداء العالي كل 5 تعليقات */}
                 {(i + 1) % 5 === 0 && <HighPerformanceAd />}
               </div>
             ))

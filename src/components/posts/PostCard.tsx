@@ -172,9 +172,22 @@ export default function PostCard({ post, currentUserProfile }: any) {
 
           {post.mediaUrls?.length > 0 && (
             <div className="mt-3 relative" onClick={e => e.stopPropagation()}>
-              <Carousel className="w-full" opts={{ direction: 'rtl' }}>
-                <CarouselContent>{post.mediaUrls.map((u: string, i: number) => <CarouselItem key={i}><div className="rounded-xl overflow-hidden border aspect-square relative shadow-sm"><img src={u} className="absolute inset-0 w-full h-full object-cover" /></div></CarouselItem>)}</CarouselContent>
-                {post.mediaUrls.length > 1 && <><CarouselPrevious className="right-2 h-8 w-8" /><CarouselNext className="left-2 h-8 w-8" /></>}
+              <Carousel className="w-full" opts={{ direction: 'rtl', align: 'start' }}>
+                <CarouselContent className="-ml-1">
+                  {post.mediaUrls.map((u: string, i: number) => (
+                    <CarouselItem key={i} className="pl-1">
+                      <div className="rounded-xl overflow-hidden border aspect-square relative shadow-sm bg-muted/20">
+                        <img src={u} className="absolute inset-0 w-full h-full object-cover" alt={`Post image ${i + 1}`} loading="lazy" />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {post.mediaUrls.length > 1 && (
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-2">
+                    <CarouselPrevious className="pointer-events-auto h-8 w-8 rounded-full bg-black/20 text-white border-none backdrop-blur-md static translate-y-0" />
+                    <CarouselNext className="pointer-events-auto h-8 w-8 rounded-full bg-black/20 text-white border-none backdrop-blur-md static translate-y-0" />
+                  </div>
+                )}
               </Carousel>
             </div>
           )}
