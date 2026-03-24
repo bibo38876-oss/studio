@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from 'react';
@@ -16,18 +17,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { HighPerformanceAd } from '@/components/ads/AadsUnit';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 
-/**
- * CommentsDialog - نافذة التعليقات المطورة حصرياً للهواتف.
- * تم حل مشكلة اختفاء المربع خلف لوحة المفاتيح عبر استخدام تخطيط Flex ثابت.
- */
 export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: any) {
   const [text, setText] = useState('');
   const [isSupport, setIsSupport] = useState(false);
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
+
+  const isAdmin = user?.email === 'adelbenmaza8@gmail.com';
 
   const commentsQuery = useMemoFirebase(() => (firestore && postId) ? query(collection(firestore, 'posts', postId, 'comments'), orderBy('createdAt', 'asc')) : null, [firestore, postId]);
   const { data: comments, isLoading } = useCollection(commentsQuery);
@@ -66,18 +65,18 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background text-right overflow-hidden">
-      {/* رأس النافذة الثابت */}
-      <header className="flex items-center gap-3 p-2 border-b h-12 bg-background/95 shrink-0 z-50">
+    <div className="flex flex-col h-[100dvh] bg-background text-right overflow-hidden relative">
+      {/* رأس النافذة */}
+      <header className="flex items-center gap-3 p-2 border-b h-12 bg-background/95 sticky top-0 z-50 shrink-0">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 rounded-full"><ChevronRight size={24} /></Button>
         <div className="flex flex-col">
           <span className="text-xs font-bold text-primary">النقاش التفاعلي</span>
-          <span className="text-[8px] text-muted-foreground uppercase tracking-widest">Timgad Global Chat</span>
+          <span className="text-[8px] text-muted-foreground uppercase tracking-widest">Timgad Mobile Chat</span>
         </div>
       </header>
 
-      {/* منطقة المحتوى القابلة للتمرير */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-2">
+      {/* منطقة المحتوى */}
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
         <div className="p-4 border-b bg-primary/[0.02]">
           <div className="flex gap-3 mb-4 justify-end">
             <div className="flex flex-col text-right">
@@ -150,8 +149,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      {/* حقل الإدخال الثابت والذكي للموبايل */}
-      <div className="p-3 border-t bg-background shrink-0 pb-safe">
+      {/* حقل الإدخال الثابت للموبايل */}
+      <div className="fixed bottom-0 left-0 right-0 p-3 border-t bg-background z-[100] pb-safe max-w-[500px] mx-auto shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
         <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 focus-within:border-primary/20 transition-all shadow-inner">
           <Input 
             placeholder="اكتب تعليقك..." 
@@ -172,7 +171,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      {/* نافذة الدعم */}
       <Dialog open={isSupport} onOpenChange={setIsSupport}>
         <DialogContent className="sm:max-w-[300px] text-center p-6 border-amber-200 bg-background rounded-2xl">
           <DialogTitle className="text-sm font-bold text-amber-700 mb-4 flex items-center justify-center gap-2">
