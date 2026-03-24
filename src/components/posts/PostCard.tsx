@@ -173,9 +173,9 @@ export default function PostCard({ post, currentUserProfile }: any) {
           {post.mediaUrls?.length > 0 && (
             <div className="mt-3 relative" onClick={e => e.stopPropagation()}>
               <Carousel className="w-full" opts={{ direction: 'rtl', align: 'start' }}>
-                <CarouselContent className="-ml-1">
+                <CarouselContent className="-mr-1">
                   {post.mediaUrls.map((u: string, i: number) => (
-                    <CarouselItem key={i} className="pl-1">
+                    <CarouselItem key={i} className="pr-1">
                       <div className="rounded-xl overflow-hidden border aspect-square relative shadow-sm bg-muted/20">
                         <img src={u} className="absolute inset-0 w-full h-full object-cover" alt={`Post image ${i + 1}`} loading="lazy" />
                       </div>
