@@ -8,18 +8,18 @@ import React, { useEffect, useRef } from 'react';
  * يتم استخدامه في الفيد، التعليقات، والمجموعات.
  */
 export function HighPerformanceAd() {
-  const adRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // التحقق من وجود الحاوية وعدم تكرار المحتوى
-    if (adRef.current && adRef.current.childNodes.length === 0) {
-      const container = adRef.current;
+    // التأكد من حقن الإعلان مرة واحدة فقط لكل مكون
+    if (containerRef.current && containerRef.current.childNodes.length === 0) {
       const scriptId = `ad-script-${Math.random().toString(36).substr(2, 9)}`;
       
-      const confScript = document.createElement('script');
-      confScript.type = 'text/javascript';
-      confScript.innerHTML = `
-        atOptions = {
+      const configScript = document.createElement('script');
+      configScript.type = 'text/javascript';
+      // وضع الإعدادات داخل السكريبت لضمان استقلال كل وحدة إعلانية
+      configScript.innerHTML = `
+        var atOptions = {
           'key' : 'e94da501ef4b01acec6f8588b1253c96',
           'format' : 'iframe',
           'height' : 250,
@@ -34,14 +34,14 @@ export function HighPerformanceAd() {
       invokeScript.src = 'https://www.highperformanceformat.com/e94da501ef4b01acec6f8588b1253c96/invoke.js';
       invokeScript.async = true;
 
-      container.appendChild(confScript);
-      container.appendChild(invokeScript);
+      containerRef.current.appendChild(configScript);
+      containerRef.current.appendChild(invokeScript);
     }
   }, []);
 
   return (
     <div className="flex justify-center my-6 overflow-hidden w-full min-h-[250px] bg-primary/[0.02] border-y border-primary/5 py-4">
-      <div ref={adRef} className="shadow-sm"></div>
+      <div ref={containerRef} className="shadow-sm"></div>
     </div>
   );
 }

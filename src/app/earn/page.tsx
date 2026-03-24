@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useFirebase, useDoc, useMemoFirebase, updateDocumentNonBlocking, useCollection } from '@/firebase';
-import { doc, increment, collection, query, where, limit, orderBy } from 'firebase/firestore';
+import { doc, increment, collection, query, where, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Gift, PlayCircle, Clock, ShieldCheck, TrendingUp, ChevronRight, MessageSquare, Sparkles, ArrowDownToLine, Wallet, ExternalLink, Globe, X, ExternalLink as OpenIcon } from 'lucide-react';
+import { Loader2, TrendingUp, Clock, Sparkles, ArrowDownToLine, Globe, X, ExternalLink } from 'lucide-react';
 import TimgadCoin from '@/components/ui/TimgadCoin';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,7 +22,6 @@ const DAILY_LIMIT = 25;
 export default function EarnPage() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
-  const router = useRouter();
   
   const [faucetTimer, setFaucetTimer] = useState('00:00');
   const [canClaim, setCanClaim] = useState(false);
@@ -43,21 +42,27 @@ export default function EarnPage() {
   }, [firestore]);
   const { data: adPosts } = useCollection(adPostsQuery);
 
+  // منطق تحميل إعلانات الرسائل (Social Bar) المتجددة حصرياً في هذه الصفحة
   useEffect(() => {
     const loadSocialBar = () => {
-      const existing = document.getElementById('social-bar-script');
-      if (existing) existing.remove();
+      const oldScript = document.getElementById('social-bar-script');
+      if (oldScript) oldScript.remove();
+      
       const script = document.createElement('script');
       script.id = 'social-bar-script';
       script.src = SOCIAL_BAR;
       script.async = true;
       document.body.appendChild(script);
     };
+
     loadSocialBar();
-    const interval = setInterval(loadSocialBar, 60000); // تجديد كل دقيقة
+    // تجديد الإعلان كل 60 ثانية لزيادة الربح والظهور
+    const refreshInterval = setInterval(loadSocialBar, 60000);
+
     return () => {
-      clearInterval(interval);
-      document.getElementById('social-bar-script')?.remove();
+      clearInterval(refreshInterval);
+      const script = document.getElementById('social-bar-script');
+      if (script) script.remove();
     };
   }, []);
 
