@@ -83,7 +83,13 @@ export default function PostCard({ post, currentUserProfile }: any) {
 
   const handleBoost = (amt: number, factor: number) => {
     if (!firestore || !user) return;
-    if ((currentUserProfile?.coins || 0) < amt) return toast({ variant: "destructive", description: "رصيدك غير كافٍ للترويج." });
+    if (!post || !post.id) return;
+    
+    const userCoins = currentUserProfile?.coins || 0;
+    if (userCoins < amt) {
+      toast({ variant: "destructive", description: "رصيدك غير كافٍ للترويج." });
+      return;
+    }
     
     updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-amt) });
     updateDocumentNonBlocking(doc(firestore, 'posts', post.id), { promoted: true, boostFactor: factor });
@@ -183,7 +189,7 @@ export default function PostCard({ post, currentUserProfile }: any) {
 
           {post.mediaUrls?.length > 0 && (
             <div className="mt-3 relative" onClick={e => e.stopPropagation()}>
-              <Carousel className="w-full" opts={{ direction: 'rtl', align: 'start' }}>
+              <Carousel className="w-full" opts={{ direction: 'rtl', align: 'start', loop: true }}>
                 <CarouselContent className="-mr-1">
                   {post.mediaUrls.map((u: string, i: number) => (
                     <CarouselItem key={i} className="pr-1">

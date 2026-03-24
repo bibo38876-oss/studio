@@ -89,7 +89,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
           {post.mediaUrls?.length > 0 && (
             <div className="mb-4 relative">
-              <Carousel className="w-full" opts={{ direction: 'rtl', align: 'start' }}>
+              <Carousel className="w-full" opts={{ direction: 'rtl', align: 'start', loop: true }}>
                 <CarouselContent className="-mr-1">
                   {post.mediaUrls.map((u: string, i: number) => (
                     <CarouselItem key={i} className="pr-1">
@@ -155,23 +155,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      <Dialog open={isSupport} onOpenChange={setIsSupport}>
-        <DialogContent className="sm:max-w-[300px] text-center p-6 border-amber-200">
-          <DialogTitle className="text-sm font-bold text-amber-700 mb-4 flex items-center justify-center gap-2">
-            <Coffee size={18} /> دعم المبدع تيمقاد
-          </DialogTitle>
-          <div className="grid grid-cols-2 gap-3">
-            {[3, 7, 10, 20].map(a => (
-              <Button key={a} variant="outline" className="h-14 flex flex-col gap-1 border-amber-100 hover:bg-amber-50" onClick={() => handleSupport(a)}>
-                <span className="text-sm font-bold">{a}</span>
-                <TimgadCoin size={14} />
-              </Button>
-            ))}
-          </div>
-          <p className="text-[8px] text-muted-foreground mt-4 italic">تقتطع المنصة 10% كرسوم صيانة تقنية.</p>
-        </DialogContent>
-      </Dialog>
-
       <div className="absolute bottom-0 left-0 right-0 p-3 border-t bg-background/95 backdrop-blur-md z-[60] pb-[env(safe-area-inset-bottom)]">
         <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 focus-within:border-primary/20 transition-all">
           <Input 
@@ -192,6 +175,23 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </Button>
         </div>
       </div>
+
+      <Dialog open={isSupport} onOpenChange={setIsSupport}>
+        <DialogContent className="sm:max-w-[300px] text-center p-6 border-amber-200">
+          <DialogTitle className="text-sm font-bold text-amber-700 mb-4 flex items-center justify-center gap-2">
+            <Coffee size={18} /> دعم المبدع تيمقاد
+          </DialogTitle>
+          <div className="grid grid-cols-2 gap-3">
+            {[3, 7, 10, 20].map(a => (
+              <Button key={a} variant="outline" className="h-14 flex flex-col gap-1 border-amber-100 hover:bg-amber-50" onClick={() => handleSupport(a)}>
+                <span className="text-sm font-bold">{a}</span>
+                <TimgadCoin size={14} />
+              </Button>
+            ))}
+          </div>
+          <p className="text-[8px] text-muted-foreground mt-4 italic">تقتطع المنصة 10% كرسوم صيانة تقنية.</p>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
