@@ -10,7 +10,7 @@ import PostCard from '@/components/posts/PostCard';
 import { Toaster } from '@/components/ui/toaster';
 import { useCollection, useFirebase, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, increment, limit } from 'firebase/firestore';
-import { Loader2, Sparkles, Users } from 'lucide-react';
+import { Loader2, Sparkles, Users, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HighPerformanceAd } from '@/components/ads/AadsUnit';
@@ -75,10 +75,20 @@ function HomeContent() {
     return [...postsPool].map(post => {
       let score = (post.likesCount || 0) * 3 + (post.commentsCount || 0) * 5;
       if (profile?.followingIds?.includes(post.authorId)) score += 80;
+      
       const hours = (Date.now() - (post.createdAt?.toMillis?.() || Date.now())) / 3600000;
       score += hours < 1 ? 60 : hours < 24 ? 30 : 10;
+      
+      // تطبيق عامل التعزيز (Boost Factor)
+      const boost = post.boostFactor || 1.0;
+      score *= boost;
+
       return { ...post, calculatedScore: score };
-    }).sort((a, b) => (a.promoted === b.promoted) ? b.calculatedScore - a.calculatedScore : (a.promoted ? -1 : 1)).slice(0, 40);
+    }).sort((a, b) => {
+      // المنشورات الممولة (Ads) تأتي أولاً إذا كانت نشطة، ثم الترتيب حسب النقاط
+      if (a.isAdPost !== b.isAdPost) return a.isAdPost ? -1 : 1;
+      return b.calculatedScore - a.calculatedScore;
+    }).slice(0, 50);
   }, [postsPool, profile]);
 
   const followingPosts = useMemo(() => 
@@ -90,7 +100,6 @@ function HomeContent() {
       {posts.map((post, idx) => (
         <div key={post.id}>
           <PostCard post={post} currentUserProfile={profile} />
-          {/* إعلان الأداء العالي كل 5 منشورات */}
           {(idx + 1) % 5 === 0 && <HighPerformanceAd />}
         </div>
       ))}

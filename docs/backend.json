@@ -36,43 +36,21 @@
     "Post": {
       "title": "Post",
       "type": "object",
-      "description": "يمثل منشور اجتماعي في تيمقاد.",
+      "description": "يمثل منشور اجتماعي في تيمقاد مع دعم الترويج والروابط المدفوعة.",
       "properties": {
         "id": { "type": "string" },
         "authorId": { "type": "string" },
         "content": { "type": "string" },
         "reportsCount": { "type": "number", "default": 0 },
         "promoted": { "type": "boolean", "default": false },
+        "boostFactor": { "type": "number", "default": 1.0 },
+        "isAdPost": { "type": "boolean", "default": false },
+        "adLink": { "type": "string" },
+        "remainingAdBudget": { "type": "number", "default": 0 },
         "likesCount": { "type": "number" },
         "commentsCount": { "type": "number" },
         "viewsCount": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "AdminBanner": {
-      "title": "AdminBanner",
-      "type": "object",
-      "description": "المستطيلات الإعلانية التي تضعها الإدارة بين الستوريات.",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "link": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "expiresAt": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "PostAd": {
-      "title": "PostAd",
-      "type": "object",
-      "description": "الإعلانات التي توضع فوق التعليقات داخل المنشورات.",
-      "properties": {
-        "id": { "type": "string" },
-        "postId": { "type": "string" },
-        "title": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "link": { "type": "string" },
-        "expiresAt": { "type": "string", "format": "date-time" }
       }
     },
     "PlatformRevenue": {
@@ -80,7 +58,7 @@
       "type": "object",
       "description": "سجل إيرادات المنصة من العمولات والإعلانات والتوثيق.",
       "properties": {
-        "type": { "type": "string", "enum": ["ad_creation", "ad_click_commission", "support_fee", "verification_purchase", "post_ad_share", "post_ad_full"] },
+        "type": { "type": "string", "enum": ["ad_creation", "post_promotion", "support_fee", "verification_purchase", "post_ad_share", "post_ad_full"] },
         "amount": { "type": "number" },
         "fromUserId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -108,8 +86,6 @@
     "/users/{userId}": { "schema": "User", "description": "بيانات المستخدمين" },
     "/ads/{adId}": { "schema": "Ad", "description": "قصص الإعلانات" },
     "/posts/{postId}": { "schema": "Post", "description": "المنشورات الاجتماعية" },
-    "/admin_banners/{bannerId}": { "schema": "AdminBanner", "description": "بانرات السوق" },
-    "/post_ads/{adId}": { "schema": "PostAd", "description": "إعلانات نافذة التعليقات" },
     "/platform_revenue/{revId}": { "schema": "PlatformRevenue", "description": "سجل الأرباح" },
     "/withdrawal_requests/{reqId}": { "schema": "WithdrawalRequest", "description": "طلبات السحب" }
   }
