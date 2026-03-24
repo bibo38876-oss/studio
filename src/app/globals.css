@@ -60,10 +60,11 @@
     -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
     min-height: 100dvh;
-    /* الهاتف حصراً: تحديد عرض أقصى وتوسيط المحتوى */
+    /* الهاتف حصراً: تحديد عرض أقصى وتوسيط المحتوى ليعمل كتطبيق */
     max-width: 500px;
     margin: 0 auto !important;
     box-shadow: 0 0 50px rgba(0,0,0,0.05);
+    position: relative;
   }
 }
 

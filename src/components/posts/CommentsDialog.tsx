@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, doc, increment } from 'firebase/firestore';
@@ -65,18 +65,18 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background text-right overflow-hidden relative">
-      {/* رأس النافذة */}
+    <div className="flex flex-col h-full bg-background text-right overflow-hidden relative">
+      {/* رأس النافذة المثبت */}
       <header className="flex items-center gap-3 p-2 border-b h-12 bg-background/95 sticky top-0 z-50 shrink-0">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 rounded-full"><ChevronRight size={24} /></Button>
         <div className="flex flex-col">
           <span className="text-xs font-bold text-primary">النقاش التفاعلي</span>
-          <span className="text-[8px] text-muted-foreground uppercase tracking-widest">Timgad Mobile Chat</span>
+          <span className="text-[8px] text-muted-foreground uppercase tracking-widest">TIMGAD APP</span>
         </div>
       </header>
 
-      {/* منطقة المحتوى */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+      {/* منطقة المحتوى القابلة للتمرير */}
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-20">
         <div className="p-4 border-b bg-primary/[0.02]">
           <div className="flex gap-3 mb-4 justify-end">
             <div className="flex flex-col text-right">
@@ -149,12 +149,12 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      {/* حقل الإدخال الثابت للموبايل */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 border-t bg-background z-[100] pb-safe max-w-[500px] mx-auto shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 focus-within:border-primary/20 transition-all shadow-inner">
+      {/* حقل الإدخال الثابت أسفل الشاشة تماماً */}
+      <div className="border-t bg-background p-3 pb-safe shrink-0">
+        <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 shadow-inner">
           <Input 
             placeholder="اكتب تعليقك..." 
-            className="flex-1 border-none bg-transparent text-xs text-right p-0 h-full focus-visible:ring-0 placeholder:text-muted-foreground/50" 
+            className="flex-1 border-none bg-transparent text-xs text-right p-0 h-full focus-visible:ring-0" 
             value={text} 
             onChange={e => setText(e.target.value)} 
             onKeyDown={e => e.key === 'Enter' && handleAdd()} 
@@ -164,7 +164,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
             size="icon" 
             onClick={handleAdd} 
             disabled={!text.trim()} 
-            className={cn("transition-all duration-300", text.trim() ? "text-primary scale-110" : "text-muted-foreground opacity-40")}
+            className={cn("transition-all", text.trim() ? "text-primary" : "text-muted-foreground opacity-40")}
           >
             <Send size={18} />
           </Button>
@@ -178,7 +178,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
           </DialogTitle>
           <div className="grid grid-cols-2 gap-3">
             {[3, 7, 10, 20].map(a => (
-              <Button key={a} variant="outline" className="h-14 flex flex-col gap-1 border-amber-100 hover:bg-amber-50" onClick={() => handleSupport(a)}>
+              <Button key={a} variant="outline" className="h-14 flex flex-col gap-1 border-amber-100" onClick={() => handleSupport(a)}>
                 <span className="text-sm font-bold">{a}</span>
                 <TimgadCoin size={14} />
               </Button>

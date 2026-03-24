@@ -1,3 +1,4 @@
+
 import { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -9,6 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#f8fafc',
     theme_color: '#1e3a8a',
+    orientation: 'portrait',
     icons: [
       {
         src: 'https://picsum.photos/seed/timgad-pwa-192/192/192',
