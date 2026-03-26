@@ -74,24 +74,6 @@ export default function SettingsPage() {
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
         
-        {/* رابط مركز الأرباح الرئيسي */}
-        <Link href="/earn">
-          <Card className="border-none shadow-xl rounded-2xl bg-gradient-to-r from-primary to-accent overflow-hidden mb-4 hover:scale-[1.02] transition-transform cursor-pointer group">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md">
-                  <TrendingUp size={24} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-white">مركز أرباح تيمقاد</span>
-                  <span className="text-[9px] text-white/70 uppercase tracking-tighter">تفاعل مع الإعلانات واربح عملات ذهبية</span>
-                </div>
-              </div>
-              <Sparkles size={20} className="text-white animate-pulse" />
-            </CardContent>
-          </Card>
-        </Link>
-
         <Card className="border-none shadow-sm rounded-none bg-card mb-4 overflow-hidden">
           <CardContent className="p-0">
             <div className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">
