@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useFirebase, initiateSignOut, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { LogOut, ChevronLeft, ArrowRight, Moon, Sun, ShieldCheck, Info, TrendingUp, Sparkles } from 'lucide-react';
+import { LogOut, ChevronLeft, ArrowRight, Moon, Sun, ShieldCheck, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -73,7 +73,6 @@ export default function SettingsPage() {
       </div>
 
       <main className="container mx-auto max-w-xl -mt-6 px-4 space-y-3 relative z-20">
-        
         <Card className="border-none shadow-sm rounded-none bg-card mb-4 overflow-hidden">
           <CardContent className="p-0">
             <div className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">

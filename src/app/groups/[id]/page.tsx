@@ -38,7 +38,7 @@ export default function GroupChatPage() {
   const id = params?.id as string;
   const router = useRouter();
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore, user, isUserLoading } = useFirebase();
   const [message, setMessage] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -80,11 +80,19 @@ export default function GroupChatPage() {
   const isMember = user && group && (group.members || []).includes(user.uid);
 
   useEffect(() => {
-    if (!isGroupLoading && group && !isMember) {
+    // الانتظار حتى يتم تحميل بيانات المستخدم والمجموعة قبل اتخاذ قرار الخروج
+    if (isUserLoading || isGroupLoading) return;
+
+    if (!group) {
+      router.push('/groups');
+      return;
+    }
+
+    if (!isMember) {
       toast({ variant: "destructive", description: "ليس لديك صلاحية لدخول هذه المجموعة." });
       router.push('/groups');
     }
-  }, [group, isGroupLoading, isMember, router, toast]);
+  }, [group, isGroupLoading, isUserLoading, isMember, router, toast]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -150,13 +158,13 @@ export default function GroupChatPage() {
     router.push('/groups');
   };
 
-  if (isGroupLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+  if (isGroupLoading || isUserLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <div className="fixed top-10 left-0 right-0 z-40 bg-background/80 backdrop-blur-md border-b flex items-center justify-between p-2 h-10 container max-w-xl mx-auto">
+      <div className="fixed top-10 left-1/2 -translate-x-1/2 z-40 bg-background/80 backdrop-blur-md border-b flex items-center justify-between p-2 h-10 w-full max-w-[500px]">
         <div className="flex items-center gap-2 overflow-hidden">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-full">
             <ChevronRight size={20} />
@@ -241,10 +249,9 @@ export default function GroupChatPage() {
       </div>
 
       <main 
-        className="flex-1 overflow-y-auto pt-24 pb-20 px-4 container max-w-xl mx-auto flex flex-col gap-4 scroll-smooth" 
+        className="flex-1 overflow-y-auto pt-24 pb-20 px-4 container max-w-[500px] mx-auto flex flex-col gap-4 scroll-smooth" 
         ref={scrollRef}
       >
-        {/* وحدة الإعلانات الجديدة العريضة في المجموعات */}
         <AadsUnitBanner />
         
         {isMessagesLoading ? (
@@ -287,7 +294,7 @@ export default function GroupChatPage() {
         )}
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t p-2 container max-w-xl mx-auto h-12">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 bg-background border-t p-2 w-full max-w-[500px] h-12">
         <div className="flex gap-2 items-center bg-secondary/50 rounded-full px-4 h-full group focus-within:bg-secondary transition-colors">
           <div className="flex-1 relative flex items-center">
             <Input 

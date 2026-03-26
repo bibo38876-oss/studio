@@ -135,7 +135,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                     </div>
                     <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
                   </div>
-                  {/* إعلان استراتيجي كل 3 تعليقات */}
                   {(i + 1) % 3 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}`} />}
                 </div>
               ))}
@@ -150,8 +149,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      {/* حقل إدخال ثابت في الأسفل لسهولة الاستخدام مع لوحة المفاتيح */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t p-3 pb-safe max-w-[500px] mx-auto">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[500px] z-50 bg-background border-t p-3 pb-safe">
         <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 shadow-inner">
           <Input 
             placeholder="اكتب تعليقك..." 

@@ -45,7 +45,6 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      // السماح بالقراءة والقوائم لجميع المسجلين مع استثناءات الإدارة
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (

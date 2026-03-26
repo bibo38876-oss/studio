@@ -18,7 +18,6 @@ export default function BottomNav() {
 
   const isAnonymous = !user || user.isAnonymous;
 
-  // يظهر الشريط السفلي فقط في الصفحات الرئيسية
   const allowedPaths = ['/', '/explore', '/groups', '/messages', '/notifications'];
   const isAllowed = allowedPaths.includes(pathname) || pathname.startsWith('/profile');
 
@@ -47,7 +46,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 z-50 w-full h-12 bg-background/95 backdrop-blur-md border-t px-1 md:hidden">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[500px] h-12 bg-background/95 backdrop-blur-md border-t px-1 md:hidden">
       <div className="grid h-full grid-cols-5 items-center justify-items-center max-w-lg mx-auto">
         {navItems.map((item, index) => {
           if (item.path === 'post') {
