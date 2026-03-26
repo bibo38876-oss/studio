@@ -45,12 +45,13 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
+      // السماح بالقراءة والقوائم لجميع المسجلين مع استثناءات الإدارة
       allow read, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (
         isOwner(resource.data.authorId) || 
         isAdmin() || 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount', 'likesCount', 'repostsCount', 'commentsCount', 'bookmarksCount', 'poll', 'reportsCount', 'impressions_left', 'promoted', 'boostFactor', 'remainingAdBudget'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount', 'likesCount', 'repostsCount', 'commentsCount', 'bookmarksCount', 'poll', 'reportsCount', 'promoted', 'boostFactor', 'remainingAdBudget'])
       );
       allow delete: if isSignedIn() && (isOwner(resource.data.authorId) || isAdmin());
 

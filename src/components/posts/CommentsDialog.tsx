@@ -66,7 +66,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
 
   return (
     <div className="flex flex-col h-full bg-background text-right overflow-hidden relative">
-      {/* رأس النافذة المثبت */}
       <header className="flex items-center gap-3 p-2 border-b h-12 bg-background/95 sticky top-0 z-50 shrink-0">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 rounded-full"><ChevronRight size={24} /></Button>
         <div className="flex flex-col">
@@ -75,7 +74,6 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </header>
 
-      {/* منطقة المحتوى القابلة للتمرير */}
       <div className="flex-1 overflow-y-auto no-scrollbar pb-20">
         <div className="p-4 border-b bg-primary/[0.02]">
           <div className="flex gap-3 mb-4 justify-end">
@@ -117,40 +115,43 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         <div className="p-4 space-y-4">
           {isLoading ? (
             <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
-          ) : comments && comments.length > 0 ? (
-            comments.map((c, i) => (
-              <div key={c.id}>
-                <div className="flex gap-3 justify-end group">
-                  <div className="flex-1 flex flex-col items-end">
-                    <div className="bg-secondary/40 p-3 rounded-2xl rounded-tr-none text-right w-fit max-w-[90%] shadow-sm relative border border-primary/5">
-                      {(c.authorId === user?.uid || isAdmin) && (
-                        <button onClick={() => handleDeleteComment(c.id)} className="absolute -left-2 -top-2 h-6 w-6 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 shadow-sm"><Trash2 size={12} /></button>
-                      )}
-                      <div className="flex justify-end gap-1.5 mb-1">
-                        <VerifiedBadge type={c.authorVerificationType || 'none'} size={10} />
-                        <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
-                      </div>
-                      <p className="text-xs leading-relaxed">{c.content}</p>
-                    </div>
-                    <span className="text-[7px] text-muted-foreground mt-1 px-1">{c.createdAt?.toDate ? formatDistanceToNow(c.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
-                  </div>
-                  <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
-                </div>
-                {/* إعلان جديد كل 3 تعليقات */}
-                {(i + 1) % 3 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}`} />}
-              </div>
-            ))
           ) : (
-            <div className="text-center py-20 opacity-30 flex flex-col items-center gap-2">
-              <MessageSquareText size={32} />
-              <p className="text-[10px] font-bold">كن أول من يشارك في هذا النقاش!</p>
+            <div className="flex flex-col gap-4">
+              {comments?.map((c, i) => (
+                <div key={c.id}>
+                  <div className="flex gap-3 justify-end group">
+                    <div className="flex-1 flex flex-col items-end">
+                      <div className="bg-secondary/40 p-3 rounded-2xl rounded-tr-none text-right w-fit max-w-[90%] shadow-sm relative border border-primary/5">
+                        {(c.authorId === user?.uid || isAdmin) && (
+                          <button onClick={() => handleDeleteComment(c.id)} className="absolute -left-2 -top-2 h-6 w-6 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 shadow-sm"><Trash2 size={12} /></button>
+                        )}
+                        <div className="flex justify-end gap-1.5 mb-1">
+                          <VerifiedBadge type={c.authorVerificationType || 'none'} size={10} />
+                          <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
+                        </div>
+                        <p className="text-xs leading-relaxed">{c.content}</p>
+                      </div>
+                      <span className="text-[7px] text-muted-foreground mt-1 px-1">{c.createdAt?.toDate ? formatDistanceToNow(c.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
+                    </div>
+                    <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
+                  </div>
+                  {/* إعلان استراتيجي كل 3 تعليقات */}
+                  {(i + 1) % 3 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}`} />}
+                </div>
+              ))}
+              {(!comments || comments.length === 0) && (
+                <div className="text-center py-20 opacity-30 flex flex-col items-center gap-2">
+                  <MessageSquareText size={32} />
+                  <p className="text-[10px] font-bold">كن أول من يشارك في هذا النقاش!</p>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* حقل الإدخال الثابت أسفل الشاشة تماماً */}
-      <div className="border-t bg-background p-3 pb-safe shrink-0">
+      {/* حقل إدخال ثابت في الأسفل لسهولة الاستخدام مع لوحة المفاتيح */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t p-3 pb-safe max-w-[500px] mx-auto">
         <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 shadow-inner">
           <Input 
             placeholder="اكتب تعليقك..." 
