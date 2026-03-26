@@ -34,7 +34,7 @@ const PACKAGES = [
 
 const VERIFICATION_COST = 500;
 const CONVERSION_RATE = 100; 
-const MIN_WITHDRAW_DGB = 5; 
+const MIN_WITHDRAW_DGB = 5; // رفع الحد الأدنى للسحب إلى 5 DGB
 const CONVERSION_FEE_PERCENT = 3;
 const WALLET_ADDRESS = "dgb1q7wzxlvnuv8py8vxpy8vxpy8vxpy8vxpy8vxp"; // عنوان محفظة DGB تجريبي
 const SMARTLINK_REWARD = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
@@ -116,15 +116,15 @@ export default function WalletPage() {
     const amount = parseFloat(withdrawAmount);
     const minCoins = MIN_WITHDRAW_DGB * CONVERSION_RATE;
     if (!amount || amount < minCoins) {
-      toast({ variant: "destructive", description: `الحد الأدنى هو ${minCoins} عملة.` });
+      toast({ variant: "destructive", description: `الحد الأدنى للسحب هو ${minCoins} عملة (5 DGB).` });
       return;
     }
     if (amount > (profile?.coins || 0)) {
-      toast({ variant: "destructive", description: "رصيدك غير كافٍ." });
+      toast({ variant: "destructive", description: "رصيدك الحالي غير كافٍ لإتمام العملية." });
       return;
     }
     if (!fastPayAddress.trim()) {
-      toast({ variant: "destructive", description: "يرجى إدخل عنوان محفظة DGB." });
+      toast({ variant: "destructive", description: "يرجى إدخال عنوان محفظة DGB المعتمد." });
       return;
     }
     setIsWithdrawing(true);
@@ -132,9 +132,9 @@ export default function WalletPage() {
       await addDocumentNonBlocking(collection(firestore!, 'withdrawal_requests'), {
         userId: user!.uid, username: profile?.username, email: user!.email, amount, finalDGB: calculatedDGB.final, address: fastPayAddress.trim(), status: 'pending', createdAt: serverTimestamp()
       });
-      toast({ title: "تم استلام طلبك! ⏳", description: "سيتم التحويل قريباً." });
+      toast({ title: "تم استلام طلبك! ⏳", description: "سيتم مراجعة الطلب والتحويل لمحفظتك قريباً." });
       setIsWithdrawOpen(false); setWithdrawAmount(''); setFastPayAddress('');
-    } catch (e) { toast({ variant: "destructive", description: "فشل الطلب." }); }
+    } catch (e) { toast({ variant: "destructive", description: "فشل إرسال الطلب، حاول مجدداً." }); }
     finally { setIsWithdrawing(false); }
   };
 
@@ -158,7 +158,7 @@ export default function WalletPage() {
                 سحب (Min: 5 DGB)
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#2D1606] text-[#F3E5AB] border-[#B45309] rounded-none max-w-[95vw] sm:max-w-[400px]">
+            <DialogContent className="bg-[#2D1606] text-[#F3E5AB] border-[#B45309] rounded-none max-w-[95vw] sm:max-w-[400px] mx-auto">
               <DialogHeader>
                 <DialogTitle className="text-sm font-bold text-[#FBBF24]">سحب الأرباح إلى DGB</DialogTitle>
                 <DialogDescription className="text-[10px] text-[#F3E5AB]/60">100 عملة = 1 DGB | رسوم تحويل 3%</DialogDescription>
@@ -226,7 +226,7 @@ export default function WalletPage() {
             </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          <div className="grid grid-cols-1 gap-4 w-full max-w-[400px]">
             <Card className="bg-[#451A03] border-[#B45309]/40 shadow-xl rounded-none border-r-4 border-r-[#FBBF24]">
               <CardHeader className="p-4 flex flex-row-reverse items-center justify-between space-y-0">
                 <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-[#FBBF24]">الرصيد الحالي</CardTitle>
@@ -241,7 +241,7 @@ export default function WalletPage() {
                 <Gift size={14} className="text-green-400" />
               </CardHeader>
               <CardContent className="p-4 pt-0 text-right space-y-2">
-                <p className="text-[10px] text-white/60">احصل على 0.5 عملة فوراً</p>
+                <p className="text-[10px] text-white/60">احصل على 0.5 عملة فوراً بمشاهدة إعلان دعم</p>
                 <Button 
                   className={cn(
                     "w-full h-8 rounded-full text-[10px] font-bold transition-all",

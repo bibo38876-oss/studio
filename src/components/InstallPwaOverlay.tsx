@@ -57,7 +57,7 @@ export default function InstallPwaOverlay() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -100, opacity: 0 }}
-        className="fixed top-0 left-0 right-0 z-[100] p-3 bg-primary text-white shadow-2xl border-b border-accent/30 max-w-[500px] mx-auto"
+        className="fixed top-0 left-1/2 -translate-x-1/2 z-[100] p-3 bg-primary text-white shadow-2xl border-b border-accent/30 w-full max-w-[500px]"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -69,7 +69,7 @@ export default function InstallPwaOverlay() {
                 ثبّت تطبيق تيمقاد السيادي
                 <Sparkles size={10} className="text-accent" />
               </h3>
-              <p className="text-[8px] text-white/60 font-medium">تجربة أسرع وأمان TRX مضاعف</p>
+              <p className="text-[8px] text-white/60 font-medium">تجربة أسرع وأمان DGB مضاعف</p>
             </div>
           </div>
           
