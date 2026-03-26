@@ -278,6 +278,7 @@ export default function AdminPage() {
             <TabsTrigger value="analytics" className="px-4 text-[10px] font-bold shrink-0">الإحصائيات</TabsTrigger>
             <TabsTrigger value="withdrawals" className="px-4 text-[10px] font-bold text-accent shrink-0">السحب</TabsTrigger>
             <TabsTrigger value="moderation" className="px-4 text-[10px] font-bold text-destructive shrink-0">الرقابة</TabsTrigger>
+            <TabsTrigger value="banners" className="px-4 text-[10px] font-bold text-blue-500 shrink-0">البانرات</TabsTrigger>
             <TabsTrigger value="post_ads" className="px-4 text-[10px] font-bold shrink-0">إعلانات</TabsTrigger>
             <TabsTrigger value="users" className="px-4 text-[10px] font-bold shrink-0">الأعضاء</TabsTrigger>
           </TabsList>
@@ -296,6 +297,51 @@ export default function AdminPage() {
                 <span className="text-[9px] font-bold text-yellow-600">المتداول</span>
                 <div className="flex items-center gap-1 font-bold text-xl">{stats.totalCoins.toFixed(1)} <TimgadCoin size={16} /></div>
               </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="banners" className="space-y-4">
+            <Card className="p-4">
+              <h3 className="text-xs font-bold mb-3 flex items-center gap-2"><ImageIcon size={14} /> بانر الملف الشخصي</h3>
+              <div className="grid gap-3">
+                <Input placeholder="عنوان البانر" value={bannerTitle} onChange={e => setBannerTitle(e.target.value)} className="h-9 text-[10px]" />
+                <Input placeholder="رابط التوجيه" value={bannerLink} onChange={e => setBannerLink(e.target.value)} className="h-9 text-[10px]" />
+                <Select value={bannerDays} onValueChange={setBannerDays}>
+                  <SelectTrigger className="h-9 text-[10px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">يوم واحد</SelectItem>
+                    <SelectItem value="3">3 أيام</SelectItem>
+                    <SelectItem value="5">5 أيام</SelectItem>
+                    <SelectItem value="7">أسبوع</SelectItem>
+                    <SelectItem value="30">شهر</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1 h-9 text-[9px] gap-2" onClick={() => fileInputRef.current?.click()}>
+                    {isUploading ? <Loader2 className="animate-spin" size={12} /> : <ImageIcon size={12} />}
+                    {bannerImage ? "تم الرفع" : "رفع البانر"}
+                  </Button>
+                  <input type="file" hidden ref={fileInputRef} onChange={handleBannerUpload} accept="image/*" />
+                  <Button className="flex-1 h-9 text-[9px] font-bold bg-blue-600" onClick={handleCreateBanner} disabled={!bannerImage || isUploading}>نشر البانر</Button>
+                </div>
+              </div>
+            </Card>
+
+            <div className="space-y-3">
+              <h4 className="text-[10px] font-bold text-muted-foreground uppercase">البانرات الحالية</h4>
+              {banners?.map((b: any) => (
+                <Card key={b.id} className="p-3 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <img src={b.imageUrl} className="h-10 w-20 object-cover rounded border" />
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold">{b.title}</p>
+                      <p className="text-[8px] text-muted-foreground">ينتهي: {b.expiresAt?.toDate ? b.expiresAt.toDate().toLocaleDateString('ar-SA') : '...'}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'admin_banners', b.id))}><Trash2 size={14} /></Button>
+                </Card>
+              ))}
+              {(!banners || banners.length === 0) && <div className="text-center py-10 opacity-40 text-[10px]">لا توجد بانرات نشطة.</div>}
             </div>
           </TabsContent>
 

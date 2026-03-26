@@ -16,7 +16,7 @@ import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, 
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, query, where, orderBy, arrayUnion, arrayRemove, updateDoc, serverTimestamp, limit } from 'firebase/firestore';
 import VerifiedBadge, { VerificationType } from '@/components/ui/VerifiedBadge';
 import TimgadLogo from '@/components/ui/Logo';
 import TimgadCoin from '@/components/ui/TimgadCoin';
@@ -25,6 +25,21 @@ import { ar } from 'date-fns/locale';
 import { formatDistanceToNow } from 'date-fns';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { AadsUnitBanner } from '@/components/ads/AadsUnit';
+
+function AdminAdBanner({ banner }: { banner: any }) {
+  if (!banner) return null;
+  return (
+    <Link href={banner.link || '#'} target="_blank" className="block w-full rounded-xl overflow-hidden border border-primary/10 shadow-sm mb-4 group relative bg-card">
+      <img src={banner.imageUrl} alt={banner.title} className="w-full h-auto object-cover aspect-[3/1]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+        <p className="text-white text-[10px] font-bold">{banner.title}</p>
+      </div>
+      <div className="absolute top-2 right-2 bg-primary/80 text-white text-[7px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-widest flex items-center gap-1 shadow-lg">
+        <ShieldCheck size={8} /> إعلان الإدارة
+      </div>
+    </Link>
+  );
+}
 
 export default function ProfilePage() {
   const params = useParams();
@@ -66,6 +81,19 @@ export default function ProfilePage() {
   }, [firestore, currentUser?.uid]);
 
   const { data: currentUserProfile } = useDoc(currentUserProfileRef);
+
+  const adminBannersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'admin_banners'),
+      where('expiresAt', '>', new Date()),
+      orderBy('expiresAt', 'desc'),
+      limit(1)
+    );
+  }, [firestore]);
+
+  const { data: activeBanners } = useCollection(adminBannersQuery);
+  const activeAdminBanner = activeBanners?.[0];
 
   const postsQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -444,8 +472,12 @@ export default function ProfilePage() {
         </div>
 
         {/* وحدة الإعلانات في ملف المستخدم الشخصي */}
-        <div className="my-2">
-          <AadsUnitBanner />
+        <div className="px-4 py-2">
+          {activeAdminBanner ? (
+            <AdminAdBanner banner={activeAdminBanner} />
+          ) : (
+            <AadsUnitBanner />
+          )}
         </div>
 
         {isPrivateAndNotFollowing ? (
