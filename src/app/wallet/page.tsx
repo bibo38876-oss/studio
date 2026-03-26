@@ -37,7 +37,6 @@ const CONVERSION_RATE = 100;
 const MIN_WITHDRAW_TRX = 5; 
 const CONVERSION_FEE_PERCENT = 3;
 const WALLET_ADDRESS = "TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2";
-const WITHDRAW_AD_LINK = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
 const SMARTLINK_REWARD = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
 
 export default function WalletPage() {
@@ -49,7 +48,6 @@ export default function WalletPage() {
   const [fastPayAddress, setFastPayAddress] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
-  const [adVisited, setAdVisited] = useState(false);
   const [isPurchasingVerification, setIsPurchasingVerification] = useState(false);
 
   const [isRewardLoading, setIsRewardLoading] = useState(false);
@@ -85,12 +83,6 @@ export default function WalletPage() {
     }, 2000);
   };
 
-  const handleVisitAd = () => {
-    window.open(WITHDRAW_AD_LINK, '_blank');
-    setAdVisited(true);
-    toast({ description: "تم التحقق من دعمك! يمكنك الآن إكمال عملية السحب." });
-  };
-
   const handleGetReward = () => {
     if (isRewardLoading) return;
     window.open(SMARTLINK_REWARD, '_blank');
@@ -120,23 +112,6 @@ export default function WalletPage() {
     setIsRewardLoading(false);
   };
 
-  const handlePurchaseVerification = async () => {
-    if (!user || !firestore || !profile) return;
-    if (profile.verificationType === 'blue' || profile.verificationType === 'gold') return;
-    if ((profile.coins || 0) < VERIFICATION_COST) {
-      toast({ variant: "destructive", title: "رصيد غير كافٍ", description: `تحتاج إلى ${VERIFICATION_COST} عملة للتوثيق.` });
-      return;
-    }
-    setIsPurchasingVerification(true);
-    try {
-      updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { coins: increment(-VERIFICATION_COST), verificationType: 'blue' });
-      addDocumentNonBlocking(collection(firestore, 'platform_revenue'), { type: 'verification_purchase', amount: VERIFICATION_COST, fromUserId: user.uid, createdAt: serverTimestamp() });
-      addDocumentNonBlocking(collection(firestore, 'users', user.uid, 'notifications'), { type: 'system', message: "🎉 مبروك! تم توثيق حسابك بنجاح.", createdAt: serverTimestamp(), read: false });
-      toast({ title: "مبروك التوثيق! 🛡️" });
-    } catch (e) { toast({ variant: "destructive", description: "فشل العملية." }); }
-    finally { setIsPurchasingVerification(false); }
-  };
-
   const handleWithdrawRequest = async () => {
     const amount = parseFloat(withdrawAmount);
     const minCoins = MIN_WITHDRAW_TRX * CONVERSION_RATE;
@@ -158,7 +133,7 @@ export default function WalletPage() {
         userId: user!.uid, username: profile?.username, email: user!.email, amount, finalTRX: calculatedTRX.final, address: fastPayAddress.trim(), status: 'pending', createdAt: serverTimestamp()
       });
       toast({ title: "تم استلام طلبك! ⏳", description: "سيتم التحويل قريباً." });
-      setIsWithdrawOpen(false); setWithdrawAmount(''); setFastPayAddress(''); setAdVisited(false);
+      setIsWithdrawOpen(false); setWithdrawAmount(''); setFastPayAddress('');
     } catch (e) { toast({ variant: "destructive", description: "فشل الطلب." }); }
     finally { setIsWithdrawing(false); }
   };
@@ -176,62 +151,69 @@ export default function WalletPage() {
             </div>
           </div>
           
-          <Dialog open={isWithdrawOpen} onOpenChange={(open) => { setIsWithdrawOpen(open); if(!open) setAdVisited(false); }}>
+          <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="h-8 rounded-full border-[#FBBF24]/30 text-[#FBBF24] hover:bg-[#B45309] text-[10px] font-bold gap-2">
                 <ArrowDownToLine size={14} />
                 سحب (Min: 5 TRX)
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#2D1606] text-[#F3E5AB] border-[#B45309] rounded-none">
+            <DialogContent className="bg-[#2D1606] text-[#F3E5AB] border-[#B45309] rounded-none max-w-[95vw] sm:max-w-[400px]">
               <DialogHeader>
                 <DialogTitle className="text-sm font-bold text-[#FBBF24]">سحب الأرباح إلى TRX</DialogTitle>
                 <DialogDescription className="text-[10px] text-[#F3E5AB]/60">100 عملة = 1 TRX | رسوم تحويل 3%</DialogDescription>
               </DialogHeader>
 
-              {!adVisited ? (
-                <div className="py-6 text-center space-y-4">
-                  <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto text-accent border border-accent/20">
-                    <ExternalLink size={32} />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-bold text-[#FBBF24]">خطوة التحقق والدعم</h3>
-                    <p className="text-[10px] text-[#F3E5AB]/70 leading-relaxed px-4">
-                      لإتمام عملية السحب، يرجى زيارة الرابط التالي أولاً لدعم استمرارية المنصة. سيتم فتح الرابط في نافذة جديدة، ثم سيتفعل نموذج السحب تلقائياً.
-                    </p>
-                  </div>
-                  <Button 
-                    className="w-full bg-[#B45309] hover:bg-[#D97706] text-white font-bold h-11 rounded-full text-xs gap-2 shadow-xl"
-                    onClick={handleVisitAd}
-                  >
-                    <Sparkles size={16} />
-                    زيارة الرابط وتفعيل السحب
-                  </Button>
+              <div className="space-y-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-primary/10 border border-primary/20 p-3 rounded-sm space-y-1">
+                  <p className="text-[9px] text-[#FBBF24]/80 font-bold text-right flex items-center justify-end gap-1">
+                    <ShieldCheck size={12} className="text-green-400" /> نموذج سحب تيمقاد السريع
+                  </p>
+                  <p className="text-[8px] text-[#F3E5AB]/40 text-right">يتم معالجة الطلبات يدوياً لضمان الأمان المالي.</p>
                 </div>
-              ) : (
-                <div className="space-y-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="bg-green-500/10 border border-green-500/20 p-2 text-center rounded-sm">
-                    <p className="text-[9px] text-green-400 font-bold flex items-center justify-center gap-1">
-                      <CheckCircle2 size={12} /> تم التحقق بنجاح، يمكنك السحب الآن
-                    </p>
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">كمية العملات (Min: 500)</label>
-                    <Input type="number" placeholder="500" className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} />
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">عنوان محفظة TRX</label>
-                    <Input placeholder="عنوان المحفظة..." className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right" value={fastPayAddress} onChange={(e) => setFastPayAddress(e.target.value)} />
-                  </div>
-                  {parseFloat(withdrawAmount) >= 500 && (
-                    <div className="bg-primary/10 p-3 border border-primary/20 space-y-2">
-                      <div className="flex justify-between text-[10px] font-bold"><span>{calculatedTRX.raw.toFixed(2)} TRX</span><span className="text-[#F3E5AB]/60">القيمة:</span></div>
-                      <div className="border-t border-white/10 pt-2 flex justify-between text-xs font-bold"><span className="text-green-400">{calculatedTRX.final.toFixed(2)} TRX</span><span className="text-[#FBBF24]">الصافي المستلم:</span></div>
+
+                <div className="space-y-1 text-right">
+                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">كمية العملات (الحد الأدنى: 500)</label>
+                  <Input 
+                    type="number" 
+                    placeholder="500" 
+                    className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right focus:ring-accent" 
+                    value={withdrawAmount} 
+                    onChange={(e) => setWithdrawAmount(e.target.value)} 
+                  />
+                </div>
+
+                <div className="space-y-1 text-right">
+                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">عنوان محفظة TRX المعتمد</label>
+                  <Input 
+                    placeholder="T..." 
+                    className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right focus:ring-accent" 
+                    value={fastPayAddress} 
+                    onChange={(e) => setFastPayAddress(e.target.value)} 
+                  />
+                </div>
+
+                {parseFloat(withdrawAmount) >= 500 && (
+                  <div className="bg-primary/10 p-3 border border-primary/20 space-y-2 rounded-sm">
+                    <div className="flex justify-between text-[10px] font-bold">
+                      <span>{calculatedTRX.raw.toFixed(2)} TRX</span>
+                      <span className="text-[#F3E5AB]/60">القيمة الإجمالية:</span>
                     </div>
-                  )}
-                  <Button className="w-full bg-[#B45309] hover:bg-[#D97706] text-white font-bold h-10 rounded-full text-xs" onClick={handleWithdrawRequest} disabled={isWithdrawing}>{isWithdrawing ? <Loader2 className="animate-spin" /> : "تأكيد السحب"}</Button>
-                </div>
-              )}
+                    <div className="border-t border-white/5 pt-2 flex justify-between text-xs font-bold">
+                      <span className="text-green-400">{calculatedTRX.final.toFixed(2)} TRX</span>
+                      <span className="text-[#FBBF24]">الصافي المستلم (بعد الرسوم):</span>
+                    </div>
+                  </div>
+                )}
+
+                <Button 
+                  className="w-full bg-[#B45309] hover:bg-[#D97706] text-white font-bold h-11 rounded-full text-xs shadow-xl active:scale-95 transition-all" 
+                  onClick={handleWithdrawRequest} 
+                  disabled={isWithdrawing || !withdrawAmount || !fastPayAddress}
+                >
+                  {isWithdrawing ? <Loader2 className="animate-spin h-4 w-4" /> : "إرسال طلب السحب الآن"}
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
