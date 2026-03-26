@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, useDoc } from '@/firebase';
-import { collection, query, doc, limit, where, serverTimestamp, orderBy, increment, getDocs } from 'firebase/firestore';
+import { collection, query, doc, limit, where, serverTimestamp, orderBy, increment, getDocs, getDoc } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -98,7 +98,6 @@ export default function AdminPage() {
     u.email?.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
-  // نظام توزيع الـ 5 عملات اليومية
   const handleDailyDistribution = async () => {
     if (!firestore || !isAdminUser) return;
     
@@ -118,12 +117,10 @@ export default function AdminPage() {
 
       allUsers.forEach(userDoc => {
         const userId = userDoc.id;
-        // تحديث الرصيد
         updateDocumentNonBlocking(doc(firestore, 'users', userId), {
           coins: increment(sharePerUser)
         });
 
-        // إرسال تنبيه
         addDocumentNonBlocking(collection(firestore, 'users', userId, 'notifications'), {
           type: 'system',
           message: `🎁 لقد حصلت على نصيبك من عوائد مشاهدة الإعلانات لليوم (${sharePerUser.toFixed(3)} عملة). شكراً لتفاعلك في تيمقاد!`,
@@ -132,10 +129,7 @@ export default function AdminPage() {
         });
       });
 
-      toast({ 
-        title: "تم التوزيع بنجاح! 🚀", 
-        description: `تم تقسيم 5 عملات على ${count} مستخدم بالتساوي.` 
-      });
+      toast({ title: "تم التوزيع بنجاح! 🚀" });
     } catch (e) {
       toast({ variant: "destructive", description: "فشل توزيع العوائد." });
     } finally {
@@ -183,7 +177,7 @@ export default function AdminPage() {
 
         addDocumentNonBlocking(collection(firestore, 'users', authorId, 'notifications'), {
           type: 'system',
-          message: `🎉 مبروك! منشورك حقق شروط الربح (500+ متابع وتوثيق) وتم وضع إعلان عليه، حصلت على ${rewardAmount} عملة.`,
+          message: `🎉 مبروك! منشورك حقق شروط الربح وتم وضع إعلان عليه، حصلت على ${rewardAmount} عملة.`,
           createdAt: serverTimestamp(),
           read: false
         });
@@ -195,21 +189,12 @@ export default function AdminPage() {
           fromUserId: authorId,
           createdAt: serverTimestamp()
         });
-        toast({ description: `تم النشر. العضو مؤهل وحصل على 250 عملة.` });
-      } else {
-        addDocumentNonBlocking(collection(firestore, 'platform_revenue'), {
-          type: 'post_ad_full',
-          amount: 500,
-          postId: postAdId,
-          fromUserId: authorId,
-          createdAt: serverTimestamp()
-        });
-        toast({ description: `تم النشر. العضو غير مؤهل، الإيراد كامل للمنصة.` });
       }
 
       setPostAdId(''); setPostAdIdTitle(''); setPostAdIdImage(null);
+      toast({ description: "تم نشر الإعلان." });
     } catch (e) {
-      toast({ variant: "destructive", description: "فشل إنشاء الإعلان." });
+      toast({ variant: "destructive", description: "فشل الإنشاء." });
     } finally {
       setIsUploading(false);
     }
@@ -260,7 +245,7 @@ export default function AdminPage() {
       status: 'completed',
       completedAt: serverTimestamp()
     });
-    toast({ description: "تم تعليم الطلب كمكتمل بنجاح." });
+    toast({ description: "تم إتمام التحويل." });
   };
 
   if (isUserLoading || !isAdminUser) return null;
@@ -268,95 +253,96 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background text-right">
       <Navbar />
-      <main className="container mx-auto max-w-5xl pt-10 pb-20 px-4">
-        <header className="flex items-center justify-between mb-8 bg-primary p-6 shadow-xl relative overflow-hidden">
-          <div className="flex items-center gap-4 relative z-10">
-            <ShieldCheck size={24} className="text-white" />
+      <main className="container mx-auto pt-10 pb-20 px-4 max-w-full">
+        <header className="flex flex-col gap-4 mb-8 bg-primary p-5 shadow-xl">
+          <div className="flex items-center gap-3">
+            <ShieldCheck size={20} className="text-white" />
             <div className="text-right">
-              <h1 className="text-xl font-bold text-white uppercase">مركز قيادة تيمقاد</h1>
-              <p className="text-[10px] text-white/60">الإدارة والتحكم الاقتصادي</p>
+              <h1 className="text-lg font-bold text-white uppercase leading-none">مركز القيادة</h1>
+              <p className="text-[8px] text-white/60">تحكم تيمقاد السيادي</p>
             </div>
           </div>
           
-          {/* زر التوزيع اليومي البارز */}
           <Button 
-            className="relative z-10 bg-yellow-500 hover:bg-yellow-600 text-primary font-bold gap-2 rounded-full h-11 px-6 shadow-lg shadow-yellow-500/20 animate-pulse"
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-primary font-bold gap-2 rounded-full h-10 px-6 shadow-lg animate-pulse text-[10px]"
             onClick={handleDailyDistribution}
             disabled={isDistributing}
           >
-            {isDistributing ? <Loader2 className="animate-spin" /> : <Gift size={18} />}
-            توزيع عوائد الإعلانات (5 عملات)
+            {isDistributing ? <Loader2 className="animate-spin" /> : <Gift size={16} />}
+            توزيع الـ 5 عملات (يومي)
           </Button>
         </header>
 
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="w-full bg-secondary/30 mb-8 rounded-none p-1 border-b h-12 overflow-x-auto no-scrollbar">
-            <TabsTrigger value="analytics" className="flex-1 text-[11px] font-bold gap-2">الإحصائيات</TabsTrigger>
-            <TabsTrigger value="withdrawals" className="flex-1 text-[11px] font-bold gap-2 text-accent">طلبات السحب</TabsTrigger>
-            <TabsTrigger value="moderation" className="flex-1 text-[11px] font-bold gap-2 text-destructive">الرقابة</TabsTrigger>
-            <TabsTrigger value="post_ads" className="flex-1 text-[11px] font-bold gap-2">إعلانات المنشورات</TabsTrigger>
-            <TabsTrigger value="banners" className="flex-1 text-[11px] font-bold gap-2">مستطيلات السوق</TabsTrigger>
-            <TabsTrigger value="users" className="flex-1 text-[11px] font-bold gap-2">الأعضاء</TabsTrigger>
-            <TabsTrigger value="revenue" className="flex-1 text-[11px] font-bold gap-2">الإيرادات</TabsTrigger>
+          <TabsList className="w-full bg-secondary/30 mb-6 rounded-none p-1 border-b h-11 overflow-x-auto no-scrollbar flex flex-nowrap shrink-0">
+            <TabsTrigger value="analytics" className="px-4 text-[10px] font-bold shrink-0">الإحصائيات</TabsTrigger>
+            <TabsTrigger value="withdrawals" className="px-4 text-[10px] font-bold text-accent shrink-0">السحب</TabsTrigger>
+            <TabsTrigger value="moderation" className="px-4 text-[10px] font-bold text-destructive shrink-0">الرقابة</TabsTrigger>
+            <TabsTrigger value="post_ads" className="px-4 text-[10px] font-bold shrink-0">إعلانات</TabsTrigger>
+            <TabsTrigger value="users" className="px-4 text-[10px] font-bold shrink-0">الأعضاء</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-primary/5 border-r-4 border-r-primary"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">إجمالي المستخدمين</CardTitle></CardHeader><CardContent className="p-4 pt-0 text-2xl font-bold text-primary">{stats.totalUsers}</CardContent></Card>
-              <Card className="bg-accent/5 border-r-4 border-r-accent"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">أرباح المنصة (TRX)</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-accent">{(stats.totalRevenue / 100).toFixed(2)} TRX</CardContent></Card>
-              <Card className="bg-yellow-500/5 border-r-4 border-r-yellow-600"><CardHeader className="p-4"><CardTitle className="text-[10px] uppercase">العملات المتداولة</CardTitle></CardHeader><CardContent className="p-4 pt-0 flex items-center gap-2 text-2xl font-bold text-yellow-600">{stats.totalCoins.toFixed(1)} <TimgadCoin size={20} /></CardContent></Card>
+          <TabsContent value="analytics" className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+              <Card className="bg-primary/5 border-r-4 border-r-primary p-4 flex justify-between items-center">
+                <span className="text-[9px] font-bold text-primary">المستخدمين</span>
+                <span className="text-xl font-bold">{stats.totalUsers}</span>
+              </Card>
+              <Card className="bg-accent/5 border-r-4 border-r-accent p-4 flex justify-between items-center">
+                <span className="text-[9px] font-bold text-accent">أرباح (TRX)</span>
+                <span className="text-xl font-bold">{(stats.totalRevenue / 100).toFixed(2)}</span>
+              </Card>
+              <Card className="bg-yellow-500/5 border-r-4 border-r-yellow-600 p-4 flex justify-between items-center">
+                <span className="text-[9px] font-bold text-yellow-600">المتداول</span>
+                <div className="flex items-center gap-1 font-bold text-xl">{stats.totalCoins.toFixed(1)} <TimgadCoin size={16} /></div>
+              </Card>
             </div>
           </TabsContent>
 
           <TabsContent value="moderation" className="space-y-4">
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-destructive"><Flag size={16} /> المحتوى المبلّغ عنه</h3>
-            <div className="grid gap-4">
+            <h3 className="text-xs font-bold text-destructive flex items-center gap-2 mb-2"><Flag size={14} /> محتوى مبلّغ عنه</h3>
+            <div className="grid gap-3">
               {reportedPosts?.map((post: any) => (
-                <Card key={post.id} className="p-4 border-r-4 border-r-destructive">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6"><AvatarImage src={post.authorAvatar} /></Avatar>
-                        <span className="text-[10px] font-bold">{post.authorName}</span>
-                        <span className="text-[8px] bg-red-100 text-red-600 px-2 py-0.5 font-bold">{post.reportsCount} بلاغات</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{post.content}</p>
+                <Card key={post.id} className="p-3 border-r-2 border-r-destructive">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6"><AvatarImage src={post.authorAvatar} /></Avatar>
+                      <span className="text-[10px] font-bold">{post.authorName}</span>
+                      <span className="text-[8px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">{post.reportsCount} بلاغ</span>
                     </div>
-                    <Button variant="destructive" size="sm" className="h-8 text-[10px]" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'posts', post.id))}>حذف نهائي</Button>
+                    <p className="text-[10px] text-muted-foreground line-clamp-2">{post.content}</p>
+                    <Button variant="destructive" size="sm" className="w-full h-7 text-[9px] font-bold" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'posts', post.id))}>حذف المنشور</Button>
                   </div>
                 </Card>
               ))}
-              {(!reportedPosts || reportedPosts.length === 0) && (
-                <div className="text-center py-20 opacity-40 text-xs">لا يوجد محتوى مخالف حالياً.</div>
-              )}
+              {(!reportedPosts || reportedPosts.length === 0) && <div className="text-center py-10 opacity-40 text-[10px]">لا يوجد بلاغات.</div>}
             </div>
           </TabsContent>
 
           <TabsContent value="withdrawals" className="space-y-4">
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4"><ArrowDownToLine size={16} className="text-accent" /> طلبات سحب الأرباح (TRX)</h3>
-            <div className="grid gap-4">
+            <h3 className="text-xs font-bold text-accent flex items-center gap-2 mb-2"><ArrowDownToLine size={14} /> طلبات السحب المعلقة</h3>
+            <div className="grid gap-3">
               {withdrawals?.map((req: any) => (
-                <Card key={req.id} className={cn("p-4 border-r-4", req.status === 'completed' ? "border-r-green-500 opacity-60" : "border-r-accent")}>
-                  <div className="flex flex-col md:flex-row justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-primary">{req.username}</span>
-                        <span className="text-[8px] px-1.5 py-0.5 bg-secondary rounded text-muted-foreground">{req.email}</span>
+                <Card key={req.id} className={cn("p-3 border-r-4", req.status === 'completed' ? "border-r-green-500 opacity-60" : "border-r-accent")}>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold block">{req.username}</span>
+                        <span className="text-[8px] text-muted-foreground">{req.email}</span>
                       </div>
-                      <p className="text-[10px] font-bold text-accent">المبلغ: {req.amount} عملة ({req.finalTRX?.toFixed(2)} TRX الصافي)</p>
-                      <div className="flex items-center gap-2 bg-secondary/50 p-2 rounded mt-2">
-                        <Wallet size={12} className="text-muted-foreground" />
-                        <code className="text-[10px] font-mono select-all">{req.address}</code>
-                      </div>
+                      <span className="text-[10px] font-bold text-accent">{req.finalTRX?.toFixed(2)} TRX</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="bg-secondary/50 p-2 rounded text-center">
+                      <code className="text-[9px] font-mono break-all block">{req.address}</code>
+                    </div>
+                    <div className="flex gap-2">
                       {req.status !== 'completed' ? (
                         <>
-                          <Button size="sm" className="h-8 text-[10px] font-bold bg-green-600" onClick={() => handleCompleteWithdrawal(req.id)}>إتمام التحويل</Button>
-                          <Button size="sm" variant="ghost" className="h-8 text-[10px] font-bold text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'withdrawal_requests', req.id))}>حذف</Button>
+                          <Button size="sm" className="flex-1 h-8 text-[9px] font-bold bg-green-600" onClick={() => handleCompleteWithdrawal(req.id)}>إتمام</Button>
+                          <Button size="sm" variant="ghost" className="h-8 text-[9px] text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'withdrawal_requests', req.id))}>حذف</Button>
                         </>
                       ) : (
-                        <span className="text-[10px] font-bold text-green-600 flex items-center gap-1"><CheckCircle2 size={12} /> تم التحويل</span>
+                        <span className="w-full text-[9px] font-bold text-green-600 text-center flex items-center justify-center gap-1"><CheckCircle2 size={10} /> تم التحويل</span>
                       )}
                     </div>
                   </div>
@@ -365,91 +351,38 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="post_ads" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-sm font-bold mb-4 flex items-center gap-2"><Megaphone size={16} className="text-primary" /> إضافة إعلان لمنشور (3 أيام - 5 TRX)</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input placeholder="معرف المنشور (Post ID)" value={postAdId} onChange={e => setPostAdId(e.target.value)} className="h-10 text-xs" />
-                <Input placeholder="عنوان الإعلان" value={postAdTitle} onChange={e => setPostAdIdTitle(e.target.value)} className="h-10 text-xs" />
-                <Input placeholder="رابط المعلن" value={postAdLink} onChange={e => setPostAdIdLink(e.target.value)} className="h-10 text-xs" />
+          <TabsContent value="post_ads" className="space-y-4">
+            <Card className="p-4">
+              <h3 className="text-xs font-bold mb-3 flex items-center gap-2"><Megaphone size={14} /> إعلان منشور (3 أيام)</h3>
+              <div className="grid gap-3">
+                <Input placeholder="Post ID" value={postAdId} onChange={e => setPostAdId(e.target.value)} className="h-9 text-[10px]" />
+                <Input placeholder="عنوان الإعلان" value={postAdTitle} onChange={e => setPostAdIdTitle(e.target.value)} className="h-9 text-[10px]" />
                 <div className="flex gap-2">
-                  <Button variant="outline" className="h-10 text-xs flex-1 gap-2" onClick={() => postAdFileRef.current?.click()}>
-                    {isUploading ? <Loader2 className="animate-spin" size={14} /> : <ImageIcon size={14} />}
-                    {postAdImage ? "تم اختيار صورة" : "رفع بانر المنشور"}
+                  <Button variant="outline" className="flex-1 h-9 text-[9px] gap-2" onClick={() => postAdFileRef.current?.click()}>
+                    {isUploading ? <Loader2 className="animate-spin" size={12} /> : <ImageIcon size={12} />}
+                    {postAdImage ? "تم الرفع" : "رفع الصورة"}
                   </Button>
                   <input type="file" hidden ref={postAdFileRef} onChange={handlePostAdUpload} accept="image/*" />
-                  <Button className="h-10 text-xs font-bold px-8" onClick={handleCreatePostAd} disabled={!postAdImage || isUploading}>نشر الإعلان</Button>
+                  <Button className="flex-1 h-9 text-[9px] font-bold" onClick={handleCreatePostAd} disabled={!postAdImage || isUploading}>نشر</Button>
                 </div>
               </div>
             </Card>
-
-            <div className="space-y-4">
-              {postAds?.map((ad: any) => (
-                <Card key={ad.id} className="p-4 flex items-center justify-between border-r-4 border-r-primary">
-                  <div className="flex items-center gap-4">
-                    <img src={ad.imageUrl} className="h-12 w-20 object-cover rounded shadow-sm" alt="" />
-                    <div className="text-right">
-                      <p className="text-xs font-bold">{ad.title}</p>
-                      <p className="text-[8px] text-accent">ينتهي في: {ad.expiresAt?.toDate?.().toLocaleDateString('ar-SA')}</p>
-                    </div>
-                  </div>
-                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'post_ads', ad.id))}><Trash2 size={16} /></Button>
-                </Card>
-              ))}
-            </div>
           </TabsContent>
 
-          <TabsContent value="banners" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-sm font-bold mb-4">إضافة مستطيل إعلاني للسوق (5 أيام - 5 TRX)</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input placeholder="عنوان الإعلان" value={bannerTitle} onChange={e => setBannerTitle(e.target.value)} className="h-10 text-xs" />
-                <Input placeholder="رابط الموقع" value={bannerLink} onChange={e => setBannerLink(e.target.value)} className="h-10 text-xs" />
-                <div className="flex gap-2">
-                  <Select value={bannerDays} onValueChange={setBannerDays}>
-                    <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="المدة" /></SelectTrigger>
-                    <SelectContent><SelectItem value="5">5 أيام</SelectItem><SelectItem value="10">10 أيام</SelectItem></SelectContent>
-                  </Select>
-                  <Button variant="outline" className="h-10 text-xs flex-1 gap-2" onClick={() => fileInputRef.current?.click()}>
-                    {isUploading ? <Loader2 className="animate-spin" size={14} /> : <ImageIcon size={14} />}
-                    {bannerImage ? "تم اختيار صورة" : "ارفع بانر (أفقي)"}
-                  </Button>
-                  <input type="file" hidden ref={fileInputRef} onChange={handleBannerUpload} accept="image/*" />
-                </div>
-                <Button className="h-10 text-xs font-bold" onClick={handleCreateBanner} disabled={!bannerImage || isUploading}>حفظ ونشر البانر</Button>
-              </div>
-            </Card>
-
-            <div className="space-y-4">
-              {banners?.map((banner: any) => (
-                <Card key={banner.id} className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <img src={banner.imageUrl} className="h-12 w-20 object-cover rounded" alt="" />
-                    <div className="text-right">
-                      <p className="text-xs font-bold">{banner.title}</p>
-                      <p className="text-[10px] text-muted-foreground">ينتهي في: {banner.expiresAt?.toDate?.().toLocaleDateString('ar-SA')}</p>
-                    </div>
-                  </div>
-                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteDocumentNonBlocking(doc(firestore!, 'admin_banners', banner.id))}><Trash2 size={16} /></Button>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-6">
-            <Input placeholder="بحث..." className="bg-secondary/30 border-none" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TabsContent value="users" className="space-y-4">
+            <Input placeholder="بحث..." className="bg-secondary/30 h-9 text-[10px]" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <div className="grid gap-3">
               {filteredUsers.map(user => (
-                <Card key={user.id} className="p-4 space-y-4">
+                <Card key={user.id} className="p-3 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar><AvatarImage src={user.profilePictureUrl} /><AvatarFallback>{user.username?.[0]}</AvatarFallback></Avatar>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8"><AvatarImage src={user.profilePictureUrl} /><AvatarFallback>{user.username?.[0]}</AvatarFallback></Avatar>
                       <div className="text-right">
-                        <div className="flex items-center gap-1"><VerifiedBadge type={user.verificationType || 'none'} size={14} /><span className="text-xs font-bold">{user.username}</span></div>
-                        <span className="text-[9px] text-muted-foreground">{user.followerIds?.length || 0} متابع</span>
+                        <div className="flex items-center gap-1"><VerifiedBadge type={user.verificationType || 'none'} size={12} /><span className="text-[10px] font-bold">{user.username}</span></div>
+                        <span className="text-[8px] text-muted-foreground">{user.email}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-xs font-bold">{user.coins?.toFixed(2) || 0} <TimgadCoin size={14} /></div>
+                    <div className="flex items-center gap-1 text-[10px] font-bold">{user.coins?.toFixed(1)} <TimgadCoin size={12} /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <Select defaultValue={user.verificationType || 'none'} onValueChange={(v) => handleUpdateVerification(user.id, v)}>
@@ -465,22 +398,6 @@ export default function AdminPage() {
               ))}
             </div>
           </TabsContent>
-
-          <TabsContent value="revenue" className="space-y-4">
-            <div className="space-y-2">
-              {revenue?.map((rev: any) => (
-                <div key={rev.id} className="p-3 bg-secondary/20 flex justify-between items-center border-r-4 border-r-accent">
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-accent">
-                      {rev.type === 'support_fee' ? 'عمولة دعم' : rev.type === 'ad_click_commission' ? 'عمولة إعلان' : rev.type === 'post_ad_share' ? 'رسوم إعلان منشور (50%)' : 'رسوم شحن/إعلان'}
-                    </span>
-                    <p className="text-[8px] text-muted-foreground">{rev.createdAt?.toDate?.()?.toLocaleString('ar-SA')}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm font-bold text-accent">+{rev.amount.toFixed(2)} <TimgadCoin size={14} /></div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -489,7 +406,7 @@ export default function AdminPage() {
   function handleUpdateVerification(userId: string, type: string) {
     if (!firestore || !isAdminUser) return;
     updateDocumentNonBlocking(doc(firestore, 'users', userId), { verificationType: type });
-    toast({ description: "تم تحديث التوثيق." });
+    toast({ description: "تم التحديث." });
   }
 
   function handleAdjustCoins(userId: string) {
@@ -497,13 +414,7 @@ export default function AdminPage() {
     if (isNaN(amount) || amount === 0) return;
     if (!firestore || !isAdminUser) return;
     updateDocumentNonBlocking(doc(firestore, 'users', userId), { coins: increment(amount) });
-    addDocumentNonBlocking(collection(firestore, 'users', userId, 'notifications'), {
-      type: 'system',
-      message: amount > 0 ? `🎁 مُنحت ${amount} عملة من الإدارة.` : `⚠️ سُحب ${Math.abs(amount)} عملة من رصيدك.`,
-      createdAt: serverTimestamp(),
-      read: false
-    });
     setCoinAmount(prev => ({ ...prev, [userId]: '' }));
-    toast({ description: "تم التحديث." });
+    toast({ description: "تم التعديل." });
   }
 }

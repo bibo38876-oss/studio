@@ -80,19 +80,19 @@ export default function GroupChatPage() {
   const isMember = user && group && (group.members || []).includes(user.uid);
 
   useEffect(() => {
-    // الانتظار حتى يتم تحميل بيانات المستخدم والمجموعة قبل اتخاذ قرار الخروج
-    if (isUserLoading || isGroupLoading) return;
+    // التأكد من تحميل كافة البيانات قبل التحقق من العضوية لمنع الخروج التلقائي
+    if (isUserLoading || isGroupLoading || !user) return;
 
-    if (!group) {
+    if (!group && !isGroupLoading) {
       router.push('/groups');
       return;
     }
 
-    if (!isMember) {
+    if (group && !isMember) {
       toast({ variant: "destructive", description: "ليس لديك صلاحية لدخول هذه المجموعة." });
       router.push('/groups');
     }
-  }, [group, isGroupLoading, isUserLoading, isMember, router, toast]);
+  }, [group, isGroupLoading, isUserLoading, isMember, router, toast, user]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -118,8 +118,7 @@ export default function GroupChatPage() {
       senderId: user.uid,
       senderName: currentUserProfile?.username || user.displayName || 'مستخدم تواصل',
       senderAvatar: currentUserProfile?.profilePictureUrl || '',
-      senderEmail: user.email,
-      senderVerificationType: currentUserProfile?.verificationType || (user.email === 'adelbenmaza8@gmail.com' ? 'blue' : 'none'),
+      senderVerificationType: currentUserProfile?.verificationType || 'none',
       createdAt: serverTimestamp(),
     });
   };
@@ -218,9 +217,6 @@ export default function GroupChatPage() {
                         </Button>
                       </div>
                     ))}
-                    {(!followingUsers || followingUsers.length === 0) && (
-                      <p className="text-[10px] text-center text-muted-foreground py-10">يجب أن تتابع أشخاصاً أولاً لتتمكن من دعوتهم.</p>
-                    )}
                   </div>
                 </div>
               </DialogContent>
@@ -299,17 +295,12 @@ export default function GroupChatPage() {
           <div className="flex-1 relative flex items-center">
             <Input 
               placeholder="اكتب رسالة (150 حرفاً)..." 
-              className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0 placeholder:text-muted-foreground/50"
+              className="flex-1 border-none bg-transparent focus-visible:ring-0 text-xs h-full p-0 placeholder:text-muted-foreground/50 text-right"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               maxLength={150}
             />
-            {message.length > 120 && (
-              <span className="absolute left-0 text-[8px] text-primary/50 font-bold">
-                {150 - message.length}
-              </span>
-            )}
           </div>
           <Button 
             variant="ghost" 
@@ -326,8 +317,8 @@ export default function GroupChatPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-sm font-bold">هل أنت متأكد من حذف المجموعة؟</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs">
+            <AlertDialogTitle className="text-sm font-bold text-right">هل أنت متأكد من حذف المجموعة؟</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-right">
               هذا الإجراء نهائي ولا يمكن التراجع عنه. سيتم حذف المجموعة وجميع الرسائل بداخلها.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -107,10 +107,16 @@ button, a, .card, .avatar {
   padding-top: env(safe-area-inset-top);
 }
 
-/* تعديل خلفية الـ Overlay لتناسب الهاتف */
+/* تعديل خلفية الـ Overlay لتناسب الهاتف وتكون ممركزة */
 [data-radix-portal] > div {
   max-width: 500px;
   margin: 0 auto;
-  left: 0;
-  right: 0;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+/* تصحيح تموضع القوائم المنبثقة للـ Select */
+[role="listbox"] {
+  max-width: 500px;
+  margin: 0 auto;
 }
