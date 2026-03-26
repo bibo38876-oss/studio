@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -92,8 +93,8 @@ function HomeContent() {
       {posts.map((post, idx) => (
         <div key={post.id}>
           <PostCard post={post} currentUserProfile={profile} />
-          {/* إظهار الإعلان المربع كل 5 منشورات - حصرياً للموبايل */}
-          {(idx + 1) % 5 === 0 && <HighPerformanceAd key={`ad-feed-${post.id}`} />}
+          {/* إظهار الإعلان الاستراتيجي الجديد كل 3 منشورات */}
+          {(idx + 1) % 3 === 0 && <HighPerformanceAd key={`ad-feed-${post.id}`} />}
         </div>
       ))}
     </div>

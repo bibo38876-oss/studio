@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { motion } from 'framer-motion';
-import { AadsUnitBanner } from '@/components/ads/AadsUnit';
+import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 
 export default function GroupsPage() {
   const { firestore, user } = useFirebase();
@@ -59,12 +59,6 @@ export default function GroupsPage() {
 
   const hasGroup = myGroups && myGroups.length > 0;
 
-  const suggestedUsers = useMemo(() => {
-    if (!allUsers || !user) return [];
-    const others = allUsers.filter(u => u.id !== user.uid);
-    return others.slice(0, 10);
-  }, [allUsers, user?.uid]);
-
   const handleCreateGroup = () => {
     if (!user || user.isAnonymous) { router.push('/login'); return; }
     if (hasGroup) { toast({ variant: "destructive", description: "يمكنك إنشاء مجموعة واحدة فقط." }); return; }
@@ -83,28 +77,6 @@ export default function GroupsPage() {
     setGroupName('');
     setGroupDesc('');
     toast({ description: "تم إنشاء مجموعتك بنجاح." });
-  };
-
-  const handleFollow = (targetId: string, isFollowing: boolean) => {
-    if (!firestore || !user) return;
-    const curUserRef = doc(firestore, 'users', user.uid);
-    const targetUserRef = doc(firestore, 'users', targetId);
-
-    if (isFollowing) {
-      updateDoc(curUserRef, { followingIds: arrayRemove(targetId) });
-      updateDoc(targetUserRef, { followerIds: arrayRemove(user.uid) });
-    } else {
-      updateDoc(curUserRef, { followingIds: arrayUnion(targetId) });
-      updateDoc(targetUserRef, { followerIds: arrayUnion(user.uid) });
-      addDocumentNonBlocking(collection(firestore, 'users', targetId, 'notifications'), {
-        type: 'follow',
-        fromUserId: user.uid,
-        fromUsername: currentUserProfile?.username || user.displayName || 'مستكشف تيمقاد',
-        fromAvatar: currentUserProfile?.profilePictureUrl || '',
-        createdAt: serverTimestamp(),
-        read: false
-      });
-    }
   };
 
   return (
@@ -134,8 +106,8 @@ export default function GroupsPage() {
           )}
         </div>
 
-        {/* وحدة الإعلانات الجديدة في المجموعات */}
-        <AadsUnitBanner />
+        {/* وحدة إعلانية استراتيجية في المجموعات */}
+        <HighPerformanceAd />
 
         {invites && invites.length > 0 && (
           <div className="p-4 bg-primary/5 border-b">

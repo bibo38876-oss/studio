@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import TimgadLogo from '@/components/ui/Logo';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 
 export default function MessagesPage() {
   const { firestore, user } = useFirebase();
@@ -59,6 +60,9 @@ export default function MessagesPage() {
           </div>
           <ChevronLeft size={16} className="text-primary/40" />
         </Link>
+
+        {/* إعلان استراتيجي في قائمة الرسائل */}
+        <HighPerformanceAd />
 
         <div className="p-4 bg-muted/5">
           <h2 className="text-[10px] font-bold text-muted-foreground uppercase mb-4 pr-1">تواصل مع الأعضاء</h2>

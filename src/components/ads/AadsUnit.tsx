@@ -1,21 +1,36 @@
 
 "use client"
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 /**
- * HighPerformanceAd - تم إيقاف الوحدات المباشرة (300x250) من الواجهة بناءً على طلب المستخدم.
- * تم استبدالها بنظام الإعلانات الخلفي (Service Worker) لزيادة الأداء ونظافة التصميم.
- * تبقى المكونات موجودة كـ Empty Components لمنع أخطاء الاستيراد في الصفحات الأخرى.
+ * HighPerformanceAd - نظام الإعلانات الجديد (nap5k.com)
+ * يقوم بحقن السكريبت برمجياً في مكان الوحدة لضمان أقصى استفادة.
  */
 export function HighPerformanceAd() {
-  // لا يعرض شيئاً في الواجهة، الإعلانات تعمل الآن عبر sw.js
-  return null;
+  const adRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && adRef.current) {
+      const script = document.createElement('script');
+      // استخدام المنطق المطلوب من المستخدم للحقن
+      (function(s: any){
+        s.dataset.zone = '10787535';
+        s.src = 'https://nap5k.com/tag.min.js';
+      })(adRef.current.appendChild(document.createElement('script')));
+    }
+  }, []);
+
+  return (
+    <div className="w-full flex justify-center py-2 bg-secondary/5 border-y border-muted/5 my-1 overflow-hidden min-h-[50px]">
+      <div ref={adRef} className="ad-slot-container" />
+    </div>
+  );
 }
 
-export const AadsUnitBanner = () => null;
-export const AadsUnit = () => null;
-export const AadsUnitSmall = () => null;
-export const AadsUnitInside = () => null;
+export const AadsUnitBanner = () => <HighPerformanceAd />;
+export const AadsUnit = () => <HighPerformanceAd />;
+export const AadsUnitSmall = () => <HighPerformanceAd />;
+export const AadsUnitInside = () => <HighPerformanceAd />;
 
 export default HighPerformanceAd;

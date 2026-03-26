@@ -136,8 +136,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                   </div>
                   <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
                 </div>
-                {/* إعلان كل 5 تعليقات */}
-                {(i + 1) % 5 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}`} />}
+                {/* إعلان جديد كل 3 تعليقات */}
+                {(i + 1) % 3 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}`} />}
               </div>
             ))
           ) : (
