@@ -13,7 +13,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto max-w-2xl pt-8 pb-20 px-4 md:px-0 text-right">
+      <main className="container mx-auto max-w-[500px] pt-8 pb-20 px-4 text-right">
         <div className="bg-background sticky top-8 z-30 py-4 border-b flex items-center gap-4 mb-8">
           <button onClick={() => router.back()} className="text-primary hover:bg-primary/5 p-1 rounded-full transition-colors">
             <ChevronRight size={24} />
@@ -29,16 +29,16 @@ export default function AboutPage() {
           <section className="space-y-6">
             <div className="flex items-center gap-3 text-primary border-r-4 border-accent pr-3">
               <Coins size={20} className="text-accent" />
-              <h2 className="text-xl font-bold font-headline tracking-tighter">اقتصاد تيمقاد والتحويل (TRX)</h2>
+              <h2 className="text-xl font-bold font-headline tracking-tighter">اقتصاد تيمقاد والتحويل (DGB)</h2>
             </div>
             
             <div className="bg-secondary/10 p-6 space-y-4 rounded-sm border border-primary/5">
               <div className="flex items-center justify-between border-b border-primary/10 pb-3">
                 <span className="text-xs font-bold text-primary">معادلة الصرف الملكية</span>
-                <span className="text-sm font-bold text-accent">100 عملة تيمقاد = 1 TRX</span>
+                <span className="text-sm font-bold text-accent">100 عملة تيمقاد = 1 DGB</span>
               </div>
               <p className="text-[11px] leading-relaxed text-foreground/80">
-                يعتمد نظام تيمقاد على عملة ذهبية داخلية مرتبطة تقنياً بعملة <span className="font-bold">TRX (Tron)</span>. يتم الشحن والسحب يدوياً عبر مركز الدعم لضمان أمان خزانة المنصة.
+                يعتمد نظام تيمقاد على عملة ذهبية داخلية مرتبطة تقنياً بعملة <span className="font-bold">DGB (DigiByte)</span>. يتم الشحن والسحب يدوياً عبر مركز الدعم لضمان أمان خزانة المنصة.
               </p>
               
               <div className="bg-primary/5 p-4 border border-primary/10 flex items-center gap-3">
@@ -52,7 +52,7 @@ export default function AboutPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-card border text-center">
                   <p className="text-[9px] text-muted-foreground mb-1 uppercase font-bold">الحد الأدنى للسحب</p>
-                  <p className="text-xs font-bold text-primary">5 TRX (500 عملة)</p>
+                  <p className="text-xs font-bold text-primary">5 DGB (500 عملة)</p>
                 </div>
                 <div className="p-3 bg-card border text-center">
                   <p className="text-[9px] text-muted-foreground mb-1 uppercase font-bold">رسوم التحويل</p>
@@ -135,35 +135,15 @@ export default function AboutPage() {
                   <tr>
                     <td className="p-4 border-l font-medium">مستطيل السوق (بين المنشورات)</td>
                     <td className="p-4 border-l">5 أيام</td>
-                    <td className="p-4 font-bold">5 TRX</td>
+                    <td className="p-4 font-bold">5 DGB</td>
                   </tr>
                   <tr>
                     <td className="p-4 border-l font-medium">إعلان منشور (فوق التعليقات)</td>
                     <td className="p-4 border-l">3 أيام</td>
-                    <td className="p-4 font-bold">5 TRX</td>
+                    <td className="p-4 font-bold">5 DGB</td>
                   </tr>
                 </tbody>
               </table>
-            </div>
-          </section>
-
-          {/* 5. سياسة المحتوى والأمان */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3 text-red-600 border-r-4 border-red-600 pr-3">
-              <ShieldCheck size={20} />
-              <h2 className="text-xl font-bold font-headline tracking-tighter">الأمان وحماية المجتمع</h2>
-            </div>
-            
-            <div className="bg-red-50/50 p-6 border border-red-100 space-y-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle size={16} className="text-red-600 mt-1 shrink-0" />
-                <div className="space-y-1">
-                  <h4 className="text-[11px] font-bold text-red-700 uppercase">حظر الروابط الخارجية</h4>
-                  <p className="text-[10px] text-red-600/80 leading-relaxed">
-                    يُمنع منعاً باتاً وضع روابط خارجية (http, www) داخل المنشورات أو التعليقات لمنع الاحتيال وللحفاظ على بيئة تيمقاد السيادية.
-                  </p>
-                </div>
-              </div>
             </div>
           </section>
 

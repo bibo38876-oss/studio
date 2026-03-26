@@ -67,12 +67,12 @@
     "WithdrawalRequest": {
       "title": "WithdrawalRequest",
       "type": "object",
-      "description": "طلبات سحب الأرباح إلى عملة TRX عبر فاست باي.",
+      "description": "طلبات سحب الأرباح إلى عملة DGB عبر فاست باي.",
       "properties": {
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "amount": { "type": "number" },
-        "finalTRX": { "type": "number" },
+        "finalDGB": { "type": "number" },
         "address": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "completed"] },
         "createdAt": { "type": "string", "format": "date-time" }

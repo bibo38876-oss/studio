@@ -253,7 +253,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background text-right">
       <Navbar />
-      <main className="container mx-auto pt-10 pb-20 px-4 max-w-full">
+      <main className="container mx-auto pt-10 pb-20 px-4 max-w-[500px]">
         <header className="flex flex-col gap-4 mb-8 bg-primary p-5 shadow-xl">
           <div className="flex items-center gap-3">
             <ShieldCheck size={20} className="text-white" />
@@ -289,7 +289,7 @@ export default function AdminPage() {
                 <span className="text-xl font-bold">{stats.totalUsers}</span>
               </Card>
               <Card className="bg-accent/5 border-r-4 border-r-accent p-4 flex justify-between items-center">
-                <span className="text-[9px] font-bold text-accent">أرباح (TRX)</span>
+                <span className="text-[9px] font-bold text-accent">أرباح (DGB)</span>
                 <span className="text-xl font-bold">{(stats.totalRevenue / 100).toFixed(2)}</span>
               </Card>
               <Card className="bg-yellow-500/5 border-r-4 border-r-yellow-600 p-4 flex justify-between items-center">
@@ -330,7 +330,7 @@ export default function AdminPage() {
                         <span className="text-[10px] font-bold block">{req.username}</span>
                         <span className="text-[8px] text-muted-foreground">{req.email}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-accent">{req.finalTRX?.toFixed(2)} TRX</span>
+                      <span className="text-[10px] font-bold text-accent">{req.finalDGB?.toFixed(2)} DGB</span>
                     </div>
                     <div className="bg-secondary/50 p-2 rounded text-center">
                       <code className="text-[9px] font-mono break-all block">{req.address}</code>

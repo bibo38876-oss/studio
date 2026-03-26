@@ -93,7 +93,7 @@ export default function LoginPage() {
       <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-accent/10 rounded-full blur-3xl animate-pulse" />
 
-      <div className="w-full max-w-sm space-y-8 relative z-10">
+      <div className="w-full max-w-[500px] space-y-8 relative z-10 mx-auto">
         <div className="text-center space-y-6">
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
@@ -112,7 +112,7 @@ export default function LoginPage() {
             
             <div className="px-2">
               <p className="text-[11px] leading-relaxed text-accent font-bold text-center bg-accent/5 p-4 border-y border-accent/20 rounded-sm">
-                "منصة تيمقاد الرقمية تمثل الجيل الجديد من الشبكات الاجتماعية السيادية؛ حيث تعد المنصة الأولى التي تدمج بروتوكولات العملات الرقمية (TRX) ضمن نسيجها الاجتماعي، متبنيةً نموذجاً اقتصادياً مبتكراً يتيح للمستخدمين والمعلنين تبادل القيمة الحقيقية من خلال المحتوى والإعلانات التفاعلية في بيئة تقنية آمنة ومتطورة."
+                "منصة تيمقاد الرقمية تمثل الجيل الجديد من الشبكات الاجتماعية السيادية؛ حيث تعد المنصة الأولى التي تدمج بروتوكولات العملات الرقمية (DGB) ضمن نسيجها الاجتماعي، متبنيةً نموذجاً اقتصادياً مبتكراً يتيح للمستخدمين والمعلنين تبادل القيمة الحقيقية من خلال المحتوى والإعلانات التفاعلية في بيئة تقنية آمنة ومتطورة."
               </p>
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function LoginPage() {
               
               <div className="flex items-center justify-center gap-2 opacity-40">
                 <div className="h-px w-8 bg-muted-foreground" />
-                <span className="text-[8px] font-bold uppercase tracking-widest">Powered by TRX Protocols</span>
+                <span className="text-[8px] font-bold uppercase tracking-widest">Powered by DGB Protocols</span>
                 <div className="h-px w-8 bg-muted-foreground" />
               </div>
             </div>

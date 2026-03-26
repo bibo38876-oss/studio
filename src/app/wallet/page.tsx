@@ -26,17 +26,17 @@ import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { cn } from '@/lib/utils';
 
 const PACKAGES = [
-  { id: "pkg_1", amount: 100, price: "1 TRX", label: "حقيبة البداية" },
-  { id: "pkg_2", amount: 500, price: "5 TRX", label: "صندوق النشاط" },
-  { id: "pkg_3", amount: 1000, price: "10 TRX", label: "خزانة التميز" },
-  { id: "pkg_4", amount: 5000, price: "50 TRX", label: "كنز الريادة" }
+  { id: "pkg_1", amount: 100, price: "1 DGB", label: "حقيبة البداية" },
+  { id: "pkg_2", amount: 500, price: "5 DGB", label: "صندوق النشاط" },
+  { id: "pkg_3", amount: 1000, price: "10 DGB", label: "خزانة التميز" },
+  { id: "pkg_4", amount: 5000, price: "50 DGB", label: "كنز الريادة" }
 ];
 
 const VERIFICATION_COST = 500;
 const CONVERSION_RATE = 100; 
-const MIN_WITHDRAW_TRX = 5; 
+const MIN_WITHDRAW_DGB = 5; 
 const CONVERSION_FEE_PERCENT = 3;
-const WALLET_ADDRESS = "TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2";
+const WALLET_ADDRESS = "dgb1q7wzxlvnuv8py8vxpy8vxpy8vxpy8vxpy8vxp"; // عنوان محفظة DGB تجريبي
 const SMARTLINK_REWARD = "https://www.profitablecpmratenetwork.com/yjnuc61v00?key=ac650d2bab02304bb887aca8076f1973";
 
 export default function WalletPage() {
@@ -63,20 +63,20 @@ export default function WalletPage() {
 
   const { data: profile } = useDoc(userRef);
 
-  const calculatedTRX = useMemo(() => {
+  const calculatedDGB = useMemo(() => {
     const amount = parseFloat(withdrawAmount) || 0;
-    const trx = amount / CONVERSION_RATE;
-    const fee = (trx * CONVERSION_FEE_PERCENT) / 100;
+    const dgb = amount / CONVERSION_RATE;
+    const fee = (dgb * CONVERSION_FEE_PERCENT) / 100;
     return {
-      raw: trx,
+      raw: dgb,
       fee: fee,
-      final: Math.max(0, trx - fee)
+      final: Math.max(0, dgb - fee)
     };
   }, [withdrawAmount]);
 
   const handlePackageSelect = (pkg: any) => {
     const priceAmount = pkg.price.split(' ')[0];
-    window.location.href = `tron:${WALLET_ADDRESS}?amount=${priceAmount}`;
+    window.location.href = `digibyte:${WALLET_ADDRESS}?amount=${priceAmount}`;
     toast({ description: "جاري فتح المحفظة للدفع المباشر..." });
     setTimeout(() => {
       router.push(`/support?package=${encodeURIComponent(pkg.label)}&amount=${pkg.amount}&price=${encodeURIComponent(pkg.price)}`);
@@ -114,7 +114,7 @@ export default function WalletPage() {
 
   const handleWithdrawRequest = async () => {
     const amount = parseFloat(withdrawAmount);
-    const minCoins = MIN_WITHDRAW_TRX * CONVERSION_RATE;
+    const minCoins = MIN_WITHDRAW_DGB * CONVERSION_RATE;
     if (!amount || amount < minCoins) {
       toast({ variant: "destructive", description: `الحد الأدنى هو ${minCoins} عملة.` });
       return;
@@ -124,13 +124,13 @@ export default function WalletPage() {
       return;
     }
     if (!fastPayAddress.trim()) {
-      toast({ variant: "destructive", description: "يرجى إدخل عنوان محفظة TRX." });
+      toast({ variant: "destructive", description: "يرجى إدخل عنوان محفظة DGB." });
       return;
     }
     setIsWithdrawing(true);
     try {
       await addDocumentNonBlocking(collection(firestore!, 'withdrawal_requests'), {
-        userId: user!.uid, username: profile?.username, email: user!.email, amount, finalTRX: calculatedTRX.final, address: fastPayAddress.trim(), status: 'pending', createdAt: serverTimestamp()
+        userId: user!.uid, username: profile?.username, email: user!.email, amount, finalDGB: calculatedDGB.final, address: fastPayAddress.trim(), status: 'pending', createdAt: serverTimestamp()
       });
       toast({ title: "تم استلام طلبك! ⏳", description: "سيتم التحويل قريباً." });
       setIsWithdrawOpen(false); setWithdrawAmount(''); setFastPayAddress('');
@@ -141,7 +141,7 @@ export default function WalletPage() {
   return (
     <div className="min-h-screen bg-[#2D1606] text-[#F3E5AB]">
       <Navbar />
-      <main className="container mx-auto max-w-xl pt-10 pb-20 px-4 md:px-0 relative z-10">
+      <main className="container mx-auto max-w-[500px] pt-10 pb-20 px-4 relative z-10">
         <div className="bg-[#451A03]/80 backdrop-blur-md sticky top-8 z-30 py-4 border-b border-[#B45309]/30 flex items-center justify-between mb-10 shadow-2xl px-4">
           <div className="flex items-center gap-4">
             <button onClick={() => router.back()} className="h-8 w-8 rounded-full text-[#FBBF24] hover:bg-[#78350F] flex items-center justify-center"><ChevronRight size={20} /></button>
@@ -155,13 +155,13 @@ export default function WalletPage() {
             <DialogTrigger asChild>
               <Button variant="outline" className="h-8 rounded-full border-[#FBBF24]/30 text-[#FBBF24] hover:bg-[#B45309] text-[10px] font-bold gap-2">
                 <ArrowDownToLine size={14} />
-                سحب (Min: 5 TRX)
+                سحب (Min: 5 DGB)
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#2D1606] text-[#F3E5AB] border-[#B45309] rounded-none max-w-[95vw] sm:max-w-[400px]">
               <DialogHeader>
-                <DialogTitle className="text-sm font-bold text-[#FBBF24]">سحب الأرباح إلى TRX</DialogTitle>
-                <DialogDescription className="text-[10px] text-[#F3E5AB]/60">100 عملة = 1 TRX | رسوم تحويل 3%</DialogDescription>
+                <DialogTitle className="text-sm font-bold text-[#FBBF24]">سحب الأرباح إلى DGB</DialogTitle>
+                <DialogDescription className="text-[10px] text-[#F3E5AB]/60">100 عملة = 1 DGB | رسوم تحويل 3%</DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -184,9 +184,9 @@ export default function WalletPage() {
                 </div>
 
                 <div className="space-y-1 text-right">
-                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">عنوان محفظة TRX المعتمد</label>
+                  <label className="text-[10px] font-bold uppercase text-[#FBBF24]/60">عنوان محفظة DGB المعتمد</label>
                   <Input 
-                    placeholder="T..." 
+                    placeholder="dgb..." 
                     className="bg-[#451A03] border-[#B45309] text-[#FBBF24] h-10 text-xs text-right focus:ring-accent" 
                     value={fastPayAddress} 
                     onChange={(e) => setFastPayAddress(e.target.value)} 
@@ -196,11 +196,11 @@ export default function WalletPage() {
                 {parseFloat(withdrawAmount) >= 500 && (
                   <div className="bg-primary/10 p-3 border border-primary/20 space-y-2 rounded-sm">
                     <div className="flex justify-between text-[10px] font-bold">
-                      <span>{calculatedTRX.raw.toFixed(2)} TRX</span>
+                      <span>{calculatedDGB.raw.toFixed(2)} DGB</span>
                       <span className="text-[#F3E5AB]/60">القيمة الإجمالية:</span>
                     </div>
                     <div className="border-t border-white/5 pt-2 flex justify-between text-xs font-bold">
-                      <span className="text-green-400">{calculatedTRX.final.toFixed(2)} TRX</span>
+                      <span className="text-green-400">{calculatedDGB.final.toFixed(2)} DGB</span>
                       <span className="text-[#FBBF24]">الصافي المستلم (بعد الرسوم):</span>
                     </div>
                   </div>
@@ -270,7 +270,7 @@ export default function WalletPage() {
                 <Card key={pkg.id} className="bg-[#451A03] border-[#B45309]/30 rounded-none overflow-hidden hover:border-[#FBBF24] transition-colors group">
                   <CardContent className="p-6 flex flex-col items-center gap-4">
                     <TimgadCoin size={48} className="group-hover:scale-110 transition-transform" />
-                    <div className="text-center"><p className="text-xl font-bold text-[#FBBF24]">{pkg.amount} عملة</p><p className="text-[10px] text-[#FBBF24]/60 mt-1">السعر: {pkg.price} (TRX)</p></div>
+                    <div className="text-center"><p className="text-xl font-bold text-[#FBBF24]">{pkg.amount} عملة</p><p className="text-[10px] text-[#FBBF24]/60 mt-1">السعر: {pkg.price}</p></div>
                     <Button className="w-full rounded-none font-bold h-9 bg-primary text-white text-[10px] hover:bg-primary/90" onClick={() => handlePackageSelect(pkg)}>اطلب وشحن الآن</Button>
                   </CardContent>
                 </Card>

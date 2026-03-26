@@ -30,7 +30,7 @@ function SupportContent() {
   const initialAmount = searchParams.get('amount');
   const initialPrice = searchParams.get('price');
 
-  const WALLET_ADDRESS = "TNWaZ3FbTkpca8ytBaUVz8s7Aa39ofGXz2";
+  const WALLET_ADDRESS = "dgb1q7wzxlvnuv8py8vxpy8vxpy8vxpy8vxpy8vxp"; // عنوان محفظة DGB تجريبي
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -73,7 +73,7 @@ function SupportContent() {
     if (!isAuto && (content.includes('شراء') || content.includes('باقة'))) {
       setTimeout(() => {
         addDocumentNonBlocking(collection(firestore, 'support_chats', user.uid, 'messages'), {
-          content: `أهلاً بك! لإتمام العملية، يرجى تحويل مبلغ TRX إلى العنوان التالي عبر فاست باي:\n\n${WALLET_ADDRESS}\n\nبعد التحويل، ارفع صورة الوصل هنا.`,
+          content: `أهلاً بك! لإتمام العملية، يرجى تحويل مبلغ DGB إلى العنوان التالي عبر فاست باي:\n\n${WALLET_ADDRESS}\n\nبعد التحويل، ارفع صورة الوصل هنا.`,
           senderId: 'admin_system',
           senderName: 'إدارة تيمقاد',
           senderAvatar: '',
@@ -101,9 +101,7 @@ function SupportContent() {
   };
 
   const handleDirectPay = () => {
-    // استخدام window.location.href لفتح المحفظة مباشرة أو رابط الدفع
-    // يمكن استبداله برابط TronLink أو أي بوابة دفع TRX
-    window.location.href = `tron:${WALLET_ADDRESS}?amount=${initialPrice?.split(' ')[0] || 0}`;
+    window.location.href = `digibyte:${WALLET_ADDRESS}?amount=${initialPrice?.split(' ')[0] || 0}`;
     toast({ description: "جاري محاولة فتح تطبيق المحفظة..." });
   };
 
@@ -111,7 +109,7 @@ function SupportContent() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="fixed top-0 left-0 right-0 z-50 bg-primary p-2 h-12 flex items-center justify-between container max-w-xl mx-auto shadow-lg">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 z-50 bg-primary p-2 h-12 flex items-center justify-between w-full max-w-[500px] shadow-lg">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-white hover:bg-white/10 rounded-full h-8 w-8">
             <ChevronRight size={20} />
@@ -134,7 +132,7 @@ function SupportContent() {
         )}
       </div>
 
-      <main className="flex-1 overflow-y-auto pt-16 pb-20 px-4 container max-w-xl mx-auto flex flex-col gap-4 scroll-smooth" ref={scrollRef}>
+      <main className="flex-1 overflow-y-auto pt-16 pb-20 px-4 container max-w-[500px] mx-auto flex flex-col gap-4 scroll-smooth" ref={scrollRef}>
         {messages && messages.length > 0 ? (
           messages.map((msg: any) => {
             const isMe = msg.senderId === user?.uid;
@@ -170,7 +168,7 @@ function SupportContent() {
         )}
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t p-3 container max-w-xl mx-auto">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 bg-background border-t p-3 w-full max-w-[500px]">
         <div className="flex gap-2 items-center">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-secondary text-primary" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
             {isUploading ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
