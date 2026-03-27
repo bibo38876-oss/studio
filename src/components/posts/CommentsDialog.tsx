@@ -74,7 +74,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-20">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
         <div className="p-4 border-b bg-primary/[0.02]">
           <div className="flex gap-3 mb-4 justify-end">
             <div className="flex flex-col text-right">
@@ -135,7 +135,8 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
                     </div>
                     <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
                   </div>
-                  {(i + 1) % 3 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}`} />}
+                  {/* إظهار الإعلان بعد كل 3 تعليقات بانتظام */}
+                  {(i + 1) % 3 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}-${i}`} />}
                 </div>
               ))}
               {(!comments || comments.length === 0) && (
@@ -149,7 +150,7 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[500px] z-50 bg-background border-t p-3 pb-safe">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[500px] z-50 bg-background border-t p-3 pb-safe shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
         <div className="flex gap-2 items-center bg-secondary/60 rounded-full px-4 h-11 border border-primary/5 shadow-inner">
           <Input 
             placeholder="اكتب تعليقك..." 

@@ -93,8 +93,8 @@ function HomeContent() {
       {posts.map((post, idx) => (
         <div key={post.id}>
           <PostCard post={post} currentUserProfile={profile} />
-          {/* إظهار الإعلان الاستراتيجي الجديد كل 3 منشورات */}
-          {(idx + 1) % 3 === 0 && <HighPerformanceAd key={`ad-feed-${post.id}`} />}
+          {/* إظهار الإعلان بعد كل 3 منشورات بانتظام */}
+          {(idx + 1) % 3 === 0 && <HighPerformanceAd key={`ad-feed-${post.id}-${idx}`} />}
         </div>
       ))}
     </div>
