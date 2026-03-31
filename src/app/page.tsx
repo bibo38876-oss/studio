@@ -11,7 +11,6 @@ import { collection, query, orderBy, doc, increment, limit } from 'firebase/fire
 import { Loader2, Sparkles, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 import { useToast } from '@/hooks/use-toast';
 
 function HomeContent() {
@@ -34,15 +33,6 @@ function HomeContent() {
 
   useEffect(() => {
     if (!mounted) return;
-
-    if (searchParams.get('show_ad_warning') === 'true') {
-      toast({
-        title: "تنبيه بخصوص الإعلانات",
-        description: "بعض الإعلانات في المنصة قد تظهر بشكل غير لائق تأتي من المصدر ونعمل على فرزها قدر المستطاع.",
-        duration: 8000,
-      });
-      window.history.replaceState({}, '', window.location.pathname);
-    }
 
     if (user && profile && firestore) {
       const now = Date.now();
@@ -90,12 +80,8 @@ function HomeContent() {
 
   const renderList = (posts: any[]) => (
     <div className="space-y-[1px] pb-24">
-      {posts.map((post, idx) => (
-        <div key={post.id}>
-          <PostCard post={post} currentUserProfile={profile} />
-          {/* إظهار الإعلان بعد كل 3 منشورات بانتظام */}
-          {(idx + 1) % 3 === 0 && <HighPerformanceAd key={`ad-feed-${post.id}-${idx}`} />}
-        </div>
+      {posts.map((post) => (
+        <PostCard key={post.id} post={post} currentUserProfile={profile} />
       ))}
     </div>
   );

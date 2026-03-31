@@ -1,11 +1,11 @@
 
 "use client"
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, where, doc, arrayUnion, arrayRemove, limit, updateDoc } from 'firebase/firestore';
-import { Loader2, Plus, MessageSquare, Users, ChevronLeft, Check, X, Bell, UserPlus, UserCheck, Sparkles } from 'lucide-react';
+import { collection, query, serverTimestamp, where, doc, arrayUnion, limit } from 'firebase/firestore';
+import { Loader2, Plus, MessageSquare, Users, ChevronLeft, Check, X, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
@@ -13,10 +13,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import VerifiedBadge from '@/components/ui/VerifiedBadge';
-import { motion } from 'framer-motion';
-import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 
 export default function GroupsPage() {
   const { firestore, user } = useFirebase();
@@ -25,8 +21,6 @@ export default function GroupsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupDesc, setGroupDesc] = useState('');
-
-  const ADMIN_EMAIL = 'adelbenmaza8@gmail.com';
 
   const myGroupsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -46,16 +40,6 @@ export default function GroupsPage() {
   const { data: myGroups, isLoading: isMyGroupsLoading } = useCollection(myGroupsQuery);
   const { data: joinedGroups, isLoading: isJoinedLoading } = useCollection(joinedGroupsQuery);
   const { data: invites, isLoading: isInvitesLoading } = useCollection(invitesQuery);
-
-  const { data: allUsers } = useCollection(
-    useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(30)) : null, [firestore])
-  );
-
-  const currentUserProfileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user?.uid]);
-  const { data: currentUserProfile } = useDoc(currentUserProfileRef);
 
   const hasGroup = myGroups && myGroups.length > 0;
 
@@ -105,9 +89,6 @@ export default function GroupsPage() {
             </Dialog>
           )}
         </div>
-
-        {/* وحدة إعلانية استراتيجية في المجموعات */}
-        <HighPerformanceAd />
 
         {invites && invites.length > 0 && (
           <div className="p-4 bg-primary/5 border-b">

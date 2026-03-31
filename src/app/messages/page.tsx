@@ -5,14 +5,12 @@ import Navbar from '@/components/layout/Navbar';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, MessageSquare, Search, BadgeCheck, ShieldCheck, ChevronLeft, User } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Loader2, ChevronLeft, User, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import TimgadLogo from '@/components/ui/Logo';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
-import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 
 export default function MessagesPage() {
   const { firestore, user } = useFirebase();
@@ -60,9 +58,6 @@ export default function MessagesPage() {
           </div>
           <ChevronLeft size={16} className="text-primary/40" />
         </Link>
-
-        {/* إعلان استراتيجي في قائمة الرسائل */}
-        <HighPerformanceAd />
 
         <div className="p-4 bg-muted/5">
           <h2 className="text-[10px] font-bold text-muted-foreground uppercase mb-4 pr-1">تواصل مع الأعضاء</h2>

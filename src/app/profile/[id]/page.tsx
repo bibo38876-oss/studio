@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Bookmark, UserRoundPlus, ShieldCheck, Coffee, Sparkles, Wallet, Users } from 'lucide-react';
+import { Calendar, MapPin, Settings, Loader2, UserPlus, UserCheck, Share, Copy, ExternalLink, Twitter, Camera, ImageIcon, Lock, Heart, Bookmark, UserRoundPlus, ShieldCheck, Coffee, Sparkles, Users } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -24,7 +24,6 @@ import Link from 'next/link';
 import { ar } from 'date-fns/locale';
 import { formatDistanceToNow } from 'date-fns';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
-import { AadsUnitBanner } from '@/components/ads/AadsUnit';
 
 function AdminAdBanner({ banner }: { banner: any }) {
   if (!banner) return null;
@@ -471,13 +470,9 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* وحدة الإعلانات في ملف المستخدم الشخصي */}
+        {/* وحدة إعلان الإدارة فقط في الملف الشخصي */}
         <div className="px-4 py-2">
-          {activeAdminBanner ? (
-            <AdminAdBanner banner={activeAdminBanner} />
-          ) : (
-            <AadsUnitBanner />
-          )}
+          {activeAdminBanner && <AdminAdBanner banner={activeAdminBanner} />}
         </div>
 
         {isPrivateAndNotFollowing ? (

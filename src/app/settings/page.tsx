@@ -12,7 +12,6 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import TimgadLogo from '@/components/ui/Logo';
 import Link from 'next/link';
-import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 
 export default function SettingsPage() {
   const { auth, user, firestore } = useFirebase();
@@ -124,8 +123,6 @@ export default function SettingsPage() {
             </Card>
           </Link>
         </div>
-
-        <HighPerformanceAd />
 
         <Card className="border-none shadow-sm rounded-none bg-card mt-8 hover:bg-red-50 transition-colors cursor-pointer border-r-4 border-r-destructive overflow-hidden">
           <CardContent className="p-0">

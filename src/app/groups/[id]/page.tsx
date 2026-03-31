@@ -31,7 +31,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
-import { AadsUnitBanner } from '@/components/ads/AadsUnit';
 
 export default function GroupChatPage() {
   const params = useParams();
@@ -80,7 +79,6 @@ export default function GroupChatPage() {
   const isMember = user && group && (group.members || []).includes(user.uid);
 
   useEffect(() => {
-    // التأكد من تحميل كافة البيانات قبل التحقق من العضوية لمنع الخروج التلقائي
     if (isUserLoading || isGroupLoading || !user) return;
 
     if (!group && !isGroupLoading) {
@@ -248,8 +246,6 @@ export default function GroupChatPage() {
         className="flex-1 overflow-y-auto pt-24 pb-20 px-4 container max-w-[500px] mx-auto flex flex-col gap-4 scroll-smooth" 
         ref={scrollRef}
       >
-        <AadsUnitBanner />
-        
         {isMessagesLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
         ) : messages && messages.length > 0 ? (

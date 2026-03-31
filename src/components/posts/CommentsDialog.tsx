@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import TimgadCoin from '@/components/ui/TimgadCoin';
-import { HighPerformanceAd } from '@/components/ads/AadsUnit';
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 
 export default function CommentsDialog({ postId, postAuthorId, post, onClose, currentUserProfile }: any) {
@@ -117,26 +116,22 @@ export default function CommentsDialog({ postId, postAuthorId, post, onClose, cu
             <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
             <div className="flex flex-col gap-4">
-              {comments?.map((c, i) => (
-                <div key={c.id}>
-                  <div className="flex gap-3 justify-end group">
-                    <div className="flex-1 flex flex-col items-end">
-                      <div className="bg-secondary/40 p-3 rounded-2xl rounded-tr-none text-right w-fit max-w-[90%] shadow-sm relative border border-primary/5">
-                        {(c.authorId === user?.uid || isAdmin) && (
-                          <button onClick={() => handleDeleteComment(c.id)} className="absolute -left-2 -top-2 h-6 w-6 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 shadow-sm"><Trash2 size={12} /></button>
-                        )}
-                        <div className="flex justify-end gap-1.5 mb-1">
-                          <VerifiedBadge type={c.authorVerificationType || 'none'} size={10} />
-                          <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
-                        </div>
-                        <p className="text-xs leading-relaxed">{c.content}</p>
+              {comments?.map((c) => (
+                <div key={c.id} className="flex gap-3 justify-end group">
+                  <div className="flex-1 flex flex-col items-end">
+                    <div className="bg-secondary/40 p-3 rounded-2xl rounded-tr-none text-right w-fit max-w-[90%] shadow-sm relative border border-primary/5">
+                      {(c.authorId === user?.uid || isAdmin) && (
+                        <button onClick={() => handleDeleteComment(c.id)} className="absolute -left-2 -top-2 h-6 w-6 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-red-100 shadow-sm"><Trash2 size={12} /></button>
+                      )}
+                      <div className="flex justify-end gap-1.5 mb-1">
+                        <VerifiedBadge type={c.authorVerificationType || 'none'} size={10} />
+                        <span className="text-[10px] font-bold text-primary">{c.authorName}</span>
                       </div>
-                      <span className="text-[7px] text-muted-foreground mt-1 px-1">{c.createdAt?.toDate ? formatDistanceToNow(c.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
+                      <p className="text-xs leading-relaxed">{c.content}</p>
                     </div>
-                    <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
+                    <span className="text-[7px] text-muted-foreground mt-1 px-1">{c.createdAt?.toDate ? formatDistanceToNow(c.createdAt.toDate(), { locale: ar }) : 'الآن'}</span>
                   </div>
-                  {/* إظهار الإعلان بعد كل 3 تعليقات بانتظام */}
-                  {(i + 1) % 3 === 0 && <HighPerformanceAd key={`ad-comment-${c.id}-${i}`} />}
+                  <Avatar className="h-8 w-8 border shadow-sm"><AvatarImage src={c.authorAvatar} /><AvatarFallback>{c.authorName?.[0]}</AvatarFallback></Avatar>
                 </div>
               ))}
               {(!comments || comments.length === 0) && (
