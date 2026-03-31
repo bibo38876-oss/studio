@@ -52,43 +52,52 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground font-body;
     direction: rtl !important;
     text-align: right !important;
-    -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
     min-height: 100dvh;
-    /* الهاتف حصراً: تطبيق سيادي ممركز */
     max-width: 500px;
     margin: 0 auto !important;
     box-shadow: 0 0 50px rgba(0,0,0,0.05);
     position: relative;
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
+}
+
+/* تحسين الأداء عبر تسريع الجرافيك */
+.animate-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
 }
 
 .font-headline {
   font-family: 'Inter', sans-serif;
 }
 
-/* تصميم الكروت يملأ الشاشة في الجوال */
 .card-full-width {
   @apply rounded-none border-x-0 border-t-0;
 }
 
 button, a, .card, .avatar {
-  @apply transition-all duration-200 ease-in-out;
+  @apply transition-all duration-200 ease-out;
 }
 
 @keyframes icon-pop {
   0% { transform: scale(1); }
-  50% { transform: scale(1.4); }
+  50% { transform: scale(1.2); }
   100% { transform: scale(1.1); }
 }
 
 .animate-icon-pop {
-  animation: icon-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: icon-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -99,7 +108,6 @@ button, a, .card, .avatar {
   scrollbar-width: none;
 }
 
-/* تحسين مساحة الأمان للهواتف الحديثة (Notch) */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -107,7 +115,6 @@ button, a, .card, .avatar {
   padding-top: env(safe-area-inset-top);
 }
 
-/* تعديل خلفية الـ Overlay لتناسب الهاتف وتكون ممركزة */
 [data-radix-portal] > div {
   max-width: 500px;
   margin: 0 auto;
@@ -115,7 +122,6 @@ button, a, .card, .avatar {
   right: 0 !important;
 }
 
-/* تصحيح تموضع القوائم المنبثقة للـ Select */
 [role="listbox"] {
   max-width: 500px;
   margin: 0 auto;

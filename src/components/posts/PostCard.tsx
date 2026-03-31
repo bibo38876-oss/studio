@@ -1,8 +1,7 @@
-
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Heart, MessageCircle, Bookmark, BarChart3, MoreHorizontal, Trash2, AlertTriangle, Rocket, Coffee, ExternalLink, TrendingUp, ShieldCheck, Loader2, CheckCircle2, Coins } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo, memo } from 'react';
+import { Heart, MessageCircle, Bookmark, BarChart3, MoreHorizontal, Trash2, AlertTriangle, Rocket, Coffee, ExternalLink, TrendingUp, ShieldCheck, Loader2, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function PostCard({ post, currentUserProfile }: any) {
+function PostCardComponent({ post, currentUserProfile }: any) {
   const { user, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
@@ -131,14 +130,14 @@ export default function PostCard({ post, currentUserProfile }: any) {
     }
   };
 
-  const content = useMemo(() => {
+  const formattedContent = useMemo(() => {
     const text = expanded || post.content.length <= 180 ? post.content : post.content.slice(0, 180) + "...";
     return text.split(/(#[^\s#]+)/g).map((p: string, i: number) => p.startsWith('#') ? <span key={i} className="text-accent font-bold">{p}</span> : p);
   }, [post.content, expanded]);
 
   return (
     <>
-      <Card ref={cardRef} className={cn("border-none shadow-none rounded-none bg-card border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-all cursor-pointer", post.promoted && "bg-primary/[0.03] border-r-2 border-r-accent")} onClick={() => setIsCommentsOpen(true)}>
+      <Card ref={cardRef} className={cn("border-none shadow-none rounded-none bg-card border-b-[0.5px] border-muted/10 hover:bg-muted/5 transition-all cursor-pointer animate-gpu", post.promoted && "bg-primary/[0.03] border-r-2 border-r-accent")} onClick={() => setIsCommentsOpen(true)}>
         <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
           <div className="flex items-center gap-1">
             {post.isAdPost && <div className="bg-accent/10 text-accent px-2 py-0.5 rounded-full text-[8px] font-bold flex items-center gap-1 ml-2"><ShieldCheck size={10} /> ممول</div>}
@@ -169,13 +168,13 @@ export default function PostCard({ post, currentUserProfile }: any) {
           </Link>
         </CardHeader>
         <CardContent className="px-4 py-1 text-right">
-          <div className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{content}</div>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{formattedContent}</div>
           {post.content.length > 180 && <button onClick={e => { e.stopPropagation(); setExpanded(!expanded); }} className="text-accent text-[10px] font-bold mt-1">{expanded ? "عرض أقل" : "إقرأ المزيد"}</button>}
           
           {post.isAdPost && (
             <div className="mt-4 p-3 bg-accent/5 border border-accent/10 rounded-xl flex items-center justify-between" onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-accent rounded-full flex items-center justify-center text-white shadow-lg shadow-accent/20"><ExternalLink size={18} /></div>
+                <div className="h-10 w-10 bg-accent rounded-full flex items-center justify-center text-white shadow-lg"><ExternalLink size={18} /></div>
                 <div className="flex flex-col text-right">
                   <span className="text-xs font-bold text-accent">رابط المعلن المعتمد</span>
                   <span className="text-[8px] text-muted-foreground italic">اضغط للزيارة وتحصيل المكافأة</span>
@@ -278,3 +277,5 @@ export default function PostCard({ post, currentUserProfile }: any) {
     </>
   );
 }
+
+export default memo(PostCardComponent);
